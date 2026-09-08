@@ -6,7 +6,7 @@
   ],
   "integration_settings": {
     "agy": {
-      "script": "sh",
+      "script": "py",
       "invoke_separator": "-"
     }
   },
