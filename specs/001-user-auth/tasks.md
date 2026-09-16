@@ -6,10 +6,10 @@
 
 **Purpose**: Inicialización del proyecto desde cero, configuración de Docker Compose para PostgreSQL y estructura base del backend NestJS.
 
-- [ ] T001 Crear archivo `docker-compose.yml` en la raíz del repositorio exponiendo únicamente el servicio `postgres` (imagen postgres:16-alpine, puerto 5432, volumen persistente `postgres_data` y credenciales de desarrollo).
-- [ ] T002 Inicializar proyecto NestJS con TypeScript en `backend/package.json` y `backend/tsconfig.json` incluyendo dependencias nucleares (`@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`, `@nestjs/typeorm`, `typeorm`, `pg`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `bcrypt`, `class-validator`, `class-transformer`, `@nestjs/swagger`, `testcontainers`, `@testcontainers/postgresql`, `jest`, `ts-jest`, `@types/bcrypt`, `@types/passport-jwt`, `@types/jest`).
-- [ ] T003 [P] Configurar scripts de ejecución (`start:dev`), compilación (`build`), tests unitarios (`test:unit`) y tests de integración (`test:integration`) en `backend/package.json` y configuración de Jest en `backend/jest.config.js`.
-- [ ] T004 [P] Crear plantilla de variables de entorno en `backend/.env.example` y módulo de configuración tipado en `backend/src/config/database.config.ts`.
+- [x] T001 Crear archivo `docker-compose.yml` en la raíz del repositorio exponiendo únicamente el servicio `postgres` (imagen postgres:16-alpine, puerto 5432, volumen persistente `postgres_data` y credenciales de desarrollo).
+- [x] T002 Inicializar proyecto NestJS con TypeScript en `backend/package.json` y `backend/tsconfig.json` incluyendo dependencias nucleares (`@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`, `@nestjs/typeorm`, `typeorm`, `pg`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `bcrypt`, `class-validator`, `class-transformer`, `@nestjs/swagger`, `testcontainers`, `@testcontainers/postgresql`, `jest`, `ts-jest`, `@types/bcrypt`, `@types/passport-jwt`, `@types/jest`).
+- [x] T003 [P] Configurar scripts de ejecución (`start:dev`), compilación (`build`), tests unitarios (`test:unit`) y tests de integración (`test:integration`) en `backend/package.json` y configuración de Jest en `backend/jest.config.js`.
+- [x] T004 [P] Crear plantilla de variables de entorno en `backend/.env.example` y módulo de configuración tipado en `backend/src/config/database.config.ts`.
 
 ---
 
@@ -19,10 +19,10 @@
 
 **⚠️ CRITICAL**: No puede iniciarse el trabajo en historias de usuario hasta completar esta fase.
 
-- [ ] T005 Configurar conexión a PostgreSQL mediante TypeORM y carga de variables de entorno en `backend/src/app.module.ts`.
-- [ ] T006 [P] Implementar filtro global de excepciones para mapeo estandarizado de errores HTTP y mensajes en español en `backend/src/common/filters/http-exception.filter.ts`.
-- [ ] T007 [P] Configurar OpenAPI (Swagger) y validación global (`ValidationPipe` con whitelist) en `backend/src/main.ts`.
-- [ ] T008 [P] Configurar helper para instanciar contenedores PostgreSQL dinámicos y efímeros mediante Testcontainers en `backend/test/integration/setup-testcontainers.ts`.
+- [x] T005 Configurar conexión a PostgreSQL mediante TypeORM y carga de variables de entorno en `backend/src/app.module.ts`.
+- [x] T006 [P] Implementar filtro global de excepciones para mapeo estandarizado de errores HTTP y mensajes en español en `backend/src/common/filters/http-exception.filter.ts`.
+- [x] T007 [P] Configurar OpenAPI (Swagger) y validación global (`ValidationPipe` con whitelist) en `backend/src/main.ts`.
+- [x] T008 [P] Configurar helper para instanciar contenedores PostgreSQL dinámicos y efímeros mediante Testcontainers en `backend/test/integration/setup-testcontainers.ts`.
 
 **Checkpoint**: Base lista — las historias de usuario pueden comenzar a implementarse.
 
@@ -38,19 +38,19 @@
 
 > **NOTE: Los tests representan contratos funcionales inmutables; se deben ejecutar y fallar antes de completar la implementación.**
 
-- [ ] T009 [P] [US1] Crear tests unitarios en aislamiento total para la entidad de dominio `Usuario` (validación de invariantes de nombre, correo y complejidad de contraseña) en `backend/test/unit/domain/usuario.entity.spec.ts`.
-- [ ] T010 [P] [US1] Crear test de integración con Testcontainers para persistencia, consulta y unicidad de correo en `backend/test/integration/usuario.typeorm-repository.spec.ts`.
-- [ ] T011 [P] [US1] Crear test de integración con Testcontainers para el servicio de registro de usuarios (`AuthService.registrar`) en `backend/test/integration/auth-registro.service.spec.ts`.
+- [x] T009 [P] [US1] Crear tests unitarios en aislamiento total para la entidad de dominio `Usuario` (validación de invariantes de nombre, correo y complejidad de contraseña) en `backend/test/unit/domain/usuario.entity.spec.ts`.
+- [x] T010 [P] [US1] Crear test de integración con Testcontainers para persistencia, consulta y unicidad de correo en `backend/test/integration/usuario.typeorm-repository.spec.ts`.
+- [x] T011 [P] [US1] Crear test de integración con Testcontainers para el servicio de registro de usuarios (`AuthService.registrar`) en `backend/test/integration/auth.service.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Implementar entidad de dominio `Usuario` aplicando Rich Domain Model con métodos `crear()`, `validarInvariantes()`, `validarFormatoContrasena()` (mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número) y excepciones de negocio en `backend/src/domain/usuario.entity.ts` y `backend/src/domain/exceptions/regla-de-negocio.exception.ts`.
-- [ ] T013 [P] [US1] Definir la interfaz de puerto de dominio `UsuarioRepository` con métodos `guardar`, `buscarPorId`, `buscarPorCorreo` y `existePorCorreo` en `backend/src/domain/usuario.repository.interface.ts`.
-- [ ] T014 [US1] Implementar entidad de persistencia TypeORM `UsuarioOrmEntity` (tabla `usuarios`) y mapper bidireccional de dominio en `backend/src/data-access/usuario.orm-entity.ts` y `backend/src/data-access/usuario.mapper.ts`.
-- [ ] T015 [US1] Implementar el repositorio de persistencia `UsuarioTypeOrmRepository` implementando la interfaz `UsuarioRepository` en `backend/src/data-access/usuario.typeorm-repository.ts`.
-- [ ] T016 [P] [US1] Crear DTO de entrada `RegistroUsuarioDto` con validaciones de `class-validator` y DTO de salida `RespuestaAutenticacionDto` en `backend/src/controllers/dto/registro-usuario.dto.ts`.
-- [ ] T017 [US1] Implementar método de orquestación de registro en `AuthService` (hashing de contraseña con bcrypt a 10 rondas y delegación al repositorio) en `backend/src/services/auth.service.ts`.
-- [ ] T018 [US1] Exponer endpoint `POST /api/auth/register` en `AuthController` actuando estrictamente como pasamanos HTTP sin lógica de negocio en `backend/src/controllers/auth.controller.ts`.
+- [x] T012 [P] [US1] Implementar entidad de dominio `Usuario` aplicando Rich Domain Model con métodos `crear()`, `validarInvariantes()`, `validarFormatoContrasena()` (mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número) y excepciones de negocio en `backend/src/domain/usuario.entity.ts` y `backend/src/domain/exceptions/regla-de-negocio.exception.ts`.
+- [x] T013 [P] [US1] Definir la interfaz de puerto de dominio `UsuarioRepository` con métodos `guardar`, `buscarPorId`, `buscarPorCorreo` y `existePorCorreo` en `backend/src/domain/usuario.repository.interface.ts`.
+- [x] T014 [US1] Implementar entidad de persistencia TypeORM `UsuarioOrmEntity` (tabla `usuarios`) y mapper bidireccional de dominio en `backend/src/data-access/usuario.orm-entity.ts` y `backend/src/data-access/usuario.mapper.ts`.
+- [x] T015 [US1] Implementar el repositorio de persistencia `UsuarioTypeOrmRepository` implementando la interfaz `UsuarioRepository` en `backend/src/data-access/usuario.typeorm-repository.ts`.
+- [x] T016 [P] [US1] Crear DTO de entrada `RegistroUsuarioDto` con validaciones de `class-validator` y DTO de salida `RespuestaAutenticacionDto` en `backend/src/controllers/dto/registro-usuario.dto.ts`.
+- [x] T017 [US1] Implementar método de orquestación de registro en `AuthService` (hashing de contraseña con bcrypt a 10 rondas y delegación al repositorio) en `backend/src/services/auth.service.ts`.
+- [x] T018 [US1] Exponer endpoint `POST /api/auth/register` en `AuthController` actuando estrictamente como pasamanos HTTP sin lógica de negocio en `backend/src/controllers/auth.controller.ts`.
 
 **Checkpoint**: User Story 1 completamente funcional y verificable de manera independiente (MVP alcanzado).
 
@@ -64,15 +64,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] Crear tests unitarios para el método `verificarContrasena()` de la entidad `Usuario` en `backend/test/unit/domain/usuario-login.spec.ts`.
-- [ ] T020 [P] [US2] Crear test de integración con Testcontainers para el servicio de autenticación y emisión de JWT (`AuthService.login`) en `backend/test/integration/auth-login.service.spec.ts`.
+- [x] T019 [P] [US2] Crear tests unitarios para el método `verificarContrasena()` de la entidad `Usuario` en `backend/test/unit/domain/usuario-login.spec.ts`.
+- [x] T020 [P] [US2] Crear test de integración con Testcontainers para el servicio de autenticación y emisión de JWT (`AuthService.login`) en `backend/test/integration/auth.service.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] Crear DTO de login `LoginUsuarioDto` con validación de correo y contraseña en `backend/src/controllers/dto/login-usuario.dto.ts`.
-- [ ] T022 [US2] Configurar módulo de autenticación y proveedor JWT (`JwtModule` con secret y opciones de expiración) en `backend/src/auth/auth.module.ts`.
-- [ ] T023 [US2] Implementar método `login` en `AuthService` para verificar credenciales contra la entidad de dominio `Usuario` y firmar token JWT con claims `sub` y `email` en `backend/src/services/auth.service.ts`.
-- [ ] T024 [US2] Exponer endpoint `POST /api/auth/login` en `AuthController` en `backend/src/controllers/auth.controller.ts`.
+- [x] T021 [P] [US2] Crear DTO de login `LoginUsuarioDto` con validación de correo y contraseña en `backend/src/controllers/dto/login-usuario.dto.ts`.
+- [x] T022 [US2] Configurar módulo de autenticación y proveedor JWT (`JwtModule` con secret y opciones de expiración) en `backend/src/auth/auth.module.ts`.
+- [x] T023 [US2] Implementar método `login` en `AuthService` para verificar credenciales contra la entidad de dominio `Usuario` y firmar token JWT con claims `sub` y `email` en `backend/src/services/auth.service.ts`.
+- [x] T024 [US2] Exponer endpoint `POST /api/auth/login` en `AuthController` en `backend/src/controllers/auth.controller.ts`.
 
 **Checkpoint**: User Stories 1 y 2 operativas e integradas de forma independiente.
 
@@ -86,12 +86,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T025 [P] [US3] Crear test de integración con Testcontainers para validación de token JWT y protección del endpoint `/api/auth/me` en `backend/test/integration/auth-perfil.spec.ts`.
+- [x] T025 [P] [US3] Crear test de integración con Testcontainers para validación de token JWT y protección del endpoint `/api/auth/me` en `backend/test/integration/auth-perfil.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Implementar estrategia Passport `JwtStrategy` y guard `JwtAuthGuard` en `backend/src/auth/jwt.strategy.ts` y `backend/src/auth/jwt-auth.guard.ts`.
-- [ ] T027 [US3] Implementar y exponer endpoints `GET /api/auth/me` y `POST /api/auth/logout` con guard de autenticación en `AuthController` en `backend/src/controllers/auth.controller.ts`.
+- [x] T026 [P] [US3] Implementar estrategia Passport `JwtStrategy` y guard `JwtAuthGuard` en `backend/src/auth/jwt.strategy.ts` y `backend/src/auth/jwt-auth.guard.ts`.
+- [x] T027 [US3] Implementar y exponer endpoints `GET /api/auth/me` y `POST /api/auth/logout` con guard de autenticación en `AuthController` en `backend/src/controllers/auth.controller.ts`.
 
 **Checkpoint**: Todas las historias de usuario implementadas y protegidas según los contratos OpenAPI.
 
@@ -101,9 +101,9 @@
 
 **Purpose**: Verificación cruzada, cumplimiento del Definition of Done (DoD) y artefactos de entrega.
 
-- [ ] T028 [P] Crear y validar la colección de Postman sincronizada con las variables de entorno en `postman/football_tokens_auth.postman_collection.json`.
-- [ ] T029 Ejecutar y comprobar éxito de la suite completa de tests unitarios y de integración con Testcontainers (`npm run test:unit && npm run test:integration` en `backend/`).
-- [ ] T030 Ejecutar validación end-to-end siguiendo los flujos de `specs/001-user-auth/quickstart.md` levantando PostgreSQL con Docker Compose y verificando compilación limpia en `backend/`.
+- [x] T028 [P] Crear y validar la colección de Postman sincronizada con las variables de entorno en `postman/football_tokens_auth.postman_collection.json`.
+- [x] T029 Ejecutar y comprobar éxito de la suite completa de tests unitarios y de integración con Testcontainers (`npm run test:unit && npm run test:integration` en `backend/`).
+- [x] T030 Ejecutar validación end-to-end siguiendo los flujos de `specs/001-user-auth/quickstart.md` levantando PostgreSQL con Docker Compose y verificando compilación limpia en `backend/`.
 
 ---
 
