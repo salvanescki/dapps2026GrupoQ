@@ -8,9 +8,9 @@
 
 **Purpose**: Inicialización del proyecto React con Vite, TypeScript y configuración del entorno de testing.
 
-- [ ] T001 Initialize React 18+ TypeScript SPA project structure with Vite in `frontend/package.json`, `frontend/tsconfig.json`, `frontend/vite.config.ts`, and `frontend/index.html`
-- [ ] T002 [P] Configure dependencies (`react`, `react-dom`, `react-router-dom`) and dev dependencies (`vite`, `typescript`, `@types/react`, `@types/react-dom`, `vitest`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `jsdom`) in `frontend/package.json`
-- [ ] T003 [P] Configure Vitest testing environment and DOM matchers in `frontend/vite.config.ts` and `frontend/tests/setup.ts`
+- [x] T001 Initialize React 18+ TypeScript SPA project structure with Vite in `frontend/package.json`, `frontend/tsconfig.json`, `frontend/vite.config.ts`, and `frontend/index.html`
+- [x] T002 [P] Configure dependencies (`react`, `react-dom`, `react-router-dom`) and dev dependencies (`vite`, `typescript`, `@types/react`, `@types/react-dom`, `vitest`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `jsdom`) in `frontend/package.json`
+- [x] T003 [P] Configure Vitest testing environment and DOM matchers in `frontend/vite.config.ts` and `frontend/tests/setup.ts`
 
 ---
 
@@ -20,11 +20,11 @@
 
 **⚠️ CRITICAL**: Completar esta fase antes de avanzar a la implementación de las historias de usuario.
 
-- [ ] T004 [P] Define TypeScript interfaces and domain types (`CredencialesLogin`, `PerfilUsuario`, `RespuestaAutenticacion`, `EstadoAutenticacion`, `SesionAlmacenada`, `ErrorHttpRespuesta`) in `frontend/src/types/auth.types.ts` per data-model.md
-- [ ] T005 [P] Implement client-side storage service (`StorageService`) in `frontend/src/services/storage.service.ts` for managing session and JWT token under key `football_marketplace_session`
-- [ ] T006 [P] Create unit tests for storage service in `frontend/tests/unit/storage.service.test.ts`
-- [ ] T007 [P] Implement design tokens and global base styles (dark obsidian palette `#0a0d14`, emerald green `#10b981`, player tier amber `#f59e0b`, glassmorphism surfaces) in `frontend/src/styles/tokens.css` and `frontend/src/styles/index.css`
-- [ ] T008 Implement base HTTP client and auth API client in `frontend/src/api/cliente-http.ts` and `frontend/src/api/auth-api.client.ts` per OpenAPI contract `specs/002-frontend-login/contracts/auth-api-contract.yaml`
+- [x] T004 [P] Define TypeScript interfaces and domain types (`CredencialesLogin`, `PerfilUsuario`, `RespuestaAutenticacion`, `EstadoAutenticacion`, `SesionAlmacenada`, `ErrorHttpRespuesta`) in `frontend/src/types/auth.types.ts` per data-model.md
+- [x] T005 [P] Implement client-side storage service (`StorageService`) in `frontend/src/services/storage.service.ts` for managing session and JWT token under key `football_marketplace_session`
+- [x] T006 [P] Create unit tests for storage service in `frontend/tests/unit/storage.service.test.ts`
+- [x] T007 [P] Implement design tokens and global base styles (dark obsidian palette `#0a0d14`, emerald green `#10b981`, player tier amber `#f59e0b`, glassmorphism surfaces) in `frontend/src/styles/tokens.css` and `frontend/src/styles/index.css`
+- [x] T008 Implement base HTTP client and auth API client in `frontend/src/api/cliente-http.ts` and `frontend/src/api/auth-api.client.ts` per OpenAPI contract `specs/002-frontend-login/contracts/auth-api-contract.yaml`
 
 **Checkpoint**: Base lista: tipos, almacenamiento local, tokens de diseño y cliente API listos para construir las vistas y flujos de usuario.
 
@@ -38,15 +38,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Create integration tests for successful login flow and redirection in `frontend/tests/integration/LoginView.test.tsx`
+- [x] T009 [P] [US1] Create integration tests for successful login flow and redirection in `frontend/tests/integration/LoginView.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Implement `AuthContext` and `AuthProvider` in `frontend/src/context/AuthContext.tsx` and `frontend/src/context/AuthProvider.tsx` with custom hook in `frontend/src/hooks/useAuth.ts`
-- [ ] T011 [US1] Implement visual styling for the login view (sports investment card, typography, glow effects, loading spinner) in `frontend/src/styles/login.css`
-- [ ] T012 [US1] Implement `LoginView` component with email/password inputs, submit handler, loading feedback, and login dispatch in `frontend/src/views/LoginView.tsx`
-- [ ] T013 [US1] Implement initial dashboard view (`HomeView`) with personalized user welcome, active investor status summary, and logout action in `frontend/src/views/HomeView.tsx`
-- [ ] T014 [US1] Implement main routing structure and root app entry in `frontend/src/routes/AppRoutes.tsx`, `frontend/src/App.tsx`, and `frontend/src/main.tsx`
+- [x] T010 [P] [US1] Implement `AuthContext` and `AuthProvider` in `frontend/src/context/AuthContext.tsx` and `frontend/src/context/AuthProvider.tsx` with custom hook in `frontend/src/hooks/useAuth.ts`
+- [x] T011 [US1] Implement visual styling for the login view (sports investment card, typography, glow effects, loading spinner) in `frontend/src/styles/login.css`
+- [x] T012 [US1] Implement `LoginView` component with email/password inputs, submit handler, loading feedback, and login dispatch in `frontend/src/views/LoginView.tsx`
+- [x] T013 [US1] Implement initial dashboard view (`HomeView`) with personalized user welcome, active investor status summary, and logout action in `frontend/src/views/HomeView.tsx`
+- [x] T014 [US1] Implement main routing structure and root app entry in `frontend/src/routes/AppRoutes.tsx`, `frontend/src/App.tsx`, and `frontend/src/main.tsx`
 
 **Checkpoint**: User Story 1 (MVP) completamente funcional e independientemente verificable con credenciales válidas.
 
@@ -60,12 +60,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Add integration tests in `frontend/tests/integration/LoginView.test.tsx` for HTTP 401 error response and network failure handling
+- [x] T015 [P] [US2] Add integration tests in `frontend/tests/integration/LoginView.test.tsx` for HTTP 401 error response and network failure handling
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Enhance `frontend/src/api/auth-api.client.ts` and `frontend/src/context/AuthProvider.tsx` to parse backend `HttpExceptionFilter` error envelopes and format network errors to user-friendly Spanish messages
-- [ ] T017 [US2] Update `frontend/src/views/LoginView.tsx` to render contextual error alert banners, reset password field, and keep email field on authentication failure
+- [x] T016 [US2] Enhance `frontend/src/api/auth-api.client.ts` and `frontend/src/context/AuthProvider.tsx` to parse backend `HttpExceptionFilter` error envelopes and format network errors to user-friendly Spanish messages
+- [x] T017 [US2] Update `frontend/src/views/LoginView.tsx` to render contextual error alert banners, reset password field, and keep email field on authentication failure
 
 **Checkpoint**: User Stories 1 y 2 funcionando e independientemente testeables.
 
@@ -79,12 +79,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] Implement unit tests for client-side form validation rules in `frontend/tests/unit/validaciones.test.ts`
+- [x] T018 [P] [US3] Implement unit tests for client-side form validation rules in `frontend/tests/unit/validaciones.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T019 [P] [US3] Implement validation functions (`validarCorreo`, `validarContrasena`, `validarFormularioLogin`) and string sanitization in `frontend/src/utils/validaciones.ts`
-- [ ] T020 [US3] Update `frontend/src/views/LoginView.tsx` with client-side inline validation errors and submit button disablement during active requests
+- [x] T019 [P] [US3] Implement validation functions (`validarCorreo`, `validarContrasena`, `validarFormularioLogin`) and string sanitization in `frontend/src/utils/validaciones.ts`
+- [x] T020 [US3] Update `frontend/src/views/LoginView.tsx` with client-side inline validation errors and submit button disablement during active requests
 
 **Checkpoint**: Validación local instantánea y protección contra clics repetidos funcionando.
 
@@ -98,12 +98,12 @@
 
 ### Tests for User Story 4
 
-- [ ] T021 [P] [US4] Implement route guard tests in `frontend/tests/integration/ProtectedRoute.test.tsx`
+- [x] T021 [P] [US4] Implement route guard tests in `frontend/tests/integration/ProtectedRoute.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T022 [P] [US4] Implement route guards `ProtectedRoute` in `frontend/src/routes/ProtectedRoute.tsx` and `PublicRoute` in `frontend/src/routes/PublicRoute.tsx`
-- [ ] T023 [US4] Integrate route guards and session hydration lifecycle in `frontend/src/routes/AppRoutes.tsx` and `frontend/src/context/AuthProvider.tsx`
+- [x] T022 [P] [US4] Implement route guards `ProtectedRoute` in `frontend/src/routes/ProtectedRoute.tsx` and `PublicRoute` in `frontend/src/routes/PublicRoute.tsx`
+- [x] T023 [US4] Integrate route guards and session hydration lifecycle in `frontend/src/routes/AppRoutes.tsx` and `frontend/src/context/AuthProvider.tsx`
 
 **Checkpoint**: Persistencia de sesión y navegación protegida completamente funcionales.
 
@@ -113,9 +113,9 @@
 
 **Purpose**: Ajustes de integración, proxy de desarrollo y validación integral de calidad.
 
-- [ ] T024 [P] Configure development API proxy in `frontend/vite.config.ts` targeting `http://localhost:3000`
-- [ ] T025 Execute all frontend test suites and verify 100% pass rate (`npm test` in `frontend/`)
-- [ ] T026 Execute backend test suite to verify test immutability and zero regressions (`npm test` in `backend/`)
+- [x] T024 [P] Configure development API proxy in `frontend/vite.config.ts` targeting `http://localhost:3000`
+- [x] T025 Execute all frontend test suites and verify 100% pass rate (`npm test` in `frontend/`)
+- [x] T026 Execute backend test suite to verify test immutability and zero regressions (`npm test` in `backend/`)
 
 ---
 
