@@ -1,0 +1,18 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testMatch": ["<rootDir>/test/unit/**/*.spec.ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": ["src/domain/**/*.ts"],
+  "coverageDirectory": "./coverage/unit",
+  "testEnvironment": "node",
+  "moduleNameMapper": {
+    "^@src/(.*)$": "<rootDir>/src/$1",
+    "^@domain/(.*)$": "<rootDir>/src/domain/$1",
+    "^@services/(.*)$": "<rootDir>/src/services/$1",
+    "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",
+    "^@data-access/(.*)$": "<rootDir>/src/data-access/$1"
+  }
+}
