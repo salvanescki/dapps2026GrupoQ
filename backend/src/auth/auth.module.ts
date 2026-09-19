@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import type { StringValue } from 'ms';
 import { AuthController } from '../controllers/auth.controller';
 import { AuthService } from '../services/auth.service';
 import { UsuarioOrmEntity } from '../data-access/usuario.orm-entity';
@@ -19,7 +20,7 @@ import { JwtStrategy } from './jwt.strategy';
           process.env.JWT_SECRET ||
           'super_secreto_para_desarrollo_tokens_2026_grupo_q',
         signOptions: {
-          expiresIn: process.env.JWT_EXPIRATION || '24h',
+          expiresIn: (process.env.JWT_EXPIRATION as StringValue) || '24h',
         },
       }),
     }),
