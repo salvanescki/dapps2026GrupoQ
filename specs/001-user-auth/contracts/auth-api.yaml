@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: API de Autenticación de Usuarios - Football Player Token Marketplace
+  description: Endpoints para registro, inicio de sesión (JWT) y verificación de identidad en la plataforma.
+  version: 1.0.0
+paths:
+  /api/auth/register:
+    post:
+      summary: Registrar un nuevo usuario
+      description: Permite a un visitante crear una cuenta en la plataforma con nombre, correo y contraseña segura.
+      operationId: registrarUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroUsuarioDto'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '400':
+          description: Datos de entrada inválidos o contraseña insegura.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+        '409':
+          description: El correo electrónico ya se encuentra registrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /api/auth/login:
+    post:
+      summary: Iniciar sesión de usuario
+      description: Autentica credenciales y emite un token de acceso JWT.
+      operationId: iniciarSesion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUsuarioDto'
+      responses:
+        '200':
+          description: Autenticación exitosa. Retorna el token JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '401':
+          description: Credenciales incorrectas o cuenta inactiva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /api/auth/me:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      description: Devuelve la información del usuario autenticado actualmente mediante el token JWT.
+      operationId: obtenerPerfilActual
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilUsuarioDto'
+        '401':
+          description: Token no provisto, inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /api/auth/logout:
+    post:
+      summary: Cerrar sesión
+      description: Endpoint de cierre de sesión para confirmar revocación o invalidación del lado cliente.
+      operationId: cerrarSesion
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: Sesión cerrada exitosamente.
+        '401':
+          description: No autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegistroUsuarioDto:
+      type: object
+      required:
+        - nombre
+        - correo
+        - contrasena
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Juan Perez
+        correo:
+          type: string
+          format: email
+          example: juan.perez@ejemplo.com
+        contrasena:
+          type: string
+          format: password
+          minLength: 8
+          description: Mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula y 1 número.
+          example: SuperClave2026
+
+    LoginUsuarioDto:
+      type: object
+      required:
+        - correo
+        - contrasena
+      properties:
+        correo:
+          type: string
+          format: email
+          example: juan.perez@ejemplo.com
+        contrasena:
+          type: string
+          format: password
+          example: SuperClave2026
+
+    RespuestaAutenticacionDto:
+      type: object
+      required:
+        - tokenDeAcceso
+        - tipo
+        - usuario
+      properties:
+        tokenDeAcceso:
+          type: string
+          description: JWT emitido para autenticación subsiguiente en header Bearer.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tipo:
+          type: string
+          example: Bearer
+        usuario:
+          $ref: '#/components/schemas/PerfilUsuarioDto'
+
+    PerfilUsuarioDto:
+      type: object
+      required:
+        - id
+        - nombre
+        - correo
+        - activo
+        - creadoEn
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        nombre:
+          type: string
+          example: Juan Perez
+        correo:
+          type: string
+          example: juan.perez@ejemplo.com
+        activo:
+          type: boolean
+          example: true
+        creadoEn:
+          type: string
+          format: date-time
+          example: '2026-09-16T22:30:00.000Z'
+
+    ErrorRespuestaDto:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          example: 401
+        mensaje:
+          type: string
+          example: Credenciales inválidas.
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: '2026-09-16T22:30:00.000Z'

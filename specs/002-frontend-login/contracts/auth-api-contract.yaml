@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Football Player Token Marketplace - Frontend Auth Consumption Contract
+  description: Contrato de consumo HTTP REST para la integración de la pantalla de Login y gestión de sesión en el Frontend.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor Backend Local (NestJS)
+
+paths:
+  /api/auth/login:
+    post:
+      summary: Iniciar sesión de usuario
+      description: Endpoint consumido por el formulario de acceso del frontend para validar credenciales y obtener el token JWT de sesión.
+      operationId: loginUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUsuarioDto'
+      responses:
+        '200':
+          description: Autenticación exitosa. Retorna el token JWT y los datos del perfil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '400':
+          description: Datos de entrada con sintaxis o valores inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacionHttp'
+        '401':
+          description: Credenciales inválidas (correo no existente o contraseña errónea).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorHttp'
+
+  /api/auth/me:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      description: Endpoint utilizado para verificar la validez del token JWT guardado en almacenamiento local y refrescar la identidad.
+      operationId: obtenerPerfil
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario recuperado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilUsuarioDto'
+        '401':
+          description: Token no provisto, inválido o expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorHttp'
+
+  /api/auth/logout:
+    post:
+      summary: Cerrar sesión en el backend
+      description: Invalida formalmente la sesión (el frontend complementa limpiando el almacenamiento local).
+      operationId: logoutUsuario
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Sesión cerrada exitosamente."
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginUsuarioDto:
+      type: object
+      required:
+        - correo
+        - contrasena
+      properties:
+        correo:
+          type: string
+          format: email
+          example: "juan.perez@ejemplo.com"
+          description: Correo electrónico registrado en la plataforma.
+        contrasena:
+          type: string
+          example: "SuperClave2026"
+          description: Contraseña del usuario.
+
+    PerfilUsuarioDto:
+      type: object
+      required:
+        - id
+        - nombre
+        - correo
+        - activo
+        - creadoEn
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        nombre:
+          type: string
+          example: "Juan Perez"
+        correo:
+          type: string
+          format: email
+          example: "juan.perez@ejemplo.com"
+        activo:
+          type: boolean
+          example: true
+        creadoEn:
+          type: string
+          format: date-time
+          example: "2026-09-16T22:30:00.000Z"
+
+    RespuestaAutenticacionDto:
+      type: object
+      required:
+        - tokenDeAcceso
+        - tipo
+        - usuario
+      properties:
+        tokenDeAcceso:
+          type: string
+          description: Token JWT para autenticación Bearer
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        tipo:
+          type: string
+          example: "Bearer"
+        usuario:
+          $ref: '#/components/schemas/PerfilUsuarioDto'
+
+    ErrorHttp:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          example: 401
+        mensaje:
+          type: string
+          example: "Credenciales inválidas."
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: "2026-09-18T18:15:38.000Z"
+
+    ErrorValidacionHttp:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          example: 400
+        mensaje:
+          type: array
+          items:
+            type: string
+          example:
+            - "El formato del correo electrónico es inválido."
+            - "La contraseña es obligatoria."
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: "2026-09-18T18:15:38.000Z"
