@@ -8,9 +8,9 @@
 
 **Purpose**: Inicialización de estructuras compartidas, clientes de comunicación externa y estilos base.
 
-- [ ] T001 Definir interfaces de tipos de datos para jugadores, equipos, ligas y filtros en `frontend/src/types/player.types.ts`
-- [ ] T002 [P] Implementar cliente HTTP para la API v4 de football-data.org con autenticación de header en `backend/src/services/clients/football-data.client.ts`
-- [ ] T003 [P] Crear variables y estilos CSS específicos para catálogo, cuadrícula, tarjetas y badges en `frontend/src/styles/catalog.css`
+- [X] T001 Definir interfaces de tipos de datos para jugadores, equipos, ligas y filtros en `frontend/src/types/player.types.ts`
+- [X] T002 [P] Implementar cliente HTTP para la API v4 de football-data.org con autenticación de header en `backend/src/services/clients/football-data.client.ts`
+- [X] T003 [P] Crear variables y estilos CSS específicos para catálogo, cuadrícula, tarjetas y badges en `frontend/src/styles/catalog.css`
 
 ---
 
@@ -20,15 +20,15 @@
 
 **⚠️ CRITICAL**: No comenzar el trabajo de historias de usuario hasta completar esta fase.
 
-- [ ] T004 [P] Crear Rich Domain Entity `Liga` con invariantes de código y nombre en `backend/src/domain/liga.entity.ts`
-- [ ] T005 [P] Crear Rich Domain Entity `Equipo` con validación de pertenencia a liga en `backend/src/domain/equipo.entity.ts`
-- [ ] T006 [P] Crear Rich Domain Entity `Jugador` con reglas de normalización de posición táctica e invariantes en `backend/src/domain/jugador.entity.ts`
-- [ ] T007 [P] Definir interfaces de repositorio de dominio `IJugadorRepository`, `IEquipoRepository` e `ILigaRepository` en `backend/src/domain/jugador.repository.interface.ts`
-- [ ] T008 [P] Crear entidades TypeORM `LigaOrmEntity`, `EquipoOrmEntity` y `JugadorOrmEntity` con claves foráneas e índices en `backend/src/data-access/`
-- [ ] T009 [P] Crear mappers bidireccionales `LigaMapper`, `EquipoMapper` y `JugadorMapper` en `backend/src/data-access/`
-- [ ] T010 Implementar repositorios TypeORM `LigaTypeOrmRepository`, `EquipoTypeOrmRepository` y `JugadorTypeOrmRepository` en `backend/src/data-access/`
-- [ ] T011 Implementar servicio de sincronización inicial idempotente de las 5 grandes ligas desde football-data.org en `backend/src/services/sincronizacion-jugadores.service.ts`
-- [ ] T012 Registrar entidades ORM y proveedores del catálogo en `backend/src/app.module.ts`
+- [X] T004 [P] Crear Rich Domain Entity `Liga` con invariantes de código y nombre en `backend/src/domain/liga.entity.ts`
+- [X] T005 [P] Crear Rich Domain Entity `Equipo` con validación de pertenencia a liga en `backend/src/domain/equipo.entity.ts`
+- [X] T006 [P] Crear Rich Domain Entity `Jugador` con reglas de normalización de posición táctica e invariantes en `backend/src/domain/jugador.entity.ts`
+- [X] T007 [P] Definir interfaces de repositorio de dominio `IJugadorRepository`, `IEquipoRepository` e `ILigaRepository` en `backend/src/domain/jugador.repository.interface.ts`
+- [X] T008 [P] Crear entidades TypeORM `LigaOrmEntity`, `EquipoOrmEntity` y `JugadorOrmEntity` con claves foráneas e índices en `backend/src/data-access/`
+- [X] T009 [P] Crear mappers bidireccionales `LigaMapper`, `EquipoMapper` y `JugadorMapper` en `backend/src/data-access/`
+- [X] T010 Implementar repositorios TypeORM `LigaTypeOrmRepository`, `EquipoTypeOrmRepository` y `JugadorTypeOrmRepository` en `backend/src/data-access/`
+- [X] T011 Implementar servicio de sincronización inicial idempotente de las 5 grandes ligas desde football-data.org en `backend/src/services/sincronizacion-jugadores.service.ts`
+- [X] T012 Registrar entidades ORM y proveedores del catálogo en `backend/src/app.module.ts`
 
 **Checkpoint**: Base de datos, entidades de dominio y capa de datos operativas. Las historias de usuario pueden implementarse a continuación.
 
@@ -42,19 +42,19 @@
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T013 [P] [US1] Escribir tests unitarios para la entidad de dominio `Jugador` (invariantes, normalización de posición y validaciones) en `backend/test/unit/domain/jugador.entity.spec.ts`
-- [ ] T014 [P] [US1] Escribir tests de integración para `JugadorService` y consulta paginada con Testcontainers en `backend/test/integration/jugador.service.spec.ts`
+- [X] T013 [P] [US1] Escribir tests unitarios para la entidad de dominio `Jugador` (invariantes, normalización de posición y validaciones) en `backend/test/unit/domain/jugador.entity.spec.ts`
+- [X] T014 [P] [US1] Escribir tests de integración para `JugadorService` y consulta paginada con Testcontainers en `backend/test/integration/jugador.service.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Implementar DTOs de consulta y paginación `FiltroJugadoresDto` y `RespuestaCatalogoJugadoresDto` con validaciones en `backend/src/controllers/dto/filtro-jugadores.dto.ts`
-- [ ] T016 [US1] Implementar método `obtenerCatalogo` con verificación de sincronización inicial en `backend/src/services/jugador.service.ts`
-- [ ] T017 [US1] Implementar controlador REST `PlayersController` exponiendo `GET /players` con Swagger en `backend/src/controllers/players.controller.ts`
-- [ ] T018 [P] [US1] Implementar servicio API para consulta paginada de jugadores en `frontend/src/api/playersApi.ts`
-- [ ] T019 [P] [US1] Implementar hook personalizado `useInfinitePlayers` con `IntersectionObserver` para carga diferida en `frontend/src/hooks/useInfinitePlayers.ts`
-- [ ] T020 [P] [US1] Crear componentes de presentación `PlayerCard.tsx` y `PlayerGrid.tsx` respetando tokens de diseño en `frontend/src/components/catalog/`
-- [ ] T021 [US1] Implementar vista principal `PlayersCatalogView.tsx` y registrar la ruta `/players` en `frontend/src/routes/AppRoutes.tsx` y enlace en navbar de `frontend/src/views/HomeView.tsx`
-- [ ] T022 [P] [US1] Escribir tests de interfaz para la vista `PlayersCatalogView` en `frontend/tests/views/PlayersCatalogView.spec.tsx`
+- [X] T015 [US1] Implementar DTOs de consulta y paginación `FiltroJugadoresDto` y `RespuestaCatalogoJugadoresDto` con validaciones en `backend/src/controllers/dto/filtro-jugadores.dto.ts`
+- [X] T016 [US1] Implementar método `obtenerCatalogo` con verificación de sincronización inicial en `backend/src/services/jugador.service.ts`
+- [X] T017 [US1] Implementar controlador REST `PlayersController` exponiendo `GET /players` con Swagger en `backend/src/controllers/players.controller.ts`
+- [X] T018 [P] [US1] Implementar servicio API para consulta paginada de jugadores en `frontend/src/api/playersApi.ts`
+- [X] T019 [P] [US1] Implementar hook personalizado `useInfinitePlayers` con `IntersectionObserver` para carga diferida en `frontend/src/hooks/useInfinitePlayers.ts`
+- [X] T020 [P] [US1] Crear componentes de presentación `PlayerCard.tsx` y `PlayerGrid.tsx` respetando tokens de diseño en `frontend/src/components/catalog/`
+- [X] T021 [US1] Implementar vista principal `PlayersCatalogView.tsx` y registrar la ruta `/players` en `frontend/src/routes/AppRoutes.tsx` y enlace en navbar de `frontend/src/views/HomeView.tsx`
+- [X] T022 [P] [US1] Escribir tests de interfaz para la vista `PlayersCatalogView` en `frontend/tests/views/PlayersCatalogView.spec.tsx`
 
 **Checkpoint**: User Story 1 completamente funcional de forma independiente (MVP alcanzado).
 
@@ -68,16 +68,16 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T023 [P] [US2] Escribir tests unitarios para validación de consistencia relacional liga/equipo en `backend/test/unit/domain/criterio-filtro.spec.ts`
-- [ ] T024 [P] [US2] Escribir tests de integración para endpoint `GET /players/filters` y filtrado combinado en `backend/test/integration/players-filters.spec.ts`
+- [X] T023 [P] [US2] Escribir tests unitarios para validación de consistencia relacional liga/equipo en `backend/test/unit/domain/criterio-filtro.spec.ts`
+- [X] T024 [P] [US2] Escribir tests de integración para endpoint `GET /players/filters` y filtrado combinado en `backend/test/integration/players-filters.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implementar método `obtenerOpcionesFiltro` en `backend/src/services/jugador.service.ts` y endpoint `GET /players/filters` en `backend/src/controllers/players.controller.ts`
-- [ ] T026 [P] [US2] Implementar hook `usePlayerFilters` con lógica de reseteo automático de equipo ante cambio de liga en `frontend/src/hooks/usePlayerFilters.ts`
-- [ ] T027 [P] [US2] Construir componente de panel/modal desplegable `FilterModal.tsx` con selectores jerárquicos en `frontend/src/components/catalog/FilterModal.tsx`
-- [ ] T028 [US2] Integrar botón de filtros con indicador visual de filtros activos y apertura del modal en `frontend/src/views/PlayersCatalogView.tsx`
-- [ ] T029 [P] [US2] Construir barra de chips de filtros activos `ActiveFiltersBar.tsx` con eliminación individual en `frontend/src/components/catalog/ActiveFiltersBar.tsx`
+- [X] T025 [US2] Implementar método `obtenerOpcionesFiltro` en `backend/src/services/jugador.service.ts` y endpoint `GET /players/filters` en `backend/src/controllers/players.controller.ts`
+- [X] T026 [P] [US2] Implementar hook `usePlayerFilters` con lógica de reseteo automático de equipo ante cambio de liga en `frontend/src/hooks/usePlayerFilters.ts`
+- [X] T027 [P] [US2] Construir componente de panel/modal desplegable `FilterModal.tsx` con selectores jerárquicos en `frontend/src/components/catalog/FilterModal.tsx`
+- [X] T028 [US2] Integrar botón de filtros con indicador visual de filtros activos y apertura del modal en `frontend/src/views/PlayersCatalogView.tsx`
+- [X] T029 [P] [US2] Construir barra de chips de filtros activos `ActiveFiltersBar.tsx` con eliminación individual en `frontend/src/components/catalog/ActiveFiltersBar.tsx`
 
 **Checkpoint**: User Story 2 funcional; filtros jerárquicos operando conjuntamente con el catálogo.
 
@@ -91,9 +91,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [P] [US3] Crear componente de estado vacío `EmptyState.tsx` con mensaje amigable y botón de restablecer en `frontend/src/components/catalog/EmptyState.tsx`
-- [ ] T031 [US3] Conectar botón de limpieza general de filtros y renderizado condicional de `EmptyState` en `frontend/src/views/PlayersCatalogView.tsx`
-- [ ] T032 [P] [US3] Escribir test de interfaz para el restablecimiento de filtros y mensaje de lista vacía en `frontend/tests/views/EmptyStateFilterReset.spec.tsx`
+- [X] T030 [P] [US3] Crear componente de estado vacío `EmptyState.tsx` con mensaje amigable y botón de restablecer en `frontend/src/components/catalog/EmptyState.tsx`
+- [X] T031 [US3] Conectar botón de limpieza general de filtros y renderizado condicional de `EmptyState` en `frontend/src/views/PlayersCatalogView.tsx`
+- [X] T032 [P] [US3] Escribir test de interfaz para el restablecimiento de filtros y mensaje de lista vacía en `frontend/tests/views/EmptyStateFilterReset.spec.tsx`
 
 **Checkpoint**: User Story 3 funcional; recuperación amigable ante filtros restrictivos garantizada.
 
@@ -107,9 +107,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Optimizar consulta SQL en repositorio con búsqueda parcial insensible a mayúsculas y acentos (`ILIKE`) en `backend/src/data-access/jugador.typeorm-repository.ts`
-- [ ] T034 [P] [US4] Implementar componente `SearchBar.tsx` con debounce de 300 ms en `frontend/src/components/catalog/SearchBar.tsx`
-- [ ] T035 [US4] Conectar `SearchBar` con `useInfinitePlayers` reseteando a la página 1 en `frontend/src/views/PlayersCatalogView.tsx`
+- [X] T033 [US4] Optimizar consulta SQL en repositorio con búsqueda parcial insensible a mayúsculas y acentos (`ILIKE`) en `backend/src/data-access/jugador.typeorm-repository.ts`
+- [X] T034 [P] [US4] Implementar componente `SearchBar.tsx` con debounce de 300 ms en `frontend/src/components/catalog/SearchBar.tsx`
+- [X] T035 [US4] Conectar `SearchBar` con `useInfinitePlayers` reseteando a la página 1 en `frontend/src/views/PlayersCatalogView.tsx`
 
 **Checkpoint**: User Story 4 funcional; búsqueda textual operando con filtros activos y paginación.
 
@@ -123,13 +123,13 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T036 [P] [US5] Escribir tests de integración para `GET /players/:id` cubriendo caso exitoso (200) e ID inexistente (404) en `backend/test/integration/player-detail.spec.ts`
+- [X] T036 [P] [US5] Escribir tests de integración para `GET /players/:id` cubriendo caso exitoso (200) e ID inexistente (404) en `backend/test/integration/player-detail.spec.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T037 [US5] Implementar método `buscarPorId` en `JugadorService` y `JugadorTypeOrmRepository` en `backend/src/services/jugador.service.ts`
-- [ ] T038 [US5] Implementar endpoint `GET /players/:id` con validación de UUID y Swagger en `backend/src/controllers/players.controller.ts`
-- [ ] T039 [P] [US5] Implementar función de consulta individual `getPlayerById` en `frontend/src/api/playersApi.ts`
+- [X] T037 [US5] Implementar método `buscarPorId` en `JugadorService` y `JugadorTypeOrmRepository` en `backend/src/services/jugador.service.ts`
+- [X] T038 [US5] Implementar endpoint `GET /players/:id` con validación de UUID y Swagger en `backend/src/controllers/players.controller.ts`
+- [X] T039 [P] [US5] Implementar función de consulta individual `getPlayerById` en `frontend/src/api/playersApi.ts`
 
 **Checkpoint**: User Story 5 completamente funcional y verificada.
 
@@ -139,9 +139,9 @@
 
 **Purpose**: Asegurar estándares constitucionales de calidad, documentación Swagger, colección Postman y validación integral.
 
-- [ ] T040 [P] Actualizar la colección de Postman incorporando la carpeta "Catálogo de Jugadores" con `/players`, `/players/:id` y `/players/filters` en `postman/football_tokens_auth.postman_collection.json`
-- [ ] T041 [P] Verificar documentación OpenAPI/Swagger en `backend/src/main.ts` y validar concordancia con `specs/003-player-catalog/contracts/players-api.yaml`
-- [ ] T042 Ejecutar la guía de validación completa de `specs/003-player-catalog/quickstart.md` y verificar que la suite completa de tests de backend y frontend pase al 100%
+- [X] T040 [P] Actualizar la colección de Postman incorporando la carpeta "Catálogo de Jugadores" con `/players`, `/players/:id` y `/players/filters` en `postman/football_tokens_auth.postman_collection.json`
+- [X] T041 [P] Verificar documentación OpenAPI/Swagger en `backend/src/main.ts` y validar concordancia con `specs/003-player-catalog/contracts/players-api.yaml`
+- [X] T042 Ejecutar la guía de validación completa de `specs/003-player-catalog/quickstart.md` y verificar que la suite completa de tests de backend y frontend pase al 100%
 
 ---
 
