@@ -23,7 +23,7 @@ import {
 } from './dto/filtro-jugadores.dto';
 
 @ApiTags('Jugadores')
-@Controller(['players', 'api/players'])
+@Controller('players')
 export class PlayersController {
   constructor(private readonly jugadorService: JugadorService) {}
 

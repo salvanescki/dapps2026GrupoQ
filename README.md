@@ -10,19 +10,19 @@ Plataforma web para consultar y operar con tokens asociados a jugadores de fútb
 
 El producto calcula una cotización periódica para cada jugador a partir de métricas de rendimiento y contexto. Los usuarios podrán comprar y vender tokens, consultar la evolución histórica de las cotizaciones y controlar el valor y la rentabilidad de su portfolio.
 
-> **Estado actual:** el repositorio contiene la base de autenticación del backend y el primer flujo de login del frontend. El catálogo de jugadores, las cotizaciones, el mercado de tokens y el portfolio forman parte del alcance funcional definido para las siguientes iteraciones.
+> **Estado actual:** el repositorio incluye autenticación completa, catálogo paginado de jugadores de las 5 grandes ligas europeas con filtros jerárquicos, búsqueda textual, scroll infinito y sincronización desde football-data.org. Las cotizaciones, el mercado de tokens y el portfolio forman parte del alcance funcional definido para las siguientes iteraciones.
 
 ## Arquitectura
 
 El proyecto está organizado como un monorepo liviano con dos aplicaciones independientes:
 
-- `backend/`: API REST en NestJS, TypeScript, TypeORM y PostgreSQL. Incluye registro, login, JWT, perfil autenticado, logout, validación global y Swagger.
-- `frontend/`: SPA en React + TypeScript + Vite. Incluye login, validaciones locales, persistencia de sesión, protección de rutas y pantalla inicial.
+- `backend/`: API REST en NestJS, TypeScript, TypeORM y PostgreSQL. Incluye autenticación JWT, catálogo de jugadores con filtros y paginación, sincronización con football-data.org, validación global y Swagger.
+- `frontend/`: SPA en React + TypeScript + Vite. Incluye login, catálogo de jugadores con scroll infinito, filtros jerárquicos, búsqueda textual y estado vacío.
 - `docker-compose.yml`: servicio local de PostgreSQL 16.
 - `specs/`: especificaciones, planes, contratos OpenAPI, modelo de datos y guías de validación.
-- `postman/`: colección de Postman para probar autenticación.
+- `postman/`: colección de Postman para probar autenticación y catálogo de jugadores.
 
-La API utiliza una separación por controllers, services, domain/data-access y módulos de infraestructura. La autenticación es stateless mediante JWT en la cabecera `Authorization: Bearer`.
+La API utiliza separación por controllers, services, domain/data-access y módulos de infraestructura. La autenticación es stateless mediante JWT en la cabecera `Authorization: Bearer`. El proxy de Vite reenvía `/api/*` al backend eliminando el prefijo, por lo que los controladores NestJS están montados directamente en `/auth` y `/players`.
 
 ## Requisitos previos
 
@@ -95,23 +95,42 @@ Comandos disponibles:
 | `npm run test:integration` | Tests de integración con Testcontainers |
 | `npm run test:cov` | Tests backend con reporte de cobertura |
 
-### Endpoints de autenticación disponibles
+### Endpoints disponibles
 
-Todos los endpoints están bajo el prefijo `/api/auth`:
+> Los controladores NestJS están montados sin prefijo `/api`. Desde el frontend (Vite) las rutas se llaman con `/api/*` y el proxy las reenvía eliminando ese prefijo. Para llamadas directas al backend (curl, Postman) usar las rutas sin `/api`.
 
-- `POST /api/auth/register`: registra un usuario y devuelve un JWT.
-- `POST /api/auth/login`: autentica un usuario y devuelve un JWT.
-- `GET /api/auth/me`: obtiene el perfil del usuario autenticado.
-- `POST /api/auth/logout`: cierra la sesión del cliente autenticado.
+#### Autenticación — `/auth`
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Registra un usuario y devuelve un JWT |
+| `POST` | `/auth/login` | Autentica un usuario y devuelve un JWT |
+| `GET` | `/auth/me` | Perfil del usuario autenticado (requiere JWT) |
+| `POST` | `/auth/logout` | Cierra la sesión del cliente autenticado (requiere JWT) |
+
+#### Catálogo de jugadores — `/players`
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/players` | Catálogo paginado con filtros opcionales (`league`, `teamId`, `position`, `search`, `page`, `limit`) |
+| `GET` | `/players/filters` | Opciones disponibles para los filtros (ligas, equipos, posiciones) |
+| `GET` | `/players/:id` | Detalle individual de un jugador por UUID |
+| `POST` | `/players/sync` | Dispara sincronización manual desde football-data.org |
 
 La documentación interactiva está disponible en [Swagger](http://localhost:3000/api/docs) con el backend iniciado.
 
 Ejemplo de registro:
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:3000/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"nombre":"Inversor Demo","correo":"inversor@tokens.com","contrasena":"Clave1234"}'
+```
+
+Ejemplo de consulta del catálogo:
+
+```bash
+curl 'http://localhost:3000/players?league=PL&position=Delantero&page=1&limit=20'
 ```
 
 ## Frontend
@@ -177,24 +196,40 @@ npm install
 npm run dev
 ```
 
-Después, abrir `http://localhost:5173/login` y autenticar un usuario creado mediante Swagger, Postman o `POST /api/auth/register`.
+Después, abrir `http://localhost:5173/login` y autenticar un usuario creado mediante Swagger, Postman o `POST /auth/register`. Una vez autenticado, navegar a `http://localhost:5173/players` para explorar el catálogo.
 
 ## Documentación del proyecto
+
+### Autenticación
 
 - [Spec de autenticación](specs/001-user-auth/spec.md)
 - [Plan y arquitectura del backend](specs/001-user-auth/plan.md)
 - [Quickstart de autenticación](specs/001-user-auth/quickstart.md)
 - [Contrato OpenAPI de autenticación](specs/001-user-auth/contracts/auth-api.yaml)
+
+### Login frontend
+
 - [Spec del login frontend](specs/002-frontend-login/spec.md)
 - [Plan del frontend](specs/002-frontend-login/plan.md)
 - [Quickstart del frontend](specs/002-frontend-login/quickstart.md)
+
+### Catálogo de jugadores
+
+- [Spec del catálogo](specs/003-player-catalog/spec.md)
+- [Plan de arquitectura del catálogo](specs/003-player-catalog/plan.md)
+- [Modelo de datos](specs/003-player-catalog/data-model.md)
+- [Quickstart del catálogo](specs/003-player-catalog/quickstart.md)
+- [Contrato OpenAPI del catálogo](specs/003-player-catalog/contracts/players-api.yaml)
+
+### General
+
 - [Colección Postman](postman/football_tokens_auth.postman_collection.json)
 
 ## Próximas capacidades del dominio
 
 La visión funcional completa contempla:
 
-- Catálogo de jugadores de las cinco ligas, alimentado por fuentes externas como WhoScored y Football-Data.org.
+- ~~Catálogo de jugadores de las cinco ligas~~ ✅ Implementado — sincronización desde football-data.org, filtros jerárquicos, búsqueda textual y scroll infinito.
 - Dos o más estrategias configurables de valuación, con pesos por métrica y registro de la versión utilizada.
 - Cotización actual e histórica y recálculo periódico.
 - Compra y venta de tokens con un superusuario como tenedor inicial.
