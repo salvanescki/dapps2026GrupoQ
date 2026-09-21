@@ -2,6 +2,7 @@
 // HomeView — Pantalla inicial provisoria (Dashboard del inversor)
 // ============================================================
 
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/home.css';
 
@@ -18,14 +19,31 @@ export function HomeView() {
           <span className="home-navbar-logo" aria-hidden="true">⚽</span>
           <span className="home-navbar-title">Football Token Marketplace</span>
         </div>
-        <button
-          className="logout-button"
-          onClick={logout}
-          id="logout-button"
-          aria-label="Cerrar sesión"
-        >
-          🚪 Cerrar Sesión
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Link
+            to="/players"
+            id="nav-players-catalog"
+            style={{
+              color: 'var(--color-emerald-400)',
+              textDecoration: 'none',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+            }}
+          >
+            🏃 Ver Catálogo de Jugadores
+          </Link>
+          <button
+            className="logout-button"
+            onClick={logout}
+            id="logout-button"
+            aria-label="Cerrar sesión"
+          >
+            🚪 Cerrar Sesión
+          </button>
+        </div>
       </nav>
 
       {/* Contenido principal */}

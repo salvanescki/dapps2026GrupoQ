@@ -194,6 +194,167 @@
           "path": ["api", "auth", "login"]
         }
       }
+    },
+    {
+      "name": "Catálogo de Jugadores",
+      "item": [
+        {
+          "name": "1. Obtener Catálogo Paginado de Jugadores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has items array and pagination\", function () {",
+                  "    pm.expect(jsonData).to.have.property('items');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "    pm.expect(jsonData).to.have.property('page');",
+                  "    pm.expect(jsonData).to.have.property('limit');",
+                  "});",
+                  "if (jsonData.items && jsonData.items.length > 0) {",
+                  "    pm.environment.set(\"player_id\", jsonData.items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["players"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Retorna el catálogo paginado de jugadores de las 5 grandes ligas."
+          }
+        },
+        {
+          "name": "2. Filtrar por Liga y Posición",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players?league=PL&position=Delantero&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["players"],
+              "query": [
+                { "key": "league", "value": "PL" },
+                { "key": "position", "value": "Delantero" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Filtra jugadores pertenecientes a la Premier League en posición Delantero."
+          }
+        },
+        {
+          "name": "3. Obtener Opciones de Filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Contains ligas, equipos and posiciones\", function () {",
+                  "    pm.expect(jsonData).to.have.property('ligas');",
+                  "    pm.expect(jsonData).to.have.property('equipos');",
+                  "    pm.expect(jsonData).to.have.property('posiciones');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players/filters",
+              "host": ["{{base_url}}"],
+              "path": ["players", "filters"]
+            },
+            "description": "Obtiene las listas de ligas, equipos y posiciones para poblar los filtros dinámicos."
+          }
+        },
+        {
+          "name": "4. Obtener Detalle de Jugador por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 404\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players/{{player_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["players", "{{player_id}}"]
+            },
+            "description": "Obtiene la ficha técnica completa de un jugador por su identificador UUID."
+          }
+        },
+        {
+          "name": "5. Sincronización Manual de Jugadores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players/sync",
+              "host": ["{{base_url}}"],
+              "path": ["players", "sync"]
+            },
+            "description": "Dispara la sincronización manual idempotente de las 5 grandes ligas desde football-data.org."
+          }
+        }
+      ]
     }
   ],
   "variable": [

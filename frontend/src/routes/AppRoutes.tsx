@@ -5,6 +5,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from '../views/LoginView';
 import { HomeView } from '../views/HomeView';
+import { PlayersCatalogView } from '../views/PlayersCatalogView';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 
@@ -24,6 +25,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <HomeView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/players"
+        element={
+          <ProtectedRoute>
+            <PlayersCatalogView />
           </ProtectedRoute>
         }
       />
