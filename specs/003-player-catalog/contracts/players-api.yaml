@@ -1,0 +1,342 @@
+openapi: 3.0.3
+info:
+  title: API de Catálogo de Jugadores de Fútbol (Grupo Q)
+  description: Endpoints para consulta, búsqueda, filtrado y sincronización de futbolistas de las 5 grandes ligas europeas.
+  version: 1.0.0
+paths:
+  /players:
+    get:
+      tags:
+        - Jugadores
+      summary: Obtener catálogo paginado de jugadores con filtros
+      description: Retorna una lista paginada de jugadores filtrada opcionalmente por liga, equipo, posición táctica y término de búsqueda textual.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página para la carga diferida o paginación.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: Cantidad de futbolistas por página.
+        - name: league
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PL, PD, SA, BL1, FL1]
+          description: Código de la liga (PL = Premier League, PD = La Liga, SA = Serie A, BL1 = Bundesliga, FL1 = Ligue 1).
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Identificador único (UUID) del equipo.
+        - name: position
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Portero, Defensa, Mediocampista, Delantero]
+          description: Posición táctica normalizada del jugador.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Término de búsqueda por nombre del jugador (búsqueda parcial insensible a mayúsculas y acentos).
+      responses:
+        '200':
+          description: Catálogo de jugadores obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaCatalogoJugadores'
+        '400':
+          description: Parámetros de consulta inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /players/{id}:
+    get:
+      tags:
+        - Jugadores
+      summary: Obtener detalle individual de un jugador por ID
+      description: Retorna la ficha completa de un jugador de fútbol por su identificador único (UUID).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Identificador único (UUID) del futbolista.
+      responses:
+        '200':
+          description: Ficha del jugador obtenida exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JugadorItem'
+        '400':
+          description: Identificador UUID con formato inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+        '404':
+          description: Jugador no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /players/filters:
+    get:
+      tags:
+        - Jugadores
+      summary: Obtener opciones disponibles para los filtros del catálogo
+      description: Retorna las listas de ligas registradas, equipos asociados con su liga correspondiente, y posiciones tácticas para poblar dinámicamente el menú de filtros en el frontend.
+      responses:
+        '200':
+          description: Opciones de filtros obtenidas exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpcionesFiltroRespuesta'
+
+  /players/sync:
+    post:
+      tags:
+        - Jugadores
+      summary: Disparar sincronización manual de jugadores desde football-data.org
+      description: Descarga y persiste de forma idempotente las 5 grandes ligas europeas, sus equipos y jugadores en PostgreSQL.
+      responses:
+        '200':
+          description: Sincronización finalizada exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Sincronización de jugadores completada exitosamente."
+                  totalLigas:
+                    type: integer
+                    example: 5
+                  totalEquipos:
+                    type: integer
+                    example: 96
+                  totalJugadores:
+                    type: integer
+                    example: 2450
+        '500':
+          description: Error al comunicarse con el proveedor externo o al persistir en base de datos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+components:
+  schemas:
+    JugadorItem:
+      type: object
+      required:
+        - id
+        - nombre
+        - posicion
+        - nacionalidad
+        - equipo
+        - liga
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+        externalId:
+          type: integer
+          example: 3189
+        nombre:
+          type: string
+          example: "Bukayo Saka"
+        posicion:
+          type: string
+          example: "Delantero"
+        posicionOriginal:
+          type: string
+          example: "Right Winger"
+        fechaNacimiento:
+          type: string
+          format: date
+          nullable: true
+          example: "2001-09-05"
+        nacionalidad:
+          type: string
+          example: "England"
+        dorsal:
+          type: integer
+          nullable: true
+          example: 7
+        equipo:
+          type: object
+          required:
+            - id
+            - nombre
+          properties:
+            id:
+              type: string
+              format: uuid
+            nombre:
+              type: string
+              example: "Arsenal FC"
+            nombreCorto:
+              type: string
+              example: "Arsenal"
+            tla:
+              type: string
+              example: "ARS"
+            escudoUrl:
+              type: string
+              nullable: true
+              example: "https://crests.football-data.org/57.png"
+        liga:
+          type: object
+          required:
+            - id
+            - codigo
+            - nombre
+          properties:
+            id:
+              type: string
+              format: uuid
+            codigo:
+              type: string
+              example: "PL"
+            nombre:
+              type: string
+              example: "Premier League"
+            pais:
+              type: string
+              example: "Inglaterra"
+            emblemaUrl:
+              type: string
+              nullable: true
+              example: "https://crests.football-data.org/PL.png"
+
+    RespuestaCatalogoJugadores:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - limit
+        - totalPages
+        - hasMore
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/JugadorItem'
+        total:
+          type: integer
+          example: 2450
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 123
+        hasMore:
+          type: boolean
+          example: true
+
+    OpcionesFiltroRespuesta:
+      type: object
+      required:
+        - ligas
+        - equipos
+        - posiciones
+      properties:
+        ligas:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              codigo:
+                type: string
+                example: "PL"
+              nombre:
+                type: string
+                example: "Premier League"
+              pais:
+                type: string
+                example: "Inglaterra"
+              emblemaUrl:
+                type: string
+                nullable: true
+        equipos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              nombre:
+                type: string
+                example: "Arsenal FC"
+              nombreCorto:
+                type: string
+                example: "Arsenal"
+              escudoUrl:
+                type: string
+                nullable: true
+              ligaId:
+                type: string
+                format: uuid
+              ligaCodigo:
+                type: string
+                example: "PL"
+        posiciones:
+          type: array
+          items:
+            type: string
+          example: ["Portero", "Defensa", "Mediocampista", "Delantero"]
+
+    ErrorRespuesta:
+      type: object
+      required:
+        - statusCode
+        - mensaje
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        mensaje:
+          type: string
+          example: "Parámetros de consulta no válidos."
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: "/players"

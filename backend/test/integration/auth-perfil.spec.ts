@@ -49,14 +49,14 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
     await TestcontainersHelper.cleanDatabase();
   });
 
-  it('debe rechazar acceso a /api/auth/me sin cabecera Authorization (HTTP 401)', async () => {
-    const response = await request(app.getHttpServer()).get('/api/auth/me');
+  it('debe rechazar acceso a /auth/me sin cabecera Authorization (HTTP 401)', async () => {
+    const response = await request(app.getHttpServer()).get('/auth/me');
     expect(response.status).toBe(401);
   });
 
-  it('debe registrar un usuario, obtener token JWT y consultar /api/auth/me exitosamente', async () => {
+  it('debe registrar un usuario, obtener token JWT y consultar /auth/me exitosamente', async () => {
     const registroRes = await request(app.getHttpServer())
-      .post('/api/auth/register')
+      .post('/auth/register')
       .send({
         nombre: 'Lautaro Martinez',
         correo: 'toro@inter.it',
@@ -68,7 +68,7 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
     expect(token).toBeDefined();
 
     const perfilRes = await request(app.getHttpServer())
-      .get('/api/auth/me')
+      .get('/auth/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(perfilRes.status).toBe(200);
@@ -78,7 +78,7 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
 
   it('debe permitir cerrar sesión exitosamente con token válido', async () => {
     const registroRes = await request(app.getHttpServer())
-      .post('/api/auth/register')
+      .post('/auth/register')
       .send({
         nombre: 'Julian Alvarez',
         correo: 'araña@atleti.es',
@@ -88,7 +88,7 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
     const token = registroRes.body.tokenDeAcceso;
 
     const logoutRes = await request(app.getHttpServer())
-      .post('/api/auth/logout')
+      .post('/auth/logout')
       .set('Authorization', `Bearer ${token}`);
 
     expect(logoutRes.status).toBe(200);
