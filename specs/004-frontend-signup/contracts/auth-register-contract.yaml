@@ -1,0 +1,168 @@
+openapi: 3.0.3
+info:
+  title: Football Player Token Marketplace - Frontend Registration Contract
+  description: Contrato de consumo HTTP REST para la integración de la pantalla de Registro de Usuario en el Frontend.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor Backend Local (NestJS)
+
+paths:
+  /api/auth/register:
+    post:
+      summary: Registrar un nuevo usuario inversor
+      description: Endpoint consumido por el formulario de registro del frontend para dar de alta una nueva cuenta en la plataforma.
+      operationId: registrarUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroUsuarioDto'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente. Retorna token JWT y perfil básico.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '400':
+          description: Datos de entrada con sintaxis o formato inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacionHttp'
+        '409':
+          description: El correo electrónico provisto ya se encuentra registrado por otra cuenta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorHttp'
+        '500':
+          description: Error interno no controlado en el servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorHttp'
+
+components:
+  schemas:
+    RegistroUsuarioDto:
+      type: object
+      required:
+        - nombre
+        - correo
+        - contrasena
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Nombre completo o nombre de usuario del inversor.
+          example: Juan Perez
+        correo:
+          type: string
+          format: email
+          description: Dirección de correo electrónico única de acceso.
+          example: inversor@tokens.com
+        contrasena:
+          type: string
+          minLength: 8
+          description: Contraseña segura (mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número).
+          example: SuperClave2026
+
+    PerfilUsuarioDto:
+      type: object
+      required:
+        - id
+        - nombre
+        - correo
+        - activo
+        - creadoEn
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único universal del usuario.
+          example: 123e4567-e89b-12d3-a456-426614174000
+        nombre:
+          type: string
+          description: Nombre del usuario registrado.
+          example: Juan Perez
+        correo:
+          type: string
+          format: email
+          description: Correo electrónico registrado.
+          example: inversor@tokens.com
+        activo:
+          type: boolean
+          description: Estado de actividad de la cuenta en la plataforma.
+          example: true
+        creadoEn:
+          type: string
+          format: date-time
+          description: Marca temporal de creación de la cuenta.
+          example: '2026-09-22T23:00:00.000Z'
+
+    RespuestaAutenticacionDto:
+      type: object
+      required:
+        - tokenDeAcceso
+        - tipo
+        - usuario
+      properties:
+        tokenDeAcceso:
+          type: string
+          description: Token de acceso JWT emitido tras el registro.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tipo:
+          type: string
+          description: Tipo de esquema de autenticación.
+          example: Bearer
+        usuario:
+          $ref: '#/components/schemas/PerfilUsuarioDto'
+
+    ErrorHttp:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          description: Código de estado HTTP retornado por la excepción.
+          example: 409
+        mensaje:
+          type: string
+          description: Mensaje de error descriptivo en español emitido por el backend.
+          example: El correo electrónico inversor@tokens.com ya se encuentra registrado.
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          description: Momento en el que ocurrió el error.
+          example: '2026-09-22T23:05:00.000Z'
+
+    ErrorValidacionHttp:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          description: Código de estado HTTP para errores de validación.
+          example: 400
+        mensaje:
+          type: array
+          items:
+            type: string
+          description: Lista de inconsistencias encontradas por class-validator en el backend.
+          example:
+            - 'El nombre debe tener entre 2 y 100 caracteres.'
+            - 'El formato del correo electrónico es inválido.'
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: '2026-09-22T23:05:00.000Z'
