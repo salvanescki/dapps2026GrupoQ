@@ -260,4 +260,15 @@ describe('LoginView', () => {
       });
     });
   });
+
+  // ─── US3: Enlace hacia registro ───
+  describe('Navegación a registro (US3)', () => {
+    it('debería renderizar el enlace hacia la pantalla de registro', () => {
+      renderLoginView();
+      const linkRegistro = screen.getByRole('link', { name: /regístrate aquí/i });
+      expect(linkRegistro).toBeInTheDocument();
+      expect(linkRegistro).toHaveAttribute('href', '/register');
+    });
+  });
 });
+

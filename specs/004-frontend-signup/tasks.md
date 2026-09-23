@@ -13,8 +13,8 @@
 
 **Purpose**: Preparación de tipos e interfaces de dominio para el flujo de registro de usuario.
 
-- [ ] T001 [P] Definir tipos e interfaces TypeScript para registro (`SolicitudRegistroApi`, `RespuestaRegistro`, `ErroresValidacionRegistro`, `EstadoFormularioRegistro`, `EstadoNavegacionLogin`) en frontend/src/types/auth.types.ts
-- [ ] T002 [P] Declarar estilos CSS adicionales para el formulario de registro (badges de fortaleza, mensajes de ayuda y alertas de éxito/error) en frontend/src/styles/login.css
+- [x] T001 [P] Definir tipos e interfaces TypeScript para registro (`SolicitudRegistroApi`, `RespuestaRegistro`, `ErroresValidacionRegistro`, `EstadoFormularioRegistro`, `EstadoNavegacionLogin`) en frontend/src/types/auth.types.ts
+- [x] T002 [P] Declarar estilos CSS adicionales para el formulario de registro (badges de fortaleza, mensajes de ayuda y alertas de éxito/error) en frontend/src/styles/login.css
 
 ---
 
@@ -24,9 +24,9 @@
 
 **⚠️ CRITICAL**: Ninguna historia de usuario puede completarse sin estas funciones base.
 
-- [ ] T003 Implementar funciones de validación y sanitización en cliente (`validarNombre`, `validarFormatoContrasena`, `validarConfirmacionContrasena`, `validarFormularioRegistro`, `sanitizarDatosRegistro`) con restricciones exactas en frontend/src/utils/validaciones.ts
-- [ ] T004 [P] Implementar tests unitarios exhaustivos para las validaciones y sanitizaciones de registro en frontend/tests/unit/validaciones-registro.test.ts
-- [ ] T005 Implementar función cliente `registrarUsuario(datos: SolicitudRegistroApi)` con consumo de `POST /api/auth/register` y normalización de errores en frontend/src/api/auth-api.client.ts
+- [x] T003 Implementar funciones de validación y sanitización en cliente (`validarNombre`, `validarFormatoContrasena`, `validarConfirmacionContrasena`, `validarFormularioRegistro`, `sanitizarDatosRegistro`) con restricciones exactas en frontend/src/utils/validaciones.ts
+- [x] T004 [P] Implementar tests unitarios exhaustivos para las validaciones y sanitizaciones de registro en frontend/tests/unit/validaciones-registro.test.ts
+- [x] T005 Implementar función cliente `registrarUsuario(datos: SolicitudRegistroApi)` con consumo de `POST /api/auth/register` y normalización de errores en frontend/src/api/auth-api.client.ts
 
 **Checkpoint**: Base de datos de tipos, validación y cliente API lista. Las historias de usuario pueden implementarse.
 
@@ -40,13 +40,13 @@
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T006 [P] [US1] Crear test de integración para el flujo exitoso de registro y redirección con mensaje en frontend/tests/integration/RegisterView.test.tsx
+- [x] T006 [P] [US1] Crear test de integración para el flujo exitoso de registro y redirección con mensaje en frontend/tests/integration/RegisterView.test.tsx
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implementar vista de registro base `RegisterView` con formulario de campos (`nombre`, `correo`, `contrasena`, `confirmarContrasena`), indicador de carga y llamada a `registrarUsuario` con redirección a `/login` con `state.mensajeExito` en frontend/src/views/RegisterView.tsx
-- [ ] T008 [US1] Actualizar `LoginView` para leer `location.state?.mensajeExito` y presentar la alerta amigable de confirmación de cuenta creada en frontend/src/views/LoginView.tsx
-- [ ] T009 [US1] Configurar la ruta `/register` envuelta en `PublicRoute` dentro del enrutador de la aplicación en frontend/src/routes/AppRoutes.tsx
+- [x] T007 [US1] Implementar vista de registro base `RegisterView` con formulario de campos (`nombre`, `correo`, `contrasena`, `confirmarContrasena`), indicador de carga y llamada a `registrarUsuario` con redirección a `/login` con `state.mensajeExito` en frontend/src/views/RegisterView.tsx
+- [x] T008 [US1] Actualizar `LoginView` para leer `location.state?.mensajeExito` y presentar la alerta amigable de confirmación de cuenta creada en frontend/src/views/LoginView.tsx
+- [x] T009 [US1] Configurar la ruta `/register` envuelta en `PublicRoute` dentro del enrutador de la aplicación en frontend/src/routes/AppRoutes.tsx
 
 **Checkpoint**: User Story 1 (MVP) completamente funcional e independientemente testable.
 
@@ -60,12 +60,12 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T010 [P] [US2] Agregar casos de prueba de integración en `RegisterView.test.tsx` para manejo de error 409 por correo duplicado, error 400 y errores de red en frontend/tests/integration/RegisterView.test.tsx
+- [x] T010 [P] [US2] Agregar casos de prueba de integración en `RegisterView.test.tsx` para manejo de error 409 por correo duplicado, error 400 y errores de red en frontend/tests/integration/RegisterView.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Incorporar manejo de errores HTTP y renderizado del banner amigable de error (`errorServidor`) con atributos de accesibilidad `role="alert"` en frontend/src/views/RegisterView.tsx
-- [ ] T012 [US2] Manejar y transformar códigos de error de respuesta de registro (409 Conflict y errores de red) en mensajes amigables y descriptivos en frontend/src/api/auth-api.client.ts
+- [x] T011 [US2] Incorporar manejo de errores HTTP y renderizado del banner amigable de error (`errorServidor`) con atributos de accesibilidad `role="alert"` en frontend/src/views/RegisterView.tsx
+- [x] T012 [US2] Manejar y transformar códigos de error de respuesta de registro (409 Conflict y errores de red) en mensajes amigables y descriptivos en frontend/src/api/auth-api.client.ts
 
 **Checkpoint**: User Story 1 y 2 operan de forma robusta frente a éxitos y fallas del servidor.
 
@@ -79,15 +79,15 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T013 [P] [US3] Agregar casos de prueba de integración para validación local en tiempo real, bloqueo de envío si hay errores sintácticos y navegación bidireccional en frontend/tests/integration/RegisterView.test.tsx
-- [ ] T014 [P] [US3] Agregar test en `LoginView.test.tsx` verificando la presencia y funcionamiento del enlace hacia la pantalla de registro en frontend/tests/integration/LoginView.test.tsx
+- [x] T013 [P] [US3] Agregar casos de prueba de integración para validación local en tiempo real, bloqueo de envío si hay errores sintácticos y navegación bidireccional en frontend/tests/integration/RegisterView.test.tsx
+- [x] T014 [P] [US3] Agregar test en `LoginView.test.tsx` verificando la presencia y funcionamiento del enlace hacia la pantalla de registro en frontend/tests/integration/LoginView.test.tsx
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Integrar validaciones en tiempo real (`onBlur`/`onChange`) y bloqueo de submit con mensajes debajo de cada input (`aria-invalid`, `aria-describedby`) en frontend/src/views/RegisterView.tsx
-- [ ] T016 [US3] Agregar enlace de navegación hacia `/login` ("¿Ya tienes cuenta? Inicia sesión aquí") en el pie de la tarjeta en frontend/src/views/RegisterView.tsx
-- [ ] T017 [US3] Agregar enlace de navegación hacia `/register` ("¿No tienes cuenta? Regístrate aquí") en la tarjeta de login en frontend/src/views/LoginView.tsx
-- [ ] T018 [US3] Verificar y ajustar responsividad en móviles y accesibilidad WCAG (contrastes, roles, foco, etiquetas semánticas) en frontend/src/styles/login.css
+- [x] T015 [US3] Integrar validaciones en tiempo real (`onBlur`/`onChange`) y bloqueo de submit con mensajes debajo de cada input (`aria-invalid`, `aria-describedby`) en frontend/src/views/RegisterView.tsx
+- [x] T016 [US3] Agregar enlace de navegación hacia `/login` ("¿Ya tienes cuenta? Inicia sesión aquí") en el pie de la tarjeta en frontend/src/views/RegisterView.tsx
+- [x] T017 [US3] Agregar enlace de navegación hacia `/register` ("¿No tienes cuenta? Regístrate aquí") en la tarjeta de login en frontend/src/views/LoginView.tsx
+- [x] T018 [US3] Verificar y ajustar responsividad en móviles y accesibilidad WCAG (contrastes, roles, foco, etiquetas semánticas) en frontend/src/styles/login.css
 
 **Checkpoint**: Todas las historias de usuario (US1, US2, US3) implementadas, testeadas e integradas armónicamente.
 
@@ -97,9 +97,9 @@
 
 **Purpose**: Verificación global de calidad, ejecución de suites de pruebas y cumplimiento de la Constitución.
 
-- [ ] T019 [P] Ejecutar la suite completa de pruebas unitarias y de integración del frontend (`npm test` en `frontend/`) verificando que todos los tests pasen sin regresiones
-- [ ] T020 Validar los 5 escenarios de prueba manual descritos en specs/004-frontend-signup/quickstart.md
-- [ ] T021 Verificar que no se hayan modificado ni roto tests preexistentes en cumplimiento del Principio IV de la Constitución
+- [x] T019 [P] Ejecutar la suite completa de pruebas unitarias y de integración del frontend (`npm test` en `frontend/`) verificando que todos los tests pasen sin regresiones
+- [x] T020 Validar los 5 escenarios de prueba manual descritos en specs/004-frontend-signup/quickstart.md
+- [x] T021 Verificar que no se hayan modificado ni roto tests preexistentes en cumplimiento del Principio IV de la Constitución
 
 ---
 

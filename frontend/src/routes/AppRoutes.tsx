@@ -4,6 +4,7 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from '../views/LoginView';
+import { RegisterView } from '../views/RegisterView';
 import { HomeView } from '../views/HomeView';
 import { PlayersCatalogView } from '../views/PlayersCatalogView';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -17,6 +18,14 @@ export function AppRoutes() {
         element={
           <PublicRoute>
             <LoginView />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <RegisterView />
           </PublicRoute>
         }
       />
@@ -40,3 +49,4 @@ export function AppRoutes() {
     </Routes>
   );
 }
+
