@@ -4,8 +4,28 @@
 // ============================================================
 
 import type { SesionAlmacenada, PerfilUsuario } from '../types/auth.types';
+import { z } from 'zod';
 
 const STORAGE_KEY = 'football_marketplace_session';
+const JWT_REGEX = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
+
+const PerfilUsuarioSchema = z
+  .object({
+    id: z.uuid(),
+    nombre: z.string().min(1).max(100),
+    correo: z.email().max(254),
+    activo: z.boolean(),
+    creadoEn: z.iso.datetime({ offset: true }),
+  })
+  .strict();
+
+const SesionAlmacenadaSchema = z
+  .object({
+    tokenDeAcceso: z.string().min(1).max(4096).regex(JWT_REGEX),
+    usuario: PerfilUsuarioSchema,
+    guardadoEn: z.number().int().positive(),
+  })
+  .strict();
 
 /**
  * Servicio desacoplado de persistencia local para la sesión del inversor.
@@ -16,15 +36,19 @@ export const StorageService = {
    * Guarda la sesión del usuario en localStorage.
    */
   guardarSesion(tokenDeAcceso: string, usuario: PerfilUsuario): void {
-    const sesion: SesionAlmacenada = {
+    const resultado = SesionAlmacenadaSchema.safeParse({
       tokenDeAcceso,
       usuario,
       guardadoEn: Date.now(),
-    };
+    });
+
+    if (!resultado.success) {
+      console.error('Sesión inválida, no se guarda.');
+      return;
+    }
+
     try {
-      const contenidoSerializado = JSON.stringify(sesion);
-      const contenidoSeguro = decodeURIComponent(encodeURIComponent(contenidoSerializado));
-      localStorage.setItem(STORAGE_KEY, contenidoSeguro);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(resultado.data));
     } catch {
       // Si localStorage no está disponible o está lleno, fallar silenciosamente
       console.error('Error al guardar la sesión en almacenamiento local.');
@@ -39,18 +63,13 @@ export const StorageService = {
       const datos = localStorage.getItem(STORAGE_KEY);
       if (!datos) return null;
 
-      let sesion: unknown;
-      try {
-        sesion = JSON.parse(datos);
-      } catch {
-        sesion = JSON.parse(decodeURIComponent(datos));
-      }
-      if (!esSesionAlmacenada(sesion)) {
+      const resultado = SesionAlmacenadaSchema.safeParse(JSON.parse(datos));
+      if (!resultado.success) {
         this.eliminarSesion();
         return null;
       }
 
-      return sesion;
+      return resultado.data;
     } catch {
       this.eliminarSesion();
       return null;
@@ -75,25 +94,3 @@ export const StorageService = {
     return this.obtenerSesion() !== null;
   },
 };
-
-function esSesionAlmacenada(valor: unknown): valor is SesionAlmacenada {
-  if (!valor || typeof valor !== 'object') return false;
-
-  const sesion = valor as Record<string, unknown>;
-  const usuario = sesion.usuario;
-  if (!usuario || typeof usuario !== 'object') return false;
-
-  const perfil = usuario as Record<string, unknown>;
-  return (
-    typeof sesion.tokenDeAcceso === 'string' &&
-    sesion.tokenDeAcceso.length > 0 &&
-    typeof sesion.guardadoEn === 'number' &&
-    Number.isFinite(sesion.guardadoEn) &&
-    typeof perfil.id === 'string' &&
-    perfil.id.length > 0 &&
-    typeof perfil.nombre === 'string' &&
-    typeof perfil.correo === 'string' &&
-    typeof perfil.activo === 'boolean' &&
-    typeof perfil.creadoEn === 'string'
-  );
-}
