@@ -1,4 +1,5 @@
 import { ReglaDeNegocioException } from './exceptions/regla-de-negocio.exception';
+import { generarId } from '../common/utils/generar-id';
 
 export const CODIGOS_LIGA_VALIDOS = ['PL', 'PD', 'SA', 'BL1', 'FL1'] as const;
 export type CodigoLigaValido = (typeof CODIGOS_LIGA_VALIDOS)[number];
@@ -25,7 +26,7 @@ export class Liga {
   private _actualizadoEn: Date;
 
   private constructor(props: LigaProps) {
-    this._id = props.id || this.generarId();
+    this._id = props.id || generarId();
     this._codigo = props.codigo?.trim().toUpperCase();
     this._nombre = props.nombre?.trim();
     this._pais = props.pais?.trim();
@@ -71,14 +72,6 @@ export class Liga {
   public activar(): void {
     this._activo = true;
     this._actualizadoEn = new Date();
-  }
-
-  private generarId(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 
   // Getters
