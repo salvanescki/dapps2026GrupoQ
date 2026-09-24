@@ -22,7 +22,9 @@ export const StorageService = {
       guardadoEn: Date.now(),
     };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sesion));
+      const contenidoSerializado = JSON.stringify(sesion);
+      const contenidoSeguro = decodeURIComponent(encodeURIComponent(contenidoSerializado));
+      localStorage.setItem(STORAGE_KEY, contenidoSeguro);
     } catch {
       // Si localStorage no está disponible o está lleno, fallar silenciosamente
       console.error('Error al guardar la sesión en almacenamiento local.');
@@ -37,7 +39,12 @@ export const StorageService = {
       const datos = localStorage.getItem(STORAGE_KEY);
       if (!datos) return null;
 
-      const sesion: unknown = JSON.parse(datos);
+      let sesion: unknown;
+      try {
+        sesion = JSON.parse(datos);
+      } catch {
+        sesion = JSON.parse(decodeURIComponent(datos));
+      }
       if (!esSesionAlmacenada(sesion)) {
         this.eliminarSesion();
         return null;
