@@ -36,13 +36,16 @@ export const StorageService = {
     try {
       const datos = localStorage.getItem(STORAGE_KEY);
       if (!datos) return null;
-      const sesion: SesionAlmacenada = JSON.parse(datos);
-      // Validar estructura mínima
-      if (sesion.tokenDeAcceso && sesion.usuario && sesion.usuario.id) {
-        return sesion;
+
+      const sesion: unknown = JSON.parse(datos);
+      if (!esSesionAlmacenada(sesion)) {
+        this.eliminarSesion();
+        return null;
       }
-      return null;
+
+      return sesion;
     } catch {
+      this.eliminarSesion();
       return null;
     }
   },
@@ -65,3 +68,25 @@ export const StorageService = {
     return this.obtenerSesion() !== null;
   },
 };
+
+function esSesionAlmacenada(valor: unknown): valor is SesionAlmacenada {
+  if (!valor || typeof valor !== 'object') return false;
+
+  const sesion = valor as Record<string, unknown>;
+  const usuario = sesion.usuario;
+  if (!usuario || typeof usuario !== 'object') return false;
+
+  const perfil = usuario as Record<string, unknown>;
+  return (
+    typeof sesion.tokenDeAcceso === 'string' &&
+    sesion.tokenDeAcceso.length > 0 &&
+    typeof sesion.guardadoEn === 'number' &&
+    Number.isFinite(sesion.guardadoEn) &&
+    typeof perfil.id === 'string' &&
+    perfil.id.length > 0 &&
+    typeof perfil.nombre === 'string' &&
+    typeof perfil.correo === 'string' &&
+    typeof perfil.activo === 'boolean' &&
+    typeof perfil.creadoEn === 'string'
+  );
+}

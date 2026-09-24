@@ -83,6 +83,19 @@ export async function loginUsuario(
 }
 
 /**
+ * Obtiene el perfil asociado al token persistido y valida la sesión contra el backend.
+ */
+export async function obtenerPerfilAutenticado(
+  tokenDeAcceso: string
+): Promise<RespuestaAutenticacion['usuario']> {
+  return httpRequest<RespuestaAutenticacion['usuario']>('/auth/me', {
+    headers: {
+      Authorization: `Bearer ${tokenDeAcceso}`,
+    },
+  });
+}
+
+/**
  * Registra un nuevo usuario contra POST /api/auth/register.
  * Transforma los errores del servidor en mensajes amigables en español.
  */
