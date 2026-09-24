@@ -309,3 +309,70 @@
     font-size: var(--font-size-xl);
   }
 }
+
+/* ============================================================
+   Estilos adicionales para Registro de Usuario
+   Badges de fortaleza, alertas de éxito/error y enlaces auth
+   ============================================================ */
+
+/* ─── Alerta de Éxito (mensaje post-registro en LoginView) ─── */
+.success-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg);
+  animation: fadeIn 0.3s ease-out;
+  margin-bottom: var(--space-4);
+}
+
+.success-alert-icon {
+  flex-shrink: 0;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.success-alert-message {
+  font-size: var(--font-size-sm);
+  color: var(--color-emerald-400);
+  line-height: var(--line-height-normal);
+}
+
+/* ─── Enlace de navegación entre auth views ─── */
+.auth-nav-link {
+  display: block;
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.auth-nav-link a {
+  color: var(--color-emerald-400);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-base);
+}
+
+.auth-nav-link a:hover {
+  color: var(--color-emerald-300);
+  text-decoration: underline;
+}
+
+.auth-nav-link a:focus-visible {
+  outline: 2px solid var(--color-emerald-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Mensaje de ayuda debajo de campo (fortaleza de contraseña) ─── */
+.input-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: calc(-1 * var(--space-1));
+  opacity: 0.7;
+}
+

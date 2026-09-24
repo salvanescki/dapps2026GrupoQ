@@ -84,3 +84,71 @@ export interface AccionesAutenticacion {
  * Tipo completo del contexto de autenticación (estado + acciones).
  */
 export type ContextoAutenticacion = EstadoAutenticacion & AccionesAutenticacion;
+
+// ============================================================
+// Tipos e interfaces de dominio para registro de usuario
+// Alineados con el contrato OpenAPI auth-register-contract.yaml
+// ============================================================
+
+/**
+ * Datos capturados por el formulario de registro.
+ */
+export interface DatosRegistro {
+  nombre: string;
+  correo: string;
+  contrasena: string;
+  confirmarContrasena: string;
+}
+
+/**
+ * Payload JSON enviado al endpoint POST /api/auth/register.
+ * Excluye confirmarContrasena ya que no se transmite al backend.
+ */
+export interface SolicitudRegistroApi {
+  nombre: string;
+  correo: string;
+  contrasena: string;
+}
+
+/**
+ * Respuesta exitosa del endpoint POST /api/auth/register (HTTP 201).
+ */
+export interface RespuestaRegistro {
+  tokenDeAcceso: string;
+  tipo: string;
+  usuario: PerfilUsuario;
+}
+
+/**
+ * Errores de validación local campo por campo del formulario de registro.
+ */
+export interface ErroresValidacionRegistro {
+  nombre?: string;
+  correo?: string;
+  contrasena?: string;
+  confirmarContrasena?: string;
+}
+
+/**
+ * Resultado de la validación completa del formulario de registro.
+ */
+export interface ResultadoValidacionRegistro {
+  esValido: boolean;
+  errores: ErroresValidacionRegistro;
+}
+
+/**
+ * Estado reactivo interno del componente RegisterView.
+ */
+export interface EstadoFormularioRegistro {
+  cargando: boolean;
+  errorServidor: string | null;
+  erroresValidacion: ErroresValidacionRegistro;
+}
+
+/**
+ * Información de navegación transmitida a LoginView tras registro exitoso.
+ */
+export interface EstadoNavegacionLogin {
+  mensajeExito?: string;
+}

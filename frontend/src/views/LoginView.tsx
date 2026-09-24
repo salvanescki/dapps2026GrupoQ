@@ -5,21 +5,38 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { validarFormularioLogin } from '../utils/validaciones';
-import type { ResultadoValidacion } from '../types/auth.types';
+import type { ResultadoValidacion, EstadoNavegacionLogin } from '../types/auth.types';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/login.css';
 
 export function LoginView() {
   const { login, cargando, error, limpiarError } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const locationState = location.state as EstadoNavegacionLogin | null;
+  const [mensajeExito, setMensajeExito] = useState<string | null>(
+    locationState?.mensajeExito ?? null
+  );
 
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [erroresValidacion, setErroresValidacion] = useState<ResultadoValidacion['errores']>({});
+
+  const limpiarMensajeExito = () => {
+    if (mensajeExito) {
+      setMensajeExito(null);
+      // Limpiar el state de navegación para que no reaparezca al recargar
+      window.history.replaceState({}, '');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     // Limpiar error previo del servidor
     if (error) limpiarError();
+    limpiarMensajeExito();
 
     // Validación local
     const resultado = validarFormularioLogin({ correo, contrasena });
@@ -40,6 +57,7 @@ export function LoginView() {
       setErroresValidacion((prev) => ({ ...prev, correo: undefined }));
     }
     if (error) limpiarError();
+    limpiarMensajeExito();
   };
 
   const handleContrasenaChange = (value: string) => {
@@ -48,6 +66,7 @@ export function LoginView() {
       setErroresValidacion((prev) => ({ ...prev, contrasena: undefined }));
     }
     if (error) limpiarError();
+    limpiarMensajeExito();
   };
 
   return (
@@ -59,6 +78,14 @@ export function LoginView() {
           <h1 className="login-title">Football Token Marketplace</h1>
           <p className="login-subtitle">Accede a tu portfolio de inversiones deportivas</p>
         </header>
+
+        {/* Mensaje de éxito post-registro */}
+        {mensajeExito && (
+          <div className="success-alert" role="status" aria-live="polite">
+            <span className="success-alert-icon" aria-hidden="true">✓</span>
+            <span className="success-alert-message">{mensajeExito}</span>
+          </div>
+        )}
 
         {/* Error del servidor */}
         {error && (
@@ -136,6 +163,14 @@ export function LoginView() {
           </button>
         </form>
 
+        {/* Enlace a registro */}
+        <p className="auth-nav-link">
+          ¿No tienes cuenta?{' '}
+          <a href="/register" onClick={(e) => { e.preventDefault(); navigate('/register'); }}>
+            Regístrate aquí
+          </a>
+        </p>
+
         {/* Footer */}
         <footer className="login-footer">
           <p className="login-footer-text">
@@ -147,3 +182,4 @@ export function LoginView() {
     </div>
   );
 }
+
