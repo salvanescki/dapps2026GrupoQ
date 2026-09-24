@@ -1,4 +1,5 @@
 import { ReglaDeNegocioException } from './exceptions/regla-de-negocio.exception';
+import { generarId } from '../common/utils/generar-id';
 
 export interface EquipoProps {
   id?: string;
@@ -24,7 +25,7 @@ export class Equipo {
   private _actualizadoEn: Date;
 
   private constructor(props: EquipoProps) {
-    this._id = props.id || this.generarId();
+    this._id = props.id || generarId();
     this._externalId = props.externalId;
     this._nombre = props.nombre?.trim();
     this._nombreCorto = props.nombreCorto ? props.nombreCorto.trim() : null;
@@ -64,14 +65,6 @@ export class Equipo {
   public perteneceALiga(ligaId: string): boolean {
     if (!ligaId) return false;
     return this._ligaId.toLowerCase() === ligaId.trim().toLowerCase();
-  }
-
-  private generarId(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 
   // Getters

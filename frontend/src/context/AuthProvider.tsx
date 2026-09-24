@@ -6,7 +6,11 @@
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { StorageService } from '../services/storage.service';
-import { loginUsuario as apiLogin, HttpError } from '../api/auth-api.client';
+import {
+  loginUsuario as apiLogin,
+  obtenerPerfilAutenticado,
+  HttpError,
+} from '../api/auth-api.client';
 import { sanitizarCredenciales } from '../utils/validaciones';
 import type {
   PerfilUsuario,
@@ -29,20 +33,47 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [estado, setEstado] = useState<EstadoAutenticacion>(ESTADO_INICIAL);
 
-  // Hidratar sesión desde localStorage al montar
+  // Hidratar sesión solo después de validar el token y el perfil con el backend.
   useEffect(() => {
-    const sesion = StorageService.obtenerSesion();
-    if (sesion) {
-      setEstado({
-        estaAutenticado: true,
-        cargando: false,
-        usuario: sesion.usuario,
-        tokenDeAcceso: sesion.tokenDeAcceso,
-        error: null,
-      });
-    } else {
-      setEstado((prev) => ({ ...prev, cargando: false }));
-    }
+    let montado = true;
+
+    const hidratarSesion = async () => {
+      const sesion = StorageService.obtenerSesion();
+      if (!sesion) {
+        if (montado) setEstado((prev) => ({ ...prev, cargando: false }));
+        return;
+      }
+
+      try {
+        const usuario = await obtenerPerfilAutenticado(sesion.tokenDeAcceso);
+        if (!montado) return;
+
+        StorageService.guardarSesion(sesion.tokenDeAcceso, usuario);
+        setEstado({
+          estaAutenticado: true,
+          cargando: false,
+          usuario,
+          tokenDeAcceso: sesion.tokenDeAcceso,
+          error: null,
+        });
+      } catch {
+        StorageService.eliminarSesion();
+        if (montado) {
+          setEstado({
+            estaAutenticado: false,
+            cargando: false,
+            usuario: null,
+            tokenDeAcceso: null,
+            error: 'La sesión expiró. Inicie sesión nuevamente.',
+          });
+        }
+      }
+    };
+
+    void hidratarSesion();
+    return () => {
+      montado = false;
+    };
   }, []);
 
   const login = useCallback(async (credenciales: CredencialesLogin) => {

@@ -1,5 +1,9 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { FootballDataClient } from './clients/football-data.client';
+import {
+  FootballDataClient,
+  FootballDataSquadMember,
+  FootballDataTeam,
+} from './clients/football-data.client';
 import {
   IJugadorRepository,
   IEquipoRepository,
@@ -96,16 +100,7 @@ export class SincronizacionJugadoresService {
       try {
         this.logger.log(`Sincronizando liga ${metaLiga.nombre} (${metaLiga.codigo})...`);
 
-        let liga = await this.ligaRepository.buscarPorCodigo(metaLiga.codigo);
-        if (!liga) {
-          liga = Liga.crear({
-            codigo: metaLiga.codigo,
-            nombre: metaLiga.nombre,
-            pais: metaLiga.pais,
-            emblemaUrl: metaLiga.emblemaUrl,
-          });
-          liga = await this.ligaRepository.guardar(liga);
-        }
+        const liga = await this.obtenerOCrearLiga(metaLiga);
         totalLigas++;
 
         const response =
@@ -117,66 +112,18 @@ export class SincronizacionJugadoresService {
           continue;
         }
 
-        for (const team of response.teams) {
-          if (!team.id || !team.name) continue;
-
-          let equipo = await this.equipoRepository.buscarPorExternalId(team.id);
-          if (!equipo) {
-            equipo = Equipo.crear({
-              externalId: team.id,
-              nombre: team.name,
-              nombreCorto: team.shortName || null,
-              tla: team.tla || null,
-              escudoUrl: team.crest || null,
-              ligaId: liga.id,
-            });
-            equipo = await this.equipoRepository.guardar(equipo);
-          }
-          totalEquipos++;
-
-          if (team.squad && Array.isArray(team.squad)) {
-            const jugadoresParaGuardar: Jugador[] = [];
-
-            for (const member of team.squad) {
-              if (!member.id || !member.name) continue;
-
-              const posicionNormalizada = Jugador.normalizarPosicion(member.position);
-
-              const existente =
-                await this.jugadorRepository.buscarPorExternalId(member.id);
-
-              if (!existente) {
-                try {
-                  const nuevoJugador = Jugador.crear({
-                    externalId: member.id,
-                    nombre: member.name,
-                    posicion: posicionNormalizada,
-                    posicionOriginal: member.position || null,
-                    fechaNacimiento: member.dateOfBirth || null,
-                    nacionalidad: member.nationality || 'Desconocida',
-                    dorsal: member.shirtNumber || null,
-                    equipoId: equipo.id,
-                    ligaId: liga.id,
-                  });
-                  jugadoresParaGuardar.push(nuevoJugador);
-                } catch (err) {
-                  this.logger.warn(
-                    `Invariante no cumplida para jugador ${member.name}: ${err.message}`,
-                  );
-                }
-              }
-            }
-
-            if (jugadoresParaGuardar.length > 0) {
-              await this.jugadorRepository.guardarMuchos(jugadoresParaGuardar);
-              totalJugadores += jugadoresParaGuardar.length;
-            }
-          }
-        }
+        const resultadoEquipos = await this.sincronizarEquipos(
+          response.teams,
+          liga,
+        );
+        totalEquipos += resultadoEquipos.totalEquipos;
+        totalJugadores += resultadoEquipos.totalJugadores;
       } catch (error) {
+        const mensajeError = error instanceof Error ? error.message : String(error);
+        const pilaError = error instanceof Error ? error.stack : undefined;
         this.logger.error(
-          `Error al sincronizar liga ${metaLiga.codigo}: ${error.message}`,
-          error.stack,
+          `Error al sincronizar liga ${metaLiga.codigo}: ${mensajeError}`,
+          pilaError,
         );
       }
     }
@@ -191,5 +138,103 @@ export class SincronizacionJugadoresService {
       totalEquipos,
       totalJugadores,
     };
+  }
+
+  private async obtenerOCrearLiga(metaLiga: MetaLiga): Promise<Liga> {
+    const ligaExistente = await this.ligaRepository.buscarPorCodigo(metaLiga.codigo);
+    if (ligaExistente) return ligaExistente;
+
+    return this.ligaRepository.guardar(
+      Liga.crear({
+        codigo: metaLiga.codigo,
+        nombre: metaLiga.nombre,
+        pais: metaLiga.pais,
+        emblemaUrl: metaLiga.emblemaUrl,
+      }),
+    );
+  }
+
+  private async sincronizarEquipos(
+    teams: FootballDataTeam[],
+    liga: Liga,
+  ): Promise<{ totalEquipos: number; totalJugadores: number }> {
+    let totalJugadores = 0;
+
+    for (const team of teams) {
+      if (!team.id || !team.name) continue;
+
+      totalJugadores += await this.sincronizarEquipo(team, liga);
+    }
+
+    return {
+      totalEquipos: teams.filter((team) => team.id && team.name).length,
+      totalJugadores,
+    };
+  }
+
+  private async sincronizarEquipo(
+    team: FootballDataTeam,
+    liga: Liga,
+  ): Promise<number> {
+    let equipo = await this.equipoRepository.buscarPorExternalId(team.id);
+    if (!equipo) {
+      equipo = await this.equipoRepository.guardar(
+        Equipo.crear({
+          externalId: team.id,
+          nombre: team.name,
+          nombreCorto: team.shortName || null,
+          tla: team.tla || null,
+          escudoUrl: team.crest || null,
+          ligaId: liga.id,
+        }),
+      );
+    }
+
+    if (!team.squad || !Array.isArray(team.squad)) return 0;
+
+    const jugadores = await this.crearJugadoresNuevos(team.squad, equipo, liga);
+    if (jugadores.length > 0) {
+      await this.jugadorRepository.guardarMuchos(jugadores);
+    }
+
+    return jugadores.length;
+  }
+
+  private async crearJugadoresNuevos(
+    squad: FootballDataSquadMember[],
+    equipo: Equipo,
+    liga: Liga,
+  ): Promise<Jugador[]> {
+    const jugadores: Jugador[] = [];
+
+    for (const member of squad) {
+      if (!member.id || !member.name) continue;
+
+      const existente = await this.jugadorRepository.buscarPorExternalId(member.id);
+      if (existente) continue;
+
+      try {
+        jugadores.push(
+          Jugador.crear({
+            externalId: member.id,
+            nombre: member.name,
+            posicion: Jugador.normalizarPosicion(member.position),
+            posicionOriginal: member.position || null,
+            fechaNacimiento: member.dateOfBirth || null,
+            nacionalidad: member.nationality || 'Desconocida',
+            dorsal: member.shirtNumber || null,
+            equipoId: equipo.id,
+            ligaId: liga.id,
+          }),
+        );
+      } catch (err) {
+        const mensajeError = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `Invariante no cumplida para jugador ${member.name}: ${mensajeError}`,
+        );
+      }
+    }
+
+    return jugadores;
   }
 }
