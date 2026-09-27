@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Usuario } from '../domain/usuario.entity';
 import {
   USUARIO_REPOSITORY,
