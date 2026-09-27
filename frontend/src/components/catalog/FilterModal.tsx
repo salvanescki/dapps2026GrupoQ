@@ -97,14 +97,17 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   return (
-    <div
-      className="filter-modal-backdrop"
-      onClick={onClose}
-      data-testid="filter-modal-backdrop"
-    >
+    <div className="filter-modal-overlay">
+      <button
+        type="button"
+        className="filter-modal-backdrop"
+        onClick={onClose}
+        tabIndex={-1}
+        aria-hidden="true"
+        data-testid="filter-modal-backdrop"
+      />
       <div
         className="filter-modal-content"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="filter-modal-title"
