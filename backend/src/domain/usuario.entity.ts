@@ -72,7 +72,7 @@ export class Usuario {
       throw new ReglaDeNegocioException('El correo electrónico es obligatorio.');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
     if (!emailRegex.test(this._correo)) {
       throw new ReglaDeNegocioException(
         'El formato del correo electrónico no es válido.',
