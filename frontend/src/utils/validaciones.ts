@@ -5,7 +5,7 @@
 
 import type { ResultadoValidacion, CredencialesLogin } from '../types/auth.types';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 
 /**
  * Valida el formato del correo electrónico.
