@@ -1,54 +1,36 @@
 // ============================================================
-// HomeView — Pantalla inicial provisoria (Dashboard del inversor)
+// HomeView — Pantalla inicial (Dashboard del inversor)
 // ============================================================
 
-import { Link } from 'react-router-dom';
+import React from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { AppLayout } from '../components/layout/AppLayout';
 import '../styles/home.css';
+import '../styles/components.css';
 
 export function HomeView() {
   const { usuario, logout } = useAuth();
 
   if (!usuario) return null;
 
-  return (
-    <div className="home-page">
-      {/* Navbar */}
-      <nav className="home-navbar" aria-label="Navegación principal">
-        <div className="home-navbar-brand">
-          <span className="home-navbar-logo" aria-hidden="true">⚽</span>
-          <span className="home-navbar-title">Football Token Marketplace</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link
-            to="/players"
-            id="nav-players-catalog"
-            style={{
-              color: 'var(--color-emerald-400)',
-              textDecoration: 'none',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-            }}
-          >
-            🏃 Ver Catálogo de Jugadores
-          </Link>
-          <button
-            className="logout-button"
-            onClick={logout}
-            id="logout-button"
-            aria-label="Cerrar sesión"
-          >
-            🚪 Cerrar Sesión
-          </button>
-        </div>
-      </nav>
+  const navbarProps = {
+    titulo: 'Football Token Marketplace',
+    logoIcono: '⚽',
+    items: [
+      {
+        label: '🏃 Ver Catálogo de Jugadores',
+        to: '/players',
+        id: 'nav-players-catalog',
+      },
+    ],
+    onLogout: logout,
+  };
 
+  return (
+    <AppLayout navbarProps={navbarProps} className="home-page">
       {/* Contenido principal */}
       <main className="home-content">
-        <div className="home-welcome-card">
+        <div className="home-welcome-card card card-glass">
           {/* Avatar */}
           <div className="home-avatar" aria-hidden="true">
             {usuario.nombre.charAt(0).toUpperCase()}
@@ -90,6 +72,6 @@ export function HomeView() {
           </div>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }
