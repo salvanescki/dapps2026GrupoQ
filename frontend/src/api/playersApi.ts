@@ -35,7 +35,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         errorMsg = Array.isArray(data.mensaje) ? data.mensaje.join(' ') : data.mensaje;
       }
     } catch {
-      // Usar mensaje por defecto si no es JSON
     }
     throw new PlayersApiError(response.status, errorMsg);
   }
@@ -43,9 +42,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return response.json();
 }
 
-/**
- * Consulta el catálogo paginado de jugadores con filtros opcionales.
- */
 export async function getPlayers(
   params: FiltroJugadoresParams = {},
 ): Promise<RespuestaCatalogoJugadores> {
@@ -65,16 +61,10 @@ export async function getPlayers(
   return request<RespuestaCatalogoJugadores>(endpoint);
 }
 
-/**
- * Obtiene la ficha de detalle de un futbolista por su ID (UUID).
- */
 export async function getPlayerById(id: string): Promise<Jugador> {
   return request<Jugador>(`/players/${id}`);
 }
 
-/**
- * Obtiene las opciones disponibles para poblar los filtros dinámicos (ligas, equipos, posiciones).
- */
 export async function getPlayerFilterOptions(): Promise<OpcionesFiltroRespuesta> {
   return request<OpcionesFiltroRespuesta>('/players/filters');
 }

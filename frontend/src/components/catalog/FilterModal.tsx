@@ -27,7 +27,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   const [selectedTeamId, setSelectedTeamId] = useState(filters.teamId);
   const [selectedPosition, setSelectedPosition] = useState(filters.position);
 
-  // Sincronizar estado local al abrir
   useEffect(() => {
     if (isOpen) {
       setSelectedLeague(filters.league);
@@ -36,7 +35,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     }
   }, [isOpen, filters]);
 
-  // Manejar tecla ESC para cerrar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -47,7 +45,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Lista de equipos disponibles filtrada según la liga seleccionada
   const availableTeams = useMemo(() => {
     if (!filterOptions?.equipos) return [];
     if (!selectedLeague) return filterOptions.equipos;
@@ -63,7 +60,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     });
   }, [filterOptions, selectedLeague]);
 
-  // Si cambia la liga y el equipo actual no pertenece a la nueva liga, resetear el equipo seleccionado
   const handleLeagueChange = (newLeague: string) => {
     setSelectedLeague(newLeague);
     if (selectedTeamId && newLeague && filterOptions?.equipos) {
@@ -129,7 +125,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         </div>
 
         <form onSubmit={handleApply} className="filter-modal-body">
-          {/* Selector de Liga */}
           <div className="filter-form-group">
             <label htmlFor="filter-league" className="filter-form-label">
               Liga de Competición
@@ -150,7 +145,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </select>
           </div>
 
-          {/* Selector de Equipo */}
           <div className="filter-form-group">
             <label htmlFor="filter-team" className="filter-form-label">
               Equipo / Club
@@ -171,7 +165,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </select>
           </div>
 
-          {/* Selector de Posición */}
           <div className="filter-form-group">
             <label htmlFor="filter-position" className="filter-form-label">
               Posición Táctica

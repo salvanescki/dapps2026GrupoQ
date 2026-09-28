@@ -1,8 +1,3 @@
-// ============================================================
-// AuthProvider — Proveedor del estado global de autenticación
-// Gestiona login, logout, hidratación desde localStorage
-// ============================================================
-
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { StorageService } from '../services/storage.service';
@@ -33,7 +28,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [estado, setEstado] = useState<EstadoAutenticacion>(ESTADO_INICIAL);
 
-  // Hidratar sesión solo después de validar el token y el perfil con el backend.
   useEffect(() => {
     let montado = true;
 
@@ -83,7 +77,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const credencialesSanitizadas = sanitizarCredenciales(credenciales);
       const respuesta = await apiLogin(credencialesSanitizadas);
 
-      // Persistir sesión
       StorageService.guardarSesion(respuesta.tokenDeAcceso, respuesta.usuario);
 
       setEstado({

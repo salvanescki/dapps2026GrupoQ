@@ -14,8 +14,6 @@ export const Alert: React.FC<AlertProps> = ({
   const role = isError ? 'alert' : isSuccess ? 'status' : 'region';
   const ariaLive = isError ? 'assertive' : 'polite';
 
-  const defaultIcon = isError ? '⚠️' : isSuccess ? '✓' : tipo === 'warning' ? '⚠️' : 'ℹ️';
-
   const typeClass = isError
     ? 'alert-error error-alert'
     : isSuccess
@@ -29,9 +27,6 @@ export const Alert: React.FC<AlertProps> = ({
       role={role}
       aria-live={ariaLive}
     >
-      <span className={`${isError ? 'error-alert-icon ' : isSuccess ? 'success-alert-icon ' : ''}alert-icon`} aria-hidden="true">
-        {defaultIcon}
-      </span>
       <span className={`${isError ? 'error-alert-message ' : isSuccess ? 'success-alert-message ' : ''}alert-message`}>
         {mensaje}
       </span>

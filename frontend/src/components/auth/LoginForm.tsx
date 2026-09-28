@@ -50,12 +50,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <form className="login-form" onSubmit={handleSubmit} noValidate>
-      {/* Campo de correo */}
       <Input
         id="correo"
         type="email"
         label="Correo electrónico"
-        icon="📧"
         placeholder="inversor@tokens.com"
         value={correo}
         onChange={(e) => handleCorreoChange(e.target.value)}
@@ -64,12 +62,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         error={erroresValidacion.correo}
       />
 
-      {/* Campo de contraseña */}
       <Input
         id="contrasena"
         type="password"
         label="Contraseña"
-        icon="🔒"
         placeholder="Ingrese su contraseña"
         value={contrasena}
         onChange={(e) => handleContrasenaChange(e.target.value)}
@@ -78,7 +74,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         error={erroresValidacion.contrasena}
       />
 
-      {/* Botón de envío */}
       <button
         type="submit"
         className="login-button"

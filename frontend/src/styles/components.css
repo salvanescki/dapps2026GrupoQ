@@ -1,11 +1,5 @@
-/* ============================================================
-   Component Styles — Football Token Marketplace
-   Centralized UI Base & Layout Component Styles
-   ============================================================ */
-
 @import './tokens.css';
 
-/* ─── 1. Spinner ─── */
 .spinner {
   display: inline-block;
   width: 1.125rem;
@@ -40,7 +34,6 @@
   }
 }
 
-/* ─── 2. Buttons ─── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -63,7 +56,6 @@
   pointer-events: none;
 }
 
-/* Variantes */
 .btn-primary {
   background: linear-gradient(135deg, var(--color-emerald-600), var(--color-emerald-500));
   color: #ffffff;
@@ -111,7 +103,6 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Tamaños */
 .btn-sm {
   padding: var(--space-1) var(--space-3);
   font-size: var(--font-size-xs);
@@ -133,7 +124,6 @@
   gap: var(--space-2);
 }
 
-/* Clase de compatibilidad previa para submit button */
 .login-button {
   width: 100%;
   margin-top: var(--space-2);
@@ -169,7 +159,6 @@
   gap: var(--space-2);
 }
 
-/* ─── 3. Inputs & Form Fields ─── */
 .input-group {
   display: flex;
   flex-direction: column;
@@ -268,7 +257,6 @@
   font-weight: bold;
 }
 
-/* ─── 4. Alerts & Notifications ─── */
 .alert {
   display: flex;
   align-items: center;
@@ -347,7 +335,6 @@
   opacity: 1;
 }
 
-/* ─── 5. Cards ─── */
 .card {
   border-radius: var(--radius-xl);
   box-sizing: border-box;
@@ -376,7 +363,6 @@
 .card-padding-md { padding: var(--space-6); }
 .card-padding-lg { padding: var(--space-8); }
 
-/* ─── 6. Navbar & Header ─── */
 .app-navbar,
 .home-navbar {
   display: flex;
@@ -389,6 +375,10 @@
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin: 0;
   z-index: 100;
 }
 
@@ -410,6 +400,18 @@
 .app-navbar-logo,
 .home-navbar-logo {
   font-size: 1.5rem;
+}
+
+.app-navbar-logo-img {
+  height: 2.25rem;
+  width: auto;
+  display: block;
+}
+
+.auth-logo-img {
+  height: 3.5rem;
+  width: auto;
+  display: block;
 }
 
 .app-navbar-title,
@@ -474,7 +476,6 @@
   color: var(--color-red-400);
 }
 
-/* ─── 7. Layout Wrappers ─── */
 .app-layout {
   min-height: 100vh;
   background-color: var(--bg-primary);

@@ -27,7 +27,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [confirmarContrasena, setConfirmarContrasena] = useState('');
   const [erroresValidacion, setErroresValidacion] = useState<ErroresValidacionRegistro>({});
 
-  // ─── Handlers de cambio ───
   const handleNombreChange = (value: string) => {
     setNombre(value);
     if (erroresValidacion.nombre) {
@@ -60,7 +59,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     if (onClearError) onClearError();
   };
 
-  // ─── Handlers de blur ───
   const handleNombreBlur = () => {
     const error = validarNombre(nombre);
     if (error) {
@@ -89,7 +87,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
-  // ─── Submit ───
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -107,12 +104,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   return (
     <form className="login-form register-form" onSubmit={handleSubmit} noValidate>
-      {/* Campo de Nombre */}
       <Input
         id="nombre"
         type="text"
         label="Nombre completo"
-        icon="👤"
         placeholder="Juan Pérez"
         value={nombre}
         onChange={(e) => handleNombreChange(e.target.value)}
@@ -122,12 +117,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         error={erroresValidacion.nombre}
       />
 
-      {/* Campo de Correo */}
       <Input
         id="correo"
         type="email"
         label="Correo electrónico"
-        icon="📧"
         placeholder="inversor@tokens.com"
         value={correo}
         onChange={(e) => handleCorreoChange(e.target.value)}
@@ -137,12 +130,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         error={erroresValidacion.correo}
       />
 
-      {/* Campo de Contraseña */}
       <Input
         id="contrasena"
         type="password"
         label="Contraseña"
-        icon="🔒"
         placeholder="Mínimo 8 caracteres (A-Z, 0-9, !@#)"
         value={contrasena}
         onChange={(e) => handleContrasenaChange(e.target.value)}
@@ -153,12 +144,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         helperText={!erroresValidacion.contrasena ? 'Debe incluir mayúscula, número y caracter especial.' : undefined}
       />
 
-      {/* Campo de Confirmar Contraseña */}
       <Input
         id="confirmarContrasena"
         type="password"
         label="Confirmar contraseña"
-        icon="🔒"
         placeholder="Repita su contraseña"
         value={confirmarContrasena}
         onChange={(e) => handleConfirmarContrasenaChange(e.target.value)}
@@ -168,7 +157,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         error={erroresValidacion.confirmarContrasena}
       />
 
-      {/* Botón de envío */}
       <button
         type="submit"
         className="login-button register-button"

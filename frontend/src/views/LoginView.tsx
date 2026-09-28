@@ -1,7 +1,3 @@
-// ============================================================
-// LoginView — Pantalla de inicio de sesión
-// ============================================================
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -43,24 +39,19 @@ export function LoginView() {
     <AuthLayout
       titulo="Football Token Marketplace"
       subtitulo="Accede a tu portfolio de inversiones deportivas"
-      logoIcono="⚽"
     >
-      {/* Mensaje de éxito post-registro */}
       {mensajeExito && (
         <Alert tipo="success" mensaje={mensajeExito} onCerrar={limpiarMensajeExito} />
       )}
 
-      {/* Error del servidor */}
       {error && <Alert tipo="error" mensaje={error} onCerrar={limpiarError} />}
 
-      {/* Formulario Modular */}
       <LoginForm
         onSubmit={handleSubmit}
         cargando={cargando}
         onClearError={handleClearError}
       />
 
-      {/* Enlace a registro */}
       <p className="auth-nav-link">
         ¿No tienes cuenta?{' '}
         <a
