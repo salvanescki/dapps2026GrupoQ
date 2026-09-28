@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { usePlayerFilters } from '../hooks/usePlayerFilters';
 import { useInfinitePlayers } from '../hooks/useInfinitePlayers';
@@ -8,7 +7,10 @@ import { FilterModal } from '../components/catalog/FilterModal';
 import { ActiveFiltersBar } from '../components/catalog/ActiveFiltersBar';
 import { PlayerGrid } from '../components/catalog/PlayerGrid';
 import { EmptyState } from '../components/catalog/EmptyState';
+import { Navbar } from '../components/layout/Navbar';
+import { Alert } from '../components/ui/Alert';
 import '../styles/catalog.css';
+import '../styles/components.css';
 
 export const PlayersCatalogView: React.FC = () => {
   const { logout } = useAuth();
@@ -46,49 +48,24 @@ export const PlayersCatalogView: React.FC = () => {
     reload();
   };
 
+  const navItems = [
+    {
+      label: 'Dashboard',
+      to: '/',
+      id: 'nav-dashboard',
+    },
+  ];
+
   return (
     <div className="catalog-page">
-      {/* Navbar Superior */}
-      <nav className="home-navbar" aria-label="Navegación del catálogo">
-        <div className="home-navbar-brand">
-          <Link
-            to="/"
-            style={{
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: 'inherit',
-            }}
-          >
-            <span className="home-navbar-logo" aria-hidden="true">
-              ⚽
-            </span>
-            <span className="home-navbar-title">Football Token Marketplace</span>
-          </Link>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link
-            to="/"
-            style={{
-              color: 'var(--text-secondary)',
-              fontSize: 'var(--font-size-sm)',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-          >
-            Dashboard
-          </Link>
-          <button
-            className="logout-button"
-            onClick={logout}
-            id="logout-button"
-            aria-label="Cerrar sesión"
-          >
-            🚪 Cerrar Sesión
-          </button>
-        </div>
-      </nav>
+      {/* Navbar Superior Unificado */}
+      <Navbar
+        titulo="Football Token Marketplace"
+        logoIcono="⚽"
+        items={navItems}
+        onLogout={logout}
+        brandLink="/"
+      />
 
       {/* Contenedor Principal */}
       <main className="catalog-container">
@@ -152,17 +129,8 @@ export const PlayersCatalogView: React.FC = () => {
 
         {/* Mensaje de Error */}
         {error && (
-          <div
-            style={{
-              padding: '1rem',
-              backgroundColor: 'var(--bg-error)',
-              border: '1px solid var(--border-error)',
-              borderRadius: 'var(--radius-lg)',
-              color: 'var(--color-red-400)',
-            }}
-            data-testid="catalog-error"
-          >
-            {error}
+          <div data-testid="catalog-error">
+            <Alert tipo="error" mensaje={error} />
           </div>
         )}
 
