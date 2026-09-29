@@ -5,6 +5,7 @@
   min-height: 100vh;
   padding: var(--space-4);
   position: relative;
+  overflow: hidden;
 }
 
 .login-page::before {

@@ -12,12 +12,12 @@ export interface UsuarioProps {
 }
 
 export class Usuario {
-  private _id: string;
-  private _nombre: string;
-  private _correo: string;
-  private _contrasenaHash: string;
+  private readonly _id: string;
+  private readonly _nombre: string;
+  private readonly _correo: string;
+  private readonly _contrasenaHash: string;
   private _activo: boolean;
-  private _creadoEn: Date;
+  private readonly _creadoEn: Date;
   private _actualizadoEn: Date;
 
   private constructor(props: UsuarioProps) {
@@ -25,7 +25,7 @@ export class Usuario {
     this._nombre = props.nombre?.trim();
     this._correo = Usuario.normalizarCorreo(props.correo);
     this._contrasenaHash = props.contrasenaHash;
-    this._activo = props.activo !== undefined ? props.activo : true;
+    this._activo = props.activo ?? true;
     this._creadoEn = props.creadoEn || new Date();
     this._actualizadoEn = props.actualizadoEn || new Date();
 
@@ -52,7 +52,7 @@ export class Usuario {
     }
     const tieneMayuscula = /[A-Z]/.test(contrasenaPlana);
     const tieneMinuscula = /[a-z]/.test(contrasenaPlana);
-    const tieneNumero = /[0-9]/.test(contrasenaPlana);
+    const tieneNumero = /\d/.test(contrasenaPlana);
 
     if (!tieneMayuscula || !tieneMinuscula || !tieneNumero) {
       throw new ReglaDeNegocioException(

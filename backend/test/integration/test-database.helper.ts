@@ -41,13 +41,13 @@ export class TestDatabaseHelper {
   }
 
   public static async cleanDatabase(): Promise<void> {
-    if (this.dataSource && this.dataSource.isInitialized) {
+    if (this.dataSource?.isInitialized) {
       await this.dataSource.query('TRUNCATE TABLE jugadores, equipos, ligas, usuarios CASCADE;');
     }
   }
 
   public static async stop(): Promise<void> {
-    if (this.dataSource && this.dataSource.isInitialized) {
+    if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
       this.dataSource = null;
     }

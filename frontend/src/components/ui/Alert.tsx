@@ -11,14 +11,20 @@ export const Alert: React.FC<AlertProps> = ({
   const isError = tipo === 'error';
   const isSuccess = tipo === 'success';
 
-  const role = isError ? 'alert' : isSuccess ? 'status' : 'region';
   const ariaLive = isError ? 'assertive' : 'polite';
 
-  const typeClass = isError
-    ? 'alert-error error-alert'
-    : isSuccess
-    ? 'alert-success success-alert'
-    : `alert-${tipo}`;
+  let role = 'region';
+  let typeClass = `alert-${tipo}`;
+  let messageClass = '';
+  if (isError) {
+    role = 'alert';
+    typeClass = 'alert-error error-alert';
+    messageClass = 'error-alert-message ';
+  } else if (isSuccess) {
+    role = 'status';
+    typeClass = 'alert-success success-alert';
+    messageClass = 'success-alert-message ';
+  }
 
   return (
     <div
@@ -27,7 +33,7 @@ export const Alert: React.FC<AlertProps> = ({
       role={role}
       aria-live={ariaLive}
     >
-      <span className={`${isError ? 'error-alert-message ' : isSuccess ? 'success-alert-message ' : ''}alert-message`}>
+      <span className={`${messageClass}alert-message`}>
         {mensaje}
       </span>
       {onCerrar && (

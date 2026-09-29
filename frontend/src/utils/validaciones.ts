@@ -1,4 +1,11 @@
-import type { ResultadoValidacion, CredencialesLogin } from '../types/auth.types';
+import type {
+  ResultadoValidacion,
+  CredencialesLogin,
+  DatosRegistro,
+  SolicitudRegistroApi,
+  ErroresValidacionRegistro,
+  ResultadoValidacionRegistro,
+} from '../types/auth.types';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 
@@ -46,13 +53,6 @@ export function sanitizarCredenciales(credenciales: CredencialesLogin): Credenci
   };
 }
 
-import type {
-  DatosRegistro,
-  SolicitudRegistroApi,
-  ErroresValidacionRegistro,
-  ResultadoValidacionRegistro,
-} from '../types/auth.types';
-
 export function validarNombre(nombre: string): string | undefined {
   const trimmed = nombre.trim();
   if (!trimmed || trimmed.length < 2 || trimmed.length > 100) {
@@ -69,7 +69,7 @@ export function validarFormatoContrasena(contrasena: string): string | undefined
     contrasena.length < 8 ||
     !/[A-Z]/.test(contrasena) ||
     !/[a-z]/.test(contrasena) ||
-    !/[0-9]/.test(contrasena)
+    !/\d/.test(contrasena)
   ) {
     return 'La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula y un número.';
   }
