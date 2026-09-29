@@ -59,7 +59,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const onFormSubmit = (e: FormEvent) => {
     if (onClearError) onClearError();
-    handleSubmit(e);
+    void handleSubmit(e);
   };
 
   return (

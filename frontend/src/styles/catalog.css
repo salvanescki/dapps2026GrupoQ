@@ -387,7 +387,7 @@
 
 .badge-defensa {
   background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
+  color: var(--color-blue-300);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
