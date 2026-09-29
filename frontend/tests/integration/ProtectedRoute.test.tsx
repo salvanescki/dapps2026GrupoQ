@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import React from 'react';
 import { AuthContext } from '../../src/context/AuthContext';
 import { ProtectedRoute } from '../../src/routes/ProtectedRoute';
 import { PublicRoute } from '../../src/routes/PublicRoute';
@@ -33,6 +34,24 @@ function createMockContext(overrides: Partial<ContextoAutenticacion> = {}): Cont
   };
 }
 
+function renderRouteWithAuth(
+  ctx: ContextoAutenticacion,
+  initialEntry: string,
+  routes: Array<{ path: string; element: React.ReactNode }>
+) {
+  return render(
+    <AuthContext.Provider value={ctx}>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          {routes.map((r) => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>
+  );
+}
+
 describe('ProtectedRoute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,23 +60,17 @@ describe('ProtectedRoute', () => {
   it('debería redirigir a /login si el usuario no está autenticado', () => {
     const ctx = createMockContext({ estaAutenticado: false });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/']}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <div>Contenido protegido</div>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/login" element={<div>Pantalla de Login</div>} />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/', [
+      {
+        path: '/',
+        element: (
+          <ProtectedRoute>
+            <div>Contenido protegido</div>
+          </ProtectedRoute>
+        ),
+      },
+      { path: '/login', element: <div>Pantalla de Login</div> },
+    ]);
 
     expect(screen.getByText('Pantalla de Login')).toBeInTheDocument();
     expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument();
@@ -70,23 +83,17 @@ describe('ProtectedRoute', () => {
       tokenDeAcceso: 'test-token',
     });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/']}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <div>Contenido protegido</div>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/login" element={<div>Pantalla de Login</div>} />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/', [
+      {
+        path: '/',
+        element: (
+          <ProtectedRoute>
+            <div>Contenido protegido</div>
+          </ProtectedRoute>
+        ),
+      },
+      { path: '/login', element: <div>Pantalla de Login</div> },
+    ]);
 
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla de Login')).not.toBeInTheDocument();
@@ -95,22 +102,16 @@ describe('ProtectedRoute', () => {
   it('debería mostrar loading mientras está cargando la sesión', () => {
     const ctx = createMockContext({ cargando: true });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/']}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <div>Contenido protegido</div>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/', [
+      {
+        path: '/',
+        element: (
+          <ProtectedRoute>
+            <div>Contenido protegido</div>
+          </ProtectedRoute>
+        ),
+      },
+    ]);
 
     expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Cargando sesión')).toBeInTheDocument();
@@ -129,23 +130,17 @@ describe('PublicRoute', () => {
       tokenDeAcceso: 'test-token',
     });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <div>Pantalla de Login</div>
-                </PublicRoute>
-              }
-            />
-            <Route path="/" element={<div>Pantalla principal</div>} />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/login', [
+      {
+        path: '/login',
+        element: (
+          <PublicRoute>
+            <div>Pantalla de Login</div>
+          </PublicRoute>
+        ),
+      },
+      { path: '/', element: <div>Pantalla principal</div> },
+    ]);
 
     expect(screen.getByText('Pantalla principal')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla de Login')).not.toBeInTheDocument();
@@ -154,23 +149,17 @@ describe('PublicRoute', () => {
   it('debería renderizar el contenido si el usuario no está autenticado', () => {
     const ctx = createMockContext({ estaAutenticado: false });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <div>Pantalla de Login</div>
-                </PublicRoute>
-              }
-            />
-            <Route path="/" element={<div>Pantalla principal</div>} />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/login', [
+      {
+        path: '/login',
+        element: (
+          <PublicRoute>
+            <div>Pantalla de Login</div>
+          </PublicRoute>
+        ),
+      },
+      { path: '/', element: <div>Pantalla principal</div> },
+    ]);
 
     expect(screen.getByText('Pantalla de Login')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla principal')).not.toBeInTheDocument();
@@ -179,22 +168,16 @@ describe('PublicRoute', () => {
   it('debería mostrar loading mientras está cargando la sesión', () => {
     const ctx = createMockContext({ cargando: true });
 
-    render(
-      <AuthContext.Provider value={ctx}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <div>Pantalla de Login</div>
-                </PublicRoute>
-              }
-            />
-          </Routes>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
+    renderRouteWithAuth(ctx, '/login', [
+      {
+        path: '/login',
+        element: (
+          <PublicRoute>
+            <div>Pantalla de Login</div>
+          </PublicRoute>
+        ),
+      },
+    ]);
 
     expect(screen.queryByText('Pantalla de Login')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Cargando sesión')).toBeInTheDocument();

@@ -1,10 +1,11 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
+import { UsuarioOrmEntity } from '../../src/data-access/usuario.orm-entity';
 import { LigaOrmEntity } from '../../src/data-access/liga.orm-entity';
 import { EquipoOrmEntity } from '../../src/data-access/equipo.orm-entity';
 import { JugadorOrmEntity } from '../../src/data-access/jugador.orm-entity';
 
-export class PlayersTestcontainersHelper {
+export class TestDatabaseHelper {
   private static container: StartedPostgreSqlContainer;
   private static dataSource: DataSource;
 
@@ -14,7 +15,7 @@ export class PlayersTestcontainersHelper {
   }> {
     if (!this.container) {
       this.container = await new PostgreSqlContainer('postgres:16-alpine')
-        .withDatabase('players_test_db')
+        .withDatabase('test_db')
         .withUsername('test_user')
         .withPassword('test_password')
         .start();
@@ -26,7 +27,7 @@ export class PlayersTestcontainersHelper {
         username: this.container.getUsername(),
         password: this.container.getPassword(),
         database: this.container.getDatabase(),
-        entities: [LigaOrmEntity, EquipoOrmEntity, JugadorOrmEntity],
+        entities: [UsuarioOrmEntity, LigaOrmEntity, EquipoOrmEntity, JugadorOrmEntity],
         synchronize: true,
       });
 
@@ -41,7 +42,7 @@ export class PlayersTestcontainersHelper {
 
   public static async cleanDatabase(): Promise<void> {
     if (this.dataSource && this.dataSource.isInitialized) {
-      await this.dataSource.query('TRUNCATE TABLE jugadores, equipos, ligas CASCADE;');
+      await this.dataSource.query('TRUNCATE TABLE jugadores, equipos, ligas, usuarios CASCADE;');
     }
   }
 

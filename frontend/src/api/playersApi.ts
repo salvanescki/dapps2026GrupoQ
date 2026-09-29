@@ -4,43 +4,7 @@ import type {
   Jugador,
   OpcionesFiltroRespuesta,
 } from '../types/player.types';
-
-const BASE_URL = '/api';
-
-export class PlayersApiError extends Error {
-  constructor(
-    public readonly statusCode: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'PlayersApiError';
-  }
-}
-
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    let errorMsg = 'Error en la petición al servidor.';
-    try {
-      const data = await response.json();
-      if (data.mensaje) {
-        errorMsg = Array.isArray(data.mensaje) ? data.mensaje.join(' ') : data.mensaje;
-      }
-    } catch {
-    }
-    throw new PlayersApiError(response.status, errorMsg);
-  }
-
-  return response.json();
-}
+import { httpRequest } from './http-client';
 
 export async function getPlayers(
   params: FiltroJugadoresParams = {},
@@ -58,13 +22,14 @@ export async function getPlayers(
 
   const query = searchParams.toString();
   const endpoint = `/players${query ? `?${query}` : ''}`;
-  return request<RespuestaCatalogoJugadores>(endpoint);
+  return httpRequest<RespuestaCatalogoJugadores>(endpoint);
 }
 
 export async function getPlayerById(id: string): Promise<Jugador> {
-  return request<Jugador>(`/players/${id}`);
+  return httpRequest<Jugador>(`/players/${id}`);
 }
 
 export async function getPlayerFilterOptions(): Promise<OpcionesFiltroRespuesta> {
-  return request<OpcionesFiltroRespuesta>('/players/filters');
+  return httpRequest<OpcionesFiltroRespuesta>('/players/filters');
 }
+
