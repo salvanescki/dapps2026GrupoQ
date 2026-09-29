@@ -79,7 +79,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Cerrar sesión' })
   @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
-  async logout(): Promise<{ mensaje: string }> {
+  logout(): { mensaje: string } {
     return { mensaje: 'Sesión cerrada exitosamente.' };
   }
 }

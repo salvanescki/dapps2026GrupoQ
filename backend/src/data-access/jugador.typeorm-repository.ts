@@ -93,7 +93,7 @@ export class JugadorTypeOrmRepository implements IJugadorRepository {
     return { items, total };
   }
 
-  async contarTotal(): Promise<number> {
+  contarTotal(): Promise<number> {
     return this.ormRepository.count();
   }
 }
