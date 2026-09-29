@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { StorageService } from '../services/storage.service';
 import {
@@ -8,7 +8,6 @@ import {
 } from '../api/auth-api.client';
 import { sanitizarCredenciales } from '../utils/validaciones';
 import type {
-  PerfilUsuario,
   CredencialesLogin,
   EstadoAutenticacion,
 } from '../types/auth.types';
@@ -25,7 +24,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [estado, setEstado] = useState<EstadoAutenticacion>(ESTADO_INICIAL);
 
   useEffect(() => {
@@ -122,12 +121,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setEstado((prev) => ({ ...prev, error: null }));
   }, []);
 
-  const contextValue = {
-    ...estado,
-    login,
-    logout,
-    limpiarError,
-  };
+  const contextValue = useMemo(
+    () => ({
+      ...estado,
+      login,
+      logout,
+      limpiarError,
+    }),
+    [estado, login, logout, limpiarError]
+  );
 
   return (
     <AuthContext.Provider value={contextValue}>

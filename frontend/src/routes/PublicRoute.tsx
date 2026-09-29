@@ -7,7 +7,7 @@ interface PublicRouteProps {
   children: ReactNode;
 }
 
-export function PublicRoute({ children }: PublicRouteProps) {
+export function PublicRoute({ children }: Readonly<PublicRouteProps>) {
   const { estaAutenticado, cargando } = useAuth();
 
   if (cargando) {

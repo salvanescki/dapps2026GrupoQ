@@ -140,7 +140,7 @@ export class JugadorService {
       posicionOriginal: j.posicionOriginal || undefined,
       fechaNacimiento: j.fechaNacimiento || undefined,
       nacionalidad: j.nacionalidad,
-      dorsal: j.dorsal !== null ? j.dorsal : undefined,
+      dorsal: j.dorsal ?? undefined,
       equipo: {
         id: j.equipo?.id || j.equipoId,
         nombre: j.equipo?.nombre || 'Equipo no disponible',

@@ -63,6 +63,13 @@ const LIGAS_DEFINIDAS: MetaLiga[] = [
   },
 ];
 
+function obtenerMensajeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return typeof error === 'string' ? error : JSON.stringify(error);
+}
+
 @Injectable()
 export class SincronizacionJugadoresService {
   private readonly logger = new Logger(SincronizacionJugadoresService.name);
@@ -119,7 +126,7 @@ export class SincronizacionJugadoresService {
         totalEquipos += resultadoEquipos.totalEquipos;
         totalJugadores += resultadoEquipos.totalJugadores;
       } catch (error) {
-        const mensajeError = error instanceof Error ? error.message : String(error);
+        const mensajeError = obtenerMensajeError(error);
         const pilaError = error instanceof Error ? error.stack : undefined;
         this.logger.error(
           `Error al sincronizar liga ${metaLiga.codigo}: ${mensajeError}`,
@@ -228,7 +235,7 @@ export class SincronizacionJugadoresService {
           }),
         );
       } catch (err) {
-        const mensajeError = err instanceof Error ? err.message : String(err);
+        const mensajeError = obtenerMensajeError(err);
         this.logger.warn(
           `Invariante no cumplida para jugador ${member.name}: ${mensajeError}`,
         );

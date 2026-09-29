@@ -21,7 +21,8 @@ export async function getPlayers(
   }
 
   const query = searchParams.toString();
-  const endpoint = `/players${query ? `?${query}` : ''}`;
+  const sufijoQuery = query ? `?${query}` : '';
+  const endpoint = `/players${sufijoQuery}`;
   return httpRequest<RespuestaCatalogoJugadores>(endpoint);
 }
 

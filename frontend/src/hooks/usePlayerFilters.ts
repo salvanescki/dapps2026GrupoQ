@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type {
-  LigaItem,
   EquipoItem,
   OpcionesFiltroRespuesta,
 } from '../types/player.types';
@@ -85,7 +84,7 @@ export function usePlayerFilters(
           const equipoActual = filterOptions.equipos.find(
             (e) => e.id === prev.teamId,
           );
-          if (equipoActual && equipoActual.ligaCodigo && equipoActual.ligaCodigo !== code) {
+          if (equipoActual?.ligaCodigo && equipoActual.ligaCodigo !== code) {
             newTeamId = '';
           }
         }
@@ -132,7 +131,7 @@ export function usePlayerFilters(
           const equipoActual = filterOptions.equipos.find(
             (e) => e.id === next.teamId,
           );
-          if (equipoActual && equipoActual.ligaCodigo && equipoActual.ligaCodigo !== next.league) {
+          if (equipoActual?.ligaCodigo && equipoActual.ligaCodigo !== next.league) {
             next.teamId = '';
           }
         }

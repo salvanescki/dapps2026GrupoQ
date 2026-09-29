@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type {
-  LigaItem,
-  EquipoItem,
-  OpcionesFiltroRespuesta,
-} from '../../types/player.types';
+import type { OpcionesFiltroRespuesta } from '../../types/player.types';
 import type { PlayerFiltersState } from '../../hooks/usePlayerFilters';
 
 interface FilterModalProps {
@@ -66,7 +62,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       const equipoActual = filterOptions.equipos.find(
         (e) => e.id === selectedTeamId,
       );
-      if (equipoActual && equipoActual.ligaCodigo && equipoActual.ligaCodigo !== newLeague) {
+      if (equipoActual?.ligaCodigo && equipoActual.ligaCodigo !== newLeague) {
         setSelectedTeamId('');
       }
     }
@@ -102,9 +98,9 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         aria-hidden="true"
         data-testid="filter-modal-backdrop"
       />
-      <div
+      <dialog
+        open
         className="filter-modal-content"
-        role="dialog"
         aria-modal="true"
         aria-labelledby="filter-modal-title"
         data-testid="filter-modal"
@@ -203,7 +199,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
+      </dialog>
     </div>
   );
 };

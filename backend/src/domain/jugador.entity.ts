@@ -68,21 +68,21 @@ export class CriterioFiltroJugador {
 }
 
 export class Jugador {
-  private _id: string;
-  private _externalId: number;
-  private _nombre: string;
-  private _posicion: PosicionJugador;
-  private _posicionOriginal: string | null;
-  private _fechaNacimiento: string | null;
-  private _nacionalidad: string;
-  private _dorsal: number | null;
+  private readonly _id: string;
+  private readonly _externalId: number;
+  private readonly _nombre: string;
+  private readonly _posicion: PosicionJugador;
+  private readonly _posicionOriginal: string | null;
+  private readonly _fechaNacimiento: string | null;
+  private readonly _nacionalidad: string;
+  private readonly _dorsal: number | null;
   private _equipoId: string;
   private _ligaId: string;
   private _activo: boolean;
-  private _creadoEn: Date;
+  private readonly _creadoEn: Date;
   private _actualizadoEn: Date;
-  private _equipo?: Equipo | null;
-  private _liga?: Liga | null;
+  private readonly _equipo?: Equipo | null;
+  private readonly _liga?: Liga | null;
 
   private constructor(props: JugadorProps) {
     this._id = props.id || generarId();
@@ -99,7 +99,7 @@ export class Jugador {
         : null;
     this._equipoId = props.equipoId;
     this._ligaId = props.ligaId;
-    this._activo = props.activo !== undefined ? props.activo : true;
+    this._activo = props.activo ?? true;
     this._creadoEn = props.creadoEn || new Date();
     this._actualizadoEn = props.actualizadoEn || new Date();
     this._equipo = props.equipo || null;

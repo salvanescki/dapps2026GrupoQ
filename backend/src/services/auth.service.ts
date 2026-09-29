@@ -11,7 +11,6 @@ import {
   USUARIO_REPOSITORY,
   UsuarioRepository,
 } from '../domain/usuario.repository.interface';
-import { UsuarioDuplicadoException } from '../domain/exceptions/usuario-duplicado.exception';
 import { RegistroUsuarioDto } from '../controllers/dto/registro-usuario.dto';
 import { LoginUsuarioDto } from '../controllers/dto/login-usuario.dto';
 import {
