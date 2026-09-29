@@ -16,13 +16,13 @@ export interface LigaProps {
 }
 
 export class Liga {
-  private _id: string;
-  private _codigo: string;
-  private _nombre: string;
-  private _pais: string;
-  private _emblemaUrl: string | null;
+  private readonly _id: string;
+  private readonly _codigo: string;
+  private readonly _nombre: string;
+  private readonly _pais: string;
+  private readonly _emblemaUrl: string | null;
   private _activo: boolean;
-  private _creadoEn: Date;
+  private readonly _creadoEn: Date;
   private _actualizadoEn: Date;
 
   private constructor(props: LigaProps) {
@@ -31,7 +31,7 @@ export class Liga {
     this._nombre = props.nombre?.trim();
     this._pais = props.pais?.trim();
     this._emblemaUrl = props.emblemaUrl || null;
-    this._activo = props.activo !== undefined ? props.activo : true;
+    this._activo = props.activo ?? true;
     this._creadoEn = props.creadoEn || new Date();
     this._actualizadoEn = props.actualizadoEn || new Date();
 

@@ -2,7 +2,6 @@ import {
   loginUsuario,
   registrarUsuario,
   obtenerPerfilAutenticado,
-  HttpError,
 } from '../api/auth-api.client';
 import { StorageService } from './storage.service';
 import type {
@@ -31,4 +30,4 @@ export class AuthService {
   }
 }
 
-export { HttpError };
+export { HttpError } from '../api/auth-api.client';

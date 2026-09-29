@@ -437,6 +437,8 @@
 
 .filter-modal-content {
   position: relative;
+  margin: 0;
+  color: inherit;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-2xl);

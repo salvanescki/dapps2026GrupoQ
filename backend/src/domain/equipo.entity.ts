@@ -14,15 +14,15 @@ export interface EquipoProps {
 }
 
 export class Equipo {
-  private _id: string;
-  private _externalId: number;
-  private _nombre: string;
-  private _nombreCorto: string | null;
-  private _tla: string | null;
-  private _escudoUrl: string | null;
-  private _ligaId: string;
-  private _creadoEn: Date;
-  private _actualizadoEn: Date;
+  private readonly _id: string;
+  private readonly _externalId: number;
+  private readonly _nombre: string;
+  private readonly _nombreCorto: string | null;
+  private readonly _tla: string | null;
+  private readonly _escudoUrl: string | null;
+  private readonly _ligaId: string;
+  private readonly _creadoEn: Date;
+  private readonly _actualizadoEn: Date;
 
   private constructor(props: EquipoProps) {
     this._id = props.id || generarId();

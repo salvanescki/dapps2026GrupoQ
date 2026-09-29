@@ -11,7 +11,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 }) => {
   return (
     <div className={`auth-page login-page ${className}`.trim()}>
-      <div className="auth-card login-card" role="main">
+      <main className="auth-card login-card">
         <header className="auth-header login-header">
           <div className="auth-logo login-logo">
             <img src={logoSrc} alt="" className="auth-logo-img" />
@@ -25,12 +25,12 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
         <footer className="auth-footer login-footer">
           {footerContent ?? (
             <p className="auth-footer-text login-footer-text">
-              <span className="auth-footer-dot login-footer-dot" />
+              <span className="auth-footer-dot login-footer-dot" />{' '}
               Plataforma segura de inversión deportiva
             </p>
           )}
         </footer>
-      </div>
+      </main>
     </div>
   );
 };
