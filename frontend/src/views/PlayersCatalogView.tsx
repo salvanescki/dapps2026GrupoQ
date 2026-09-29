@@ -45,7 +45,7 @@ export const PlayersCatalogView: React.FC = () => {
 
   const handleResetFilters = () => {
     clearFilters();
-    reload();
+    void reload();
   };
 
   const navItems = [
