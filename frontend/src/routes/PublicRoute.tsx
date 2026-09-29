@@ -20,4 +20,3 @@ export function PublicRoute({ children }: PublicRouteProps) {
 
   return <>{children}</>;
 }
-

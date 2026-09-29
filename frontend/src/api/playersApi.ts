@@ -32,4 +32,3 @@ export async function getPlayerById(id: string): Promise<Jugador> {
 export async function getPlayerFilterOptions(): Promise<OpcionesFiltroRespuesta> {
   return httpRequest<OpcionesFiltroRespuesta>('/players/filters');
 }
-

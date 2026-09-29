@@ -30,3 +30,16 @@
 - **`ProtectedRoute.test.tsx`**: render con `AuthContext.Provider` (contexto mock existente) + `MemoryRouter` + `Routes`. Sin `AuthProvider` real.
 - **`LoginView.test.tsx` / `RegisterView.test.tsx`**: helpers para completar campos y enviar el formulario (solo `userEvent`).
 - No se crean archivos compartidos de fixtures para el catálogo: solo repiten bloques `vi.mock`.
+
+## 3. `registrarHooksContextoJugadores` (`backend/test/integration/players-test.context.ts`)
+
+Registra los hooks de ciclo de vida compartidos por las specs de jugadores y entrega el contexto preparado mediante un callback.
+
+```typescript
+export function registrarHooksContextoJugadores(
+  alPrepararContexto: (contexto: PlayersTestContext) => void
+): void;
+```
+
+- Registra `beforeAll` (inicia la base con `TestDatabaseHelper.start()`, crea el contexto y lo entrega al callback; timeout 90000 ms), `afterAll` (`TestDatabaseHelper.stop()`) y `beforeEach` (`TestDatabaseHelper.cleanDatabase()`).
+- No contiene aserciones ni datos semilla; cada spec conserva sus variables locales (`jugadorService`, `ligaRepo`, `equipoRepo`, `jugadorRepo`) y el cuerpo de cada `it` sin cambios.

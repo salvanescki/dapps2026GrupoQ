@@ -176,10 +176,20 @@ Conteos estáticos verificados contra el código (títulos `it(` y llamadas `exp
 
 | Umbral | Métrica | Antes (Línea Base) | Después (Refactorizado) | Reducción |
 |---|---|---|---|---|
-| **5 líneas / 50 tokens** | Clones encontrados | 50 clones | 24 clones | -52.0% |
-| | Líneas duplicadas | 683 (6.42%) | 323 (3.09%) | -52.7% |
-| **10 líneas / 100 tokens** | Clones encontrados | 9 clones | 4 clones | -55.5% |
-| | Líneas duplicadas | 245 (2.34%) | 99 (0.97%) | -59.6% |
+| **5 líneas / 50 tokens** | Clones encontrados | 50 clones | 20 clones | -60.0% |
+| | Líneas duplicadas | 683 (6.42%) | 237 (2.28%) | -65.3% |
+| **10 líneas / 100 tokens** | Clones encontrados | 9 clones | 1 clon | -88.9% |
+| | Líneas duplicadas | 245 (2.34%) | 27 (0.27%) | -89.0% |
+
+Medición local por debajo del objetivo de 3,0%. Un primer pase de la implementación dejó 3,09%; el pase de ajuste agregó `registrarHooksContextoJugadores` (ver contrato de helpers) para consolidar los hooks `beforeAll`/`afterAll`/`beforeEach` de las tres specs de jugadores.
+
+**Bloques que permanecen (todos justificados arriba como Duplicación Aceptada o datos de test):**
+- Bloques `vi.mock` de las specs de catálogo (27 líneas) y de Login/Register (10 líneas).
+- Entidades de dominio y ORM (Principios I y II).
+- Datos semilla de cada `it` en las specs de jugadores (Liga/Equipo/Jugador): se conservan visibles para no ocultar el valor de cada escenario (Principio IV).
+- Imports repetidos de las specs de jugadores y datos de error de `LoginView`.
+
+**Verificación:** frontend con Vitest real; backend con Jest contra un PostgreSQL 16 local (equivalente a la imagen `postgres:16-alpine` de Testcontainers) por no disponer de Docker en el entorno de revisión. Pendiente: confirmación en SonarCloud (T026), que mide solo código nuevo con su propio algoritmo.
 
 ### 4.2 Paridad de Tests y Aserciones
 

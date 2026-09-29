@@ -1,6 +1,4 @@
-import { DataSource } from 'typeorm';
-import { TestDatabaseHelper } from './test-database.helper';
-import { createPlayersTestContext } from './players-test.context';
+import { registrarHooksContextoJugadores } from './players-test.context';
 import { JugadorService } from '../../src/services/jugador.service';
 import { LigaTypeOrmRepository } from '../../src/data-access/liga.typeorm-repository';
 import { EquipoTypeOrmRepository } from '../../src/data-access/equipo.typeorm-repository';
@@ -10,29 +8,13 @@ import { Equipo } from '../../src/domain/equipo.entity';
 import { Jugador } from '../../src/domain/jugador.entity';
 
 describe('JugadorService (Integration with Testcontainers)', () => {
-  let dataSource: DataSource;
   let jugadorService: JugadorService;
   let ligaRepo: LigaTypeOrmRepository;
   let equipoRepo: EquipoTypeOrmRepository;
   let jugadorRepo: JugadorTypeOrmRepository;
 
-  beforeAll(async () => {
-    const started = await TestDatabaseHelper.start();
-    dataSource = started.dataSource;
-
-    const context = await createPlayersTestContext(dataSource);
-    jugadorService = context.jugadorService;
-    ligaRepo = context.ligaRepo;
-    equipoRepo = context.equipoRepo;
-    jugadorRepo = context.jugadorRepo;
-  }, 90000);
-
-  afterAll(async () => {
-    await TestDatabaseHelper.stop();
-  });
-
-  beforeEach(async () => {
-    await TestDatabaseHelper.cleanDatabase();
+  registrarHooksContextoJugadores((contexto) => {
+    ({ jugadorService, ligaRepo, equipoRepo, jugadorRepo } = contexto);
   });
 
   describe('Consulta del Catálogo con Paginación (US1)', () => {

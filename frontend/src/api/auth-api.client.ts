@@ -57,4 +57,3 @@ export async function registrarUsuario(
     throw error;
   }
 }
-

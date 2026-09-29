@@ -52,6 +52,34 @@ function renderRouteWithAuth(
   );
 }
 
+function renderProtectedRoute(ctx: ContextoAutenticacion) {
+  return renderRouteWithAuth(ctx, '/', [
+    {
+      path: '/',
+      element: (
+        <ProtectedRoute>
+          <div>Contenido protegido</div>
+        </ProtectedRoute>
+      ),
+    },
+    { path: '/login', element: <div>Pantalla de Login</div> },
+  ]);
+}
+
+function renderPublicRoute(ctx: ContextoAutenticacion) {
+  return renderRouteWithAuth(ctx, '/login', [
+    {
+      path: '/login',
+      element: (
+        <PublicRoute>
+          <div>Pantalla de Login</div>
+        </PublicRoute>
+      ),
+    },
+    { path: '/', element: <div>Pantalla principal</div> },
+  ]);
+}
+
 describe('ProtectedRoute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,17 +88,7 @@ describe('ProtectedRoute', () => {
   it('debería redirigir a /login si el usuario no está autenticado', () => {
     const ctx = createMockContext({ estaAutenticado: false });
 
-    renderRouteWithAuth(ctx, '/', [
-      {
-        path: '/',
-        element: (
-          <ProtectedRoute>
-            <div>Contenido protegido</div>
-          </ProtectedRoute>
-        ),
-      },
-      { path: '/login', element: <div>Pantalla de Login</div> },
-    ]);
+    renderProtectedRoute(ctx);
 
     expect(screen.getByText('Pantalla de Login')).toBeInTheDocument();
     expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument();
@@ -83,17 +101,7 @@ describe('ProtectedRoute', () => {
       tokenDeAcceso: 'test-token',
     });
 
-    renderRouteWithAuth(ctx, '/', [
-      {
-        path: '/',
-        element: (
-          <ProtectedRoute>
-            <div>Contenido protegido</div>
-          </ProtectedRoute>
-        ),
-      },
-      { path: '/login', element: <div>Pantalla de Login</div> },
-    ]);
+    renderProtectedRoute(ctx);
 
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla de Login')).not.toBeInTheDocument();
@@ -130,17 +138,7 @@ describe('PublicRoute', () => {
       tokenDeAcceso: 'test-token',
     });
 
-    renderRouteWithAuth(ctx, '/login', [
-      {
-        path: '/login',
-        element: (
-          <PublicRoute>
-            <div>Pantalla de Login</div>
-          </PublicRoute>
-        ),
-      },
-      { path: '/', element: <div>Pantalla principal</div> },
-    ]);
+    renderPublicRoute(ctx);
 
     expect(screen.getByText('Pantalla principal')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla de Login')).not.toBeInTheDocument();
@@ -149,17 +147,7 @@ describe('PublicRoute', () => {
   it('debería renderizar el contenido si el usuario no está autenticado', () => {
     const ctx = createMockContext({ estaAutenticado: false });
 
-    renderRouteWithAuth(ctx, '/login', [
-      {
-        path: '/login',
-        element: (
-          <PublicRoute>
-            <div>Pantalla de Login</div>
-          </PublicRoute>
-        ),
-      },
-      { path: '/', element: <div>Pantalla principal</div> },
-    ]);
+    renderPublicRoute(ctx);
 
     expect(screen.getByText('Pantalla de Login')).toBeInTheDocument();
     expect(screen.queryByText('Pantalla principal')).not.toBeInTheDocument();

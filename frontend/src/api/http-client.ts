@@ -33,16 +33,11 @@ export async function httpRequest<T>(
   }
 
   if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    const mensajeServidor = errorData?.mensaje;
     let mensaje = 'Error inesperado del servidor.';
-    try {
-      const errorData = await response.json();
-      if (errorData?.mensaje) {
-        mensaje = Array.isArray(errorData.mensaje)
-          ? errorData.mensaje.join(' ')
-          : errorData.mensaje;
-      }
-    } catch {
-      // Conservar mensaje por defecto si la respuesta no es JSON
+    if (mensajeServidor) {
+      mensaje = Array.isArray(mensajeServidor) ? mensajeServidor.join(' ') : mensajeServidor;
     }
 
     throw new HttpError(response.status, mensaje);

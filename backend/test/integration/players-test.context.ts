@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
+import { TestDatabaseHelper } from './test-database.helper';
 import { JugadorService } from '../../src/services/jugador.service';
 import { SincronizacionJugadoresService } from '../../src/services/sincronizacion-jugadores.service';
 import { FootballDataClient } from '../../src/services/clients/football-data.client';
@@ -73,4 +74,21 @@ export async function createPlayersTestContext(
     jugadorRepo,
     mockFootballDataClient,
   };
+}
+
+export function registrarHooksContextoJugadores(
+  alPrepararContexto: (contexto: PlayersTestContext) => void
+): void {
+  beforeAll(async () => {
+    const { dataSource } = await TestDatabaseHelper.start();
+    alPrepararContexto(await createPlayersTestContext(dataSource));
+  }, 90000);
+
+  afterAll(async () => {
+    await TestDatabaseHelper.stop();
+  });
+
+  beforeEach(async () => {
+    await TestDatabaseHelper.cleanDatabase();
+  });
 }
