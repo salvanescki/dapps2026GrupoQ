@@ -58,18 +58,14 @@ export const PlayersCatalogView: React.FC = () => {
 
   return (
     <div className="catalog-page">
-      {/* Navbar Superior Unificado */}
       <Navbar
         titulo="Football Token Marketplace"
-        logoIcono="⚽"
         items={navItems}
         onLogout={logout}
         brandLink="/"
       />
 
-      {/* Contenedor Principal */}
       <main className="catalog-container">
-        {/* Encabezado */}
         <header className="catalog-header">
           <div className="catalog-title-wrapper">
             <h1 className="catalog-title">
@@ -91,7 +87,6 @@ export const PlayersCatalogView: React.FC = () => {
           </p>
         </header>
 
-        {/* Barra de Herramientas: Búsqueda y Filtros */}
         <section className="catalog-toolbar" aria-label="Controles del catálogo">
           <SearchBar
             value={filters.search}
@@ -106,7 +101,6 @@ export const PlayersCatalogView: React.FC = () => {
             data-testid="btn-open-filters"
             aria-label="Abrir panel de filtros"
           >
-            <span aria-hidden="true">⚙️</span>
             <span>Filtros</span>
             {activeFiltersCount > 0 && (
               <span
@@ -119,7 +113,6 @@ export const PlayersCatalogView: React.FC = () => {
           </button>
         </section>
 
-        {/* Chips de Filtros Activos */}
         <ActiveFiltersBar
           filters={filters}
           filterOptions={filterOptions}
@@ -127,14 +120,12 @@ export const PlayersCatalogView: React.FC = () => {
           onClearAll={handleResetFilters}
         />
 
-        {/* Mensaje de Error */}
         {error && (
           <div data-testid="catalog-error">
             <Alert tipo="error" mensaje={error} />
           </div>
         )}
 
-        {/* Estado de Carga Inicial */}
         {loading && (
           <div
             className="catalog-loading-footer"
@@ -144,7 +135,6 @@ export const PlayersCatalogView: React.FC = () => {
           </div>
         )}
 
-        {/* Estado Vacío (Sin Resultados) */}
         {!loading && !error && players.length === 0 && (
           <EmptyState
             onReset={handleResetFilters}
@@ -153,19 +143,16 @@ export const PlayersCatalogView: React.FC = () => {
           />
         )}
 
-        {/* Cuadrícula de Futbolistas */}
         {!loading && players.length > 0 && (
           <>
             <PlayerGrid players={players} />
 
-            {/* Elemento Centinela para Scroll Infinito */}
             <div
               ref={sentinelRef}
               className="infinite-scroll-sentinel"
               data-testid="infinite-scroll-sentinel"
             />
 
-            {/* Indicador de carga de más elementos */}
             {loadingMore && (
               <div
                 className="catalog-loading-footer"
@@ -175,7 +162,6 @@ export const PlayersCatalogView: React.FC = () => {
               </div>
             )}
 
-            {/* Mensaje de Fin de Catálogo */}
             {!hasMore && (
               <div className="catalog-end-message">
                 Has llegado al final del catálogo de jugadores.
@@ -185,7 +171,6 @@ export const PlayersCatalogView: React.FC = () => {
         )}
       </main>
 
-      {/* Modal Desplegable de Filtros */}
       <FilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}

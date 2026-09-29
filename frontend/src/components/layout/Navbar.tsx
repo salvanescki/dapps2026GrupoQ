@@ -4,7 +4,7 @@ import type { NavbarProps } from '../../types/ui.types';
 
 export const Navbar: React.FC<NavbarProps> = ({
   titulo = 'Football Token Marketplace',
-  logoIcono = '⚽',
+  logoSrc = '/logo.png',
   items = [],
   onLogout,
   brandLink = '/',
@@ -13,9 +13,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav className="app-navbar home-navbar" aria-label="Navegación principal">
       <div className="app-navbar-brand home-navbar-brand">
         <Link to={brandLink} className="app-navbar-brand-link">
-          <span className="app-navbar-logo home-navbar-logo" aria-hidden="true">
-            {logoIcono}
-          </span>
+          <img src={logoSrc} alt="" className="app-navbar-logo-img" />
           <span className="app-navbar-title home-navbar-title">
             {titulo}
           </span>
@@ -42,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             id="logout-button"
             aria-label="Cerrar sesión"
           >
-            🚪 Cerrar Sesión
+            Cerrar Sesión
           </button>
         )}
       </div>

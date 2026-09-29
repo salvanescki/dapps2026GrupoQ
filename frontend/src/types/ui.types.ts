@@ -1,9 +1,5 @@
 import React from 'react';
 
-// ============================================================
-// UI Base Component Types
-// ============================================================
-
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -50,10 +46,6 @@ export interface SpinnerProps {
   className?: string;
 }
 
-// ============================================================
-// Layout & Navigation Types
-// ============================================================
-
 export interface NavItem {
   label: string;
   to: string;
@@ -63,7 +55,7 @@ export interface NavItem {
 
 export interface NavbarProps {
   titulo?: string;
-  logoIcono?: React.ReactNode;
+  logoSrc?: string;
   usuario?: {
     nombre: string;
     correo?: string;
@@ -83,7 +75,7 @@ export interface AppLayoutProps {
 export interface AuthLayoutProps {
   titulo?: string;
   subtitulo?: string;
-  logoIcono?: React.ReactNode;
+  logoSrc?: string;
   children: React.ReactNode;
   footerContent?: React.ReactNode;
   className?: string;

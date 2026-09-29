@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { TestcontainersHelper } from './setup-testcontainers';
+import { TestDatabaseHelper } from './test-database.helper';
 import { UsuarioTypeOrmRepository } from '../../src/data-access/usuario.typeorm-repository';
 import { UsuarioOrmEntity } from '../../src/data-access/usuario.orm-entity';
 import { Usuario } from '../../src/domain/usuario.entity';
@@ -9,18 +9,18 @@ describe('UsuarioTypeOrmRepository (Integration with Testcontainers)', () => {
   let repository: UsuarioTypeOrmRepository;
 
   beforeAll(async () => {
-    const started = await TestcontainersHelper.start();
+    const started = await TestDatabaseHelper.start();
     dataSource = started.dataSource;
     const ormRepo = dataSource.getRepository(UsuarioOrmEntity);
     repository = new UsuarioTypeOrmRepository(ormRepo);
   }, 90000);
 
   afterAll(async () => {
-    await TestcontainersHelper.stop();
+    await TestDatabaseHelper.stop();
   });
 
   beforeEach(async () => {
-    await TestcontainersHelper.cleanDatabase();
+    await TestDatabaseHelper.cleanDatabase();
   });
 
   it('debe persistir un usuario y recuperarlo por ID', async () => {

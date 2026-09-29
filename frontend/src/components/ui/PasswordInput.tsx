@@ -24,7 +24,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           aria-label={mostrar ? 'Ocultar contraseña' : 'Ver contraseña'}
           tabIndex={-1}
         >
-          {mostrar ? '🙈' : '👁️'}
+          {mostrar ? 'Ocultar' : 'Mostrar'}
         </button>
       )}
     </div>

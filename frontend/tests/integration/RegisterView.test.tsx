@@ -58,6 +58,20 @@ function renderRegisterView() {
   );
 }
 
+async function fillAndSubmitRegister(
+  user: ReturnType<typeof userEvent.setup>,
+  nombre: string,
+  correo: string,
+  contrasena: string,
+  confirmarContrasena: string
+) {
+  await user.type(screen.getByLabelText(/nombre completo/i), nombre);
+  await user.type(screen.getByLabelText(/correo electrónico/i), correo);
+  await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), contrasena);
+  await user.type(screen.getByLabelText(/confirmar contraseña/i), confirmarContrasena);
+  await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+}
+
 describe('RegisterView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -98,11 +112,13 @@ describe('RegisterView', () => {
       mockRegistrarUsuario.mockResolvedValueOnce(mockRespuestaExitosa);
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), '  Nuevo.Inversor@Ejemplo.COM  ');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        '  Nuevo.Inversor@Ejemplo.COM  ',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       await waitFor(() => {
         expect(mockRegistrarUsuario).toHaveBeenCalledWith({
@@ -127,11 +143,13 @@ describe('RegisterView', () => {
       );
 
       renderRegisterView();
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'nuevo@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'nuevo@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /creando cuenta/i })).toBeDisabled();
@@ -158,11 +176,13 @@ describe('RegisterView', () => {
       );
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'existente@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'existente@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       expect(
         await screen.findByText(/el correo electrónico ya se encuentra registrado/i)
@@ -176,11 +196,13 @@ describe('RegisterView', () => {
       );
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'existente@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'existente@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       await screen.findByText('Correo duplicado');
 
@@ -199,11 +221,13 @@ describe('RegisterView', () => {
       );
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'nuevo@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'nuevo@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       expect(
         await screen.findByText(/no fue posible conectar con el servidor/i)
@@ -217,11 +241,13 @@ describe('RegisterView', () => {
       );
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'nuevo@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'nuevo@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       expect(
         await screen.findByText(/el nombre debe tener entre 2 y 100 caracteres/i)
@@ -248,11 +274,7 @@ describe('RegisterView', () => {
       const user = userEvent.setup();
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'nuevo@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'abc');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'abc');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(user, 'Inversor', 'nuevo@ejemplo.com', 'abc', 'abc');
 
       expect(
         await screen.findByText(/la contraseña debe tener al menos 8 caracteres/i)
@@ -264,11 +286,13 @@ describe('RegisterView', () => {
       const user = userEvent.setup();
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'nuevo@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveDiferente');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor',
+        'nuevo@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveDiferente'
+      );
 
       expect(await screen.findByText(/las contraseñas no coinciden/i)).toBeInTheDocument();
       expect(mockRegistrarUsuario).not.toHaveBeenCalled();
@@ -304,11 +328,13 @@ describe('RegisterView', () => {
       const user = userEvent.setup();
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'correo_invalido');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor',
+        'correo_invalido',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       expect(
         await screen.findByText(/el formato del correo electrónico es inválido/i)
@@ -350,11 +376,13 @@ describe('RegisterView', () => {
       );
       renderRegisterView();
 
-      await user.type(screen.getByLabelText(/nombre completo/i), 'Inversor Prueba');
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'existente@ejemplo.com');
-      await user.type(screen.getByLabelText(/^(?!.*confirmar).*contraseña/i), 'ClaveSegura2026');
-      await user.type(screen.getByLabelText(/confirmar contraseña/i), 'ClaveSegura2026');
-      await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
+      await fillAndSubmitRegister(
+        user,
+        'Inversor Prueba',
+        'existente@ejemplo.com',
+        'ClaveSegura2026',
+        'ClaveSegura2026'
+      );
 
       const alert = await screen.findByRole('alert');
       expect(alert).toBeInTheDocument();

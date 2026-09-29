@@ -1,8 +1,3 @@
-// ============================================================
-// RegisterView — Pantalla de registro de nuevo usuario
-// Estética 100% consistente con LoginView (glassmorphism, tema oscuro)
-// ============================================================
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { registrarUsuario, HttpError } from '../api/auth-api.client';
@@ -25,7 +20,6 @@ export function RegisterView() {
     try {
       await registrarUsuario(datosSanitizados);
 
-      // Registro exitoso: redirigir a /login con mensaje de bienvenida
       navigate('/login', {
         state: { mensajeExito: '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.' },
       });
@@ -44,9 +38,7 @@ export function RegisterView() {
     <AuthLayout
       titulo="Football Token Marketplace"
       subtitulo="Crea tu cuenta de inversor deportivo"
-      logoIcono="⚽"
     >
-      {/* Error del servidor */}
       {errorServidor && (
         <Alert
           tipo="error"
@@ -55,14 +47,12 @@ export function RegisterView() {
         />
       )}
 
-      {/* Formulario Modular */}
       <RegisterForm
         onSubmit={handleSubmit}
         cargando={cargando}
         onClearError={() => setErrorServidor(null)}
       />
 
-      {/* Enlace a login */}
       <p className="auth-nav-link">
         ¿Ya tienes una cuenta?{' '}
         <a

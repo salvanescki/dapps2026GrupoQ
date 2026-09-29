@@ -52,6 +52,16 @@ function renderLoginView() {
   );
 }
 
+async function fillAndSubmitLogin(
+  user: ReturnType<typeof userEvent.setup>,
+  correo: string,
+  contrasena: string
+) {
+  await user.type(screen.getByLabelText(/correo electrónico/i), correo);
+  await user.type(screen.getByLabelText(/contraseña/i), contrasena);
+  await user.click(screen.getByRole('button', { name: /ingresar/i }));
+}
+
 describe('LoginView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,9 +102,7 @@ describe('LoginView', () => {
       const user = userEvent.setup();
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'usuario_sin_arroba');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave123');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'usuario_sin_arroba', 'Clave123');
 
       expect(
         await screen.findByText('El formato del correo electrónico es inválido.')
@@ -123,9 +131,7 @@ describe('LoginView', () => {
       mockLoginUsuario.mockResolvedValueOnce(mockRespuestaExitosa);
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), '  Inversor@Tokens.COM  ');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave1234');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, '  Inversor@Tokens.COM  ', 'Clave1234');
 
       await waitFor(() => {
         expect(mockLoginUsuario).toHaveBeenCalledWith({
@@ -143,9 +149,7 @@ describe('LoginView', () => {
       );
 
       renderLoginView();
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave1234');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'Clave1234');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /ingresando/i })).toBeDisabled();
@@ -160,9 +164,7 @@ describe('LoginView', () => {
       mockLoginUsuario.mockResolvedValueOnce(mockRespuestaExitosa);
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave1234');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'Clave1234');
 
       await waitFor(() => {
         const stored = localStorage.getItem('football_marketplace_session');
@@ -183,9 +185,7 @@ describe('LoginView', () => {
       );
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'ClaveIncorrecta');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'ClaveIncorrecta');
 
       expect(await screen.findByText('Credenciales inválidas.')).toBeInTheDocument();
     });
@@ -197,9 +197,7 @@ describe('LoginView', () => {
       );
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'ClaveIncorrecta');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'ClaveIncorrecta');
 
       await screen.findByText('Credenciales inválidas.');
       expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('inversor@tokens.com');
@@ -215,9 +213,7 @@ describe('LoginView', () => {
       );
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave1234');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'Clave1234');
 
       expect(
         await screen.findByText(/no fue posible conectar con el servidor/i)
@@ -231,9 +227,7 @@ describe('LoginView', () => {
       );
       renderLoginView();
 
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'ClaveIncorrecta');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'ClaveIncorrecta');
 
       await screen.findByText('Credenciales inválidas.');
 
@@ -251,9 +245,7 @@ describe('LoginView', () => {
       );
 
       renderLoginView();
-      await user.type(screen.getByLabelText(/correo electrónico/i), 'inversor@tokens.com');
-      await user.type(screen.getByLabelText(/contraseña/i), 'Clave1234');
-      await user.click(screen.getByRole('button', { name: /ingresar/i }));
+      await fillAndSubmitLogin(user, 'inversor@tokens.com', 'Clave1234');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /ingresando/i })).toBeDisabled();
@@ -271,4 +263,3 @@ describe('LoginView', () => {
     });
   });
 });
-

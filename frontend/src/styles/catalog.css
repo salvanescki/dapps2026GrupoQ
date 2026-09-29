@@ -1,24 +1,18 @@
-/* ============================================================
-   Catalog & Player Cards Styles — Football Token Marketplace
-   Conforme con tokens.css, estética dark-mode y glassmorphism
-   ============================================================ */
-
 .catalog-page {
   min-height: calc(100vh - 70px);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  padding: var(--space-8) var(--space-6);
 }
 
 .catalog-container {
-  max-width: 1280px;
+  max-width: calc(1280px + var(--space-6) * 2);
   margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
 }
 
-/* ─── Encabezado del Catálogo ─── */
 .catalog-header {
   display: flex;
   flex-direction: column;
@@ -66,7 +60,6 @@
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-/* ─── Barra de Control: Búsqueda y Botón Filtros ─── */
 .catalog-toolbar {
   display: flex;
   align-items: center;
@@ -84,7 +77,7 @@
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  padding: 0.75rem 1rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
@@ -171,7 +164,6 @@
   border-radius: var(--radius-full);
 }
 
-/* ─── Barra de Filtros Activos (Chips) ─── */
 .active-filters-bar {
   display: flex;
   align-items: center;
@@ -237,7 +229,6 @@
   color: var(--color-amber-300);
 }
 
-/* ─── Cuadrícula de Jugadores ─── */
 .player-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -245,7 +236,6 @@
   margin-top: var(--space-2);
 }
 
-/* ─── Tarjeta de Jugador ─── */
 .player-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -380,7 +370,6 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* ─── Badges de Posición ─── */
 .position-badge {
   font-size: 0.7rem;
   font-weight: var(--font-weight-semibold);
@@ -420,7 +409,6 @@
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-/* ─── Modal / Panel de Filtros ─── */
 .filter-modal-overlay {
   position: fixed;
   top: 0;
@@ -585,7 +573,6 @@
   background: var(--color-emerald-400);
 }
 
-/* ─── Estado Vacío (Empty State) ─── */
 .catalog-empty-state {
   display: flex;
   flex-direction: column;
@@ -643,7 +630,6 @@
   transform: translateY(-1px);
 }
 
-/* ─── Scroll Infinito & Centinela ─── */
 .infinite-scroll-sentinel {
   height: 20px;
   width: 100%;

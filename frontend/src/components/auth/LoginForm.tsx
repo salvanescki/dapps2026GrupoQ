@@ -1,7 +1,7 @@
-import React, { useState, type FormEvent } from 'react';
+import React, { type FormEvent } from 'react';
 import { Input } from '../ui/Input';
 import { validarFormularioLogin } from '../../utils/validaciones';
-import type { ResultadoValidacion } from '../../types/auth.types';
+import { useForm } from '../../hooks/useForm';
 
 export interface LoginFormProps {
   onSubmit: (credenciales: { correo: string; contrasena: string }) => Promise<void>;
@@ -14,71 +14,50 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   cargando,
   onClearError,
 }) => {
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [erroresValidacion, setErroresValidacion] = useState<ResultadoValidacion['errores']>({});
+  const { values, errors, handleChange, handleSubmit, setFieldValue } = useForm({
+    initialValues: { correo: '', contrasena: '' },
+    validate: validarFormularioLogin,
+    onFieldChange: () => {
+      if (onClearError) onClearError();
+    },
+    onSubmit: async (credenciales) => {
+      if (onClearError) onClearError();
+      await onSubmit(credenciales);
+      setFieldValue('contrasena', '');
+    },
+  });
 
-  const handleCorreoChange = (value: string) => {
-    setCorreo(value);
-    if (erroresValidacion.correo) {
-      setErroresValidacion((prev) => ({ ...prev, correo: undefined }));
-    }
+  const onFormSubmit = (e: FormEvent) => {
     if (onClearError) onClearError();
-  };
-
-  const handleContrasenaChange = (value: string) => {
-    setContrasena(value);
-    if (erroresValidacion.contrasena) {
-      setErroresValidacion((prev) => ({ ...prev, contrasena: undefined }));
-    }
-    if (onClearError) onClearError();
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (onClearError) onClearError();
-
-    const resultado = validarFormularioLogin({ correo, contrasena });
-    setErroresValidacion(resultado.errores);
-
-    if (!resultado.esValido) return;
-
-    await onSubmit({ correo, contrasena });
-    setContrasena('');
+    handleSubmit(e);
   };
 
   return (
-    <form className="login-form" onSubmit={handleSubmit} noValidate>
-      {/* Campo de correo */}
+    <form className="login-form" onSubmit={onFormSubmit} noValidate>
       <Input
         id="correo"
         type="email"
         label="Correo electrónico"
-        icon="📧"
         placeholder="inversor@tokens.com"
-        value={correo}
-        onChange={(e) => handleCorreoChange(e.target.value)}
+        value={values.correo}
+        onChange={(e) => handleChange('correo', e.target.value)}
         disabled={cargando}
         autoComplete="email"
-        error={erroresValidacion.correo}
+        error={errors.correo}
       />
 
-      {/* Campo de contraseña */}
       <Input
         id="contrasena"
         type="password"
         label="Contraseña"
-        icon="🔒"
         placeholder="Ingrese su contraseña"
-        value={contrasena}
-        onChange={(e) => handleContrasenaChange(e.target.value)}
+        value={values.contrasena}
+        onChange={(e) => handleChange('contrasena', e.target.value)}
         disabled={cargando}
         autoComplete="current-password"
-        error={erroresValidacion.contrasena}
+        error={errors.contrasena}
       />
 
-      {/* Botón de envío */}
       <button
         type="submit"
         className="login-button"
