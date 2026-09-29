@@ -4,7 +4,7 @@ import type { AuthLayoutProps } from '../../types/ui.types';
 export const AuthLayout: React.FC<AuthLayoutProps> = ({
   titulo = 'Football Token Marketplace',
   subtitulo = 'Accede a tu portfolio de inversiones deportivas',
-  logoIcono = '⚽',
+  logoSrc = '/logo.png',
   children,
   footerContent,
   className = '',
@@ -12,19 +12,16 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   return (
     <div className={`auth-page login-page ${className}`.trim()}>
       <div className="auth-card login-card" role="main">
-        {/* Header */}
         <header className="auth-header login-header">
-          <div className="auth-logo login-logo" aria-hidden="true">
-            {logoIcono}
+          <div className="auth-logo login-logo">
+            <img src={logoSrc} alt="" className="auth-logo-img" />
           </div>
           <h1 className="auth-title login-title">{titulo}</h1>
           {subtitulo && <p className="auth-subtitle login-subtitle">{subtitulo}</p>}
         </header>
 
-        {/* Content */}
         {children}
 
-        {/* Footer */}
         <footer className="auth-footer login-footer">
           {footerContent ?? (
             <p className="auth-footer-text login-footer-text">

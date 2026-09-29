@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtModule } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { TestcontainersHelper } from './setup-testcontainers';
+import { TestDatabaseHelper } from './test-database.helper';
 import { AuthService } from '../../src/services/auth.service';
 import { UsuarioOrmEntity } from '../../src/data-access/usuario.orm-entity';
 import { UsuarioTypeOrmRepository } from '../../src/data-access/usuario.typeorm-repository';
@@ -15,7 +15,7 @@ describe('AuthService (Integration with Testcontainers)', () => {
   let usuarioRepository: UsuarioTypeOrmRepository;
 
   beforeAll(async () => {
-    const started = await TestcontainersHelper.start();
+    const started = await TestDatabaseHelper.start();
     dataSource = started.dataSource;
     const ormRepo = dataSource.getRepository(UsuarioOrmEntity);
     usuarioRepository = new UsuarioTypeOrmRepository(ormRepo);
@@ -40,11 +40,11 @@ describe('AuthService (Integration with Testcontainers)', () => {
   }, 90000);
 
   afterAll(async () => {
-    await TestcontainersHelper.stop();
+    await TestDatabaseHelper.stop();
   });
 
   beforeEach(async () => {
-    await TestcontainersHelper.cleanDatabase();
+    await TestDatabaseHelper.cleanDatabase();
   });
 
   describe('Registro de Usuario (US1)', () => {

@@ -1,7 +1,3 @@
-// ============================================================
-// main.tsx — Punto de montaje de React en el DOM
-// ============================================================
-
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

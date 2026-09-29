@@ -13,9 +13,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <div className="catalog-empty-state" data-testid="empty-state">
-      <div className="empty-state-icon-box" aria-hidden="true">
-        🔍
-      </div>
       <h3 className="empty-state-title">{title}</h3>
       <p className="empty-state-text">{message}</p>
       <button

@@ -1,4 +1,4 @@
-import React, { useState, type FormEvent } from 'react';
+import React, { type FormEvent } from 'react';
 import { Input } from '../ui/Input';
 import {
   validarFormularioRegistro,
@@ -8,7 +8,8 @@ import {
   validarFormatoContrasena,
   validarConfirmacionContrasena,
 } from '../../utils/validaciones';
-import type { ErroresValidacionRegistro, SolicitudRegistroApi } from '../../types/auth.types';
+import type { DatosRegistro, SolicitudRegistroApi } from '../../types/auth.types';
+import { useForm } from '../../hooks/useForm';
 
 export interface RegisterFormProps {
   onSubmit: (datosSanitizados: SolicitudRegistroApi) => Promise<void>;
@@ -21,154 +22,101 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   cargando,
   onClearError,
 }) => {
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [confirmarContrasena, setConfirmarContrasena] = useState('');
-  const [erroresValidacion, setErroresValidacion] = useState<ErroresValidacionRegistro>({});
+  const { values, errors, handleChange, handleBlur, handleSubmit } = useForm<
+    DatosRegistro,
+    SolicitudRegistroApi
+  >({
+    initialValues: {
+      nombre: '',
+      correo: '',
+      contrasena: '',
+      confirmarContrasena: '',
+    },
+    validate: validarFormularioRegistro,
+    validateField: (name, _value, allValues) => {
+      switch (name) {
+        case 'nombre':
+          return validarNombre(allValues.nombre);
+        case 'correo':
+          return validarCorreo(allValues.correo);
+        case 'contrasena':
+          return validarFormatoContrasena(allValues.contrasena);
+        case 'confirmarContrasena':
+          return validarConfirmacionContrasena(allValues.contrasena, allValues.confirmarContrasena);
+        default:
+          return undefined;
+      }
+    },
+    sanitize: sanitizarDatosRegistro,
+    onFieldChange: () => {
+      if (onClearError) onClearError();
+    },
+    onSubmit: async (datosSanitizados) => {
+      if (onClearError) onClearError();
+      await onSubmit(datosSanitizados);
+    },
+  });
 
-  // ─── Handlers de cambio ───
-  const handleNombreChange = (value: string) => {
-    setNombre(value);
-    if (erroresValidacion.nombre) {
-      setErroresValidacion((prev) => ({ ...prev, nombre: undefined }));
-    }
+  const onFormSubmit = (e: FormEvent) => {
     if (onClearError) onClearError();
-  };
-
-  const handleCorreoChange = (value: string) => {
-    setCorreo(value);
-    if (erroresValidacion.correo) {
-      setErroresValidacion((prev) => ({ ...prev, correo: undefined }));
-    }
-    if (onClearError) onClearError();
-  };
-
-  const handleContrasenaChange = (value: string) => {
-    setContrasena(value);
-    if (erroresValidacion.contrasena) {
-      setErroresValidacion((prev) => ({ ...prev, contrasena: undefined }));
-    }
-    if (onClearError) onClearError();
-  };
-
-  const handleConfirmarContrasenaChange = (value: string) => {
-    setConfirmarContrasena(value);
-    if (erroresValidacion.confirmarContrasena) {
-      setErroresValidacion((prev) => ({ ...prev, confirmarContrasena: undefined }));
-    }
-    if (onClearError) onClearError();
-  };
-
-  // ─── Handlers de blur ───
-  const handleNombreBlur = () => {
-    const error = validarNombre(nombre);
-    if (error) {
-      setErroresValidacion((prev) => ({ ...prev, nombre: error }));
-    }
-  };
-
-  const handleCorreoBlur = () => {
-    const error = validarCorreo(correo);
-    if (error) {
-      setErroresValidacion((prev) => ({ ...prev, correo: error }));
-    }
-  };
-
-  const handleContrasenaBlur = () => {
-    const error = validarFormatoContrasena(contrasena);
-    if (error) {
-      setErroresValidacion((prev) => ({ ...prev, contrasena: error }));
-    }
-  };
-
-  const handleConfirmarContrasenaBlur = () => {
-    const error = validarConfirmacionContrasena(contrasena, confirmarContrasena);
-    if (error) {
-      setErroresValidacion((prev) => ({ ...prev, confirmarContrasena: error }));
-    }
-  };
-
-  // ─── Submit ───
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (onClearError) onClearError();
-
-    const datos = { nombre, correo, contrasena, confirmarContrasena };
-    const resultado = validarFormularioRegistro(datos);
-    setErroresValidacion(resultado.errores);
-
-    if (!resultado.esValido) return;
-
-    const datosSanitizados = sanitizarDatosRegistro(datos);
-    await onSubmit(datosSanitizados);
+    handleSubmit(e);
   };
 
   return (
-    <form className="login-form register-form" onSubmit={handleSubmit} noValidate>
-      {/* Campo de Nombre */}
+    <form className="login-form register-form" onSubmit={onFormSubmit} noValidate>
       <Input
         id="nombre"
         type="text"
         label="Nombre completo"
-        icon="👤"
         placeholder="Juan Pérez"
-        value={nombre}
-        onChange={(e) => handleNombreChange(e.target.value)}
-        onBlur={handleNombreBlur}
+        value={values.nombre}
+        onChange={(e) => handleChange('nombre', e.target.value)}
+        onBlur={() => handleBlur('nombre')}
         disabled={cargando}
         autoComplete="name"
-        error={erroresValidacion.nombre}
+        error={errors.nombre}
       />
 
-      {/* Campo de Correo */}
       <Input
         id="correo"
         type="email"
         label="Correo electrónico"
-        icon="📧"
         placeholder="inversor@tokens.com"
-        value={correo}
-        onChange={(e) => handleCorreoChange(e.target.value)}
-        onBlur={handleCorreoBlur}
+        value={values.correo}
+        onChange={(e) => handleChange('correo', e.target.value)}
+        onBlur={() => handleBlur('correo')}
         disabled={cargando}
         autoComplete="email"
-        error={erroresValidacion.correo}
+        error={errors.correo}
       />
 
-      {/* Campo de Contraseña */}
       <Input
         id="contrasena"
         type="password"
         label="Contraseña"
-        icon="🔒"
         placeholder="Mínimo 8 caracteres (A-Z, 0-9, !@#)"
-        value={contrasena}
-        onChange={(e) => handleContrasenaChange(e.target.value)}
-        onBlur={handleContrasenaBlur}
+        value={values.contrasena}
+        onChange={(e) => handleChange('contrasena', e.target.value)}
+        onBlur={() => handleBlur('contrasena')}
         disabled={cargando}
         autoComplete="new-password"
-        error={erroresValidacion.contrasena}
-        helperText={!erroresValidacion.contrasena ? 'Debe incluir mayúscula, número y caracter especial.' : undefined}
+        error={errors.contrasena}
+        helperText={!errors.contrasena ? 'Debe incluir mayúscula, número y caracter especial.' : undefined}
       />
 
-      {/* Campo de Confirmar Contraseña */}
       <Input
         id="confirmarContrasena"
         type="password"
         label="Confirmar contraseña"
-        icon="🔒"
         placeholder="Repita su contraseña"
-        value={confirmarContrasena}
-        onChange={(e) => handleConfirmarContrasenaChange(e.target.value)}
-        onBlur={handleConfirmarContrasenaBlur}
+        value={values.confirmarContrasena}
+        onChange={(e) => handleChange('confirmarContrasena', e.target.value)}
+        onBlur={() => handleBlur('confirmarContrasena')}
         disabled={cargando}
         autoComplete="new-password"
-        error={erroresValidacion.confirmarContrasena}
+        error={errors.confirmarContrasena}
       />
 
-      {/* Botón de envío */}
       <button
         type="submit"
         className="login-button register-button"

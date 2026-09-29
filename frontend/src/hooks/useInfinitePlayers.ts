@@ -38,7 +38,6 @@ export function useInfinitePlayers(
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Carga inicial o recarga por cambio de filtros
   const fetchFirstPage = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -71,7 +70,6 @@ export function useInfinitePlayers(
     fetchFirstPage();
   }, [fetchFirstPage]);
 
-  // Cargar siguiente página
   const loadMore = useCallback(async () => {
     if (loading || loadingMore || !hasMore) return;
 
@@ -99,7 +97,6 @@ export function useInfinitePlayers(
     }
   }, [loading, loadingMore, hasMore, page, limit, league, teamId, position, search]);
 
-  // Configuración del IntersectionObserver para scroll infinito
   useEffect(() => {
     if (typeof window === 'undefined' || !window.IntersectionObserver) return;
 

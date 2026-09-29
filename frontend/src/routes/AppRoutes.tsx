@@ -1,7 +1,3 @@
-// ============================================================
-// AppRoutes — Configuración principal de rutas
-// ============================================================
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from '../views/LoginView';
 import { RegisterView } from '../views/RegisterView';
@@ -49,4 +45,3 @@ export function AppRoutes() {
     </Routes>
   );
 }
-

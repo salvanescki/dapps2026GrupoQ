@@ -42,7 +42,6 @@ export function usePlayerFilters(
     useState<OpcionesFiltroRespuesta | null>(null);
   const [loadingOptions, setLoadingOptions] = useState<boolean>(true);
 
-  // Cargar metadatos de filtros una sola vez
   useEffect(() => {
     let isMounted = true;
     getPlayerFilterOptions()
@@ -63,7 +62,6 @@ export function usePlayerFilters(
     };
   }, []);
 
-  // Filtrado jerárquico de equipos dependiente de la liga activa
   const filteredTeams = useMemo(() => {
     if (!filterOptions?.equipos) return [];
     if (!filters.league) return filterOptions.equipos;
@@ -72,7 +70,6 @@ export function usePlayerFilters(
       if (equipo.ligaCodigo) {
         return equipo.ligaCodigo === filters.league;
       }
-      // Fallback por ID de liga
       const ligaMatch = filterOptions.ligas.find(
         (l) => l.codigo === filters.league,
       );
@@ -80,7 +77,6 @@ export function usePlayerFilters(
     });
   }, [filterOptions, filters.league]);
 
-  // Selección de Liga: si cambia y el equipo activo no pertenece, resetear equipo
   const setLeague = useCallback(
     (code: string) => {
       setFilters((prev) => {
@@ -132,7 +128,6 @@ export function usePlayerFilters(
     (newFilters: Partial<PlayerFiltersState>) => {
       setFilters((prev) => {
         const next = { ...prev, ...newFilters };
-        // Validar consistencia relacional jerárquica
         if (next.league && next.teamId && filterOptions?.equipos) {
           const equipoActual = filterOptions.equipos.find(
             (e) => e.id === next.teamId,

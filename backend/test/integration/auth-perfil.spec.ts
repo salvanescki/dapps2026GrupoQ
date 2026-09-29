@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { DataSource } from 'typeorm';
-import { TestcontainersHelper } from './setup-testcontainers';
+import { TestDatabaseHelper } from './test-database.helper';
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
 
@@ -11,7 +11,7 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    const started = await TestcontainersHelper.start();
+    const started = await TestDatabaseHelper.start();
     dataSource = started.dataSource;
 
     // Set test env variables for database to match testcontainer
@@ -42,11 +42,11 @@ describe('Auth Endpoints & Protection (e2e Integration with Testcontainers)', ()
     if (app) {
       await app.close();
     }
-    await TestcontainersHelper.stop();
+    await TestDatabaseHelper.stop();
   });
 
   beforeEach(async () => {
-    await TestcontainersHelper.cleanDatabase();
+    await TestDatabaseHelper.cleanDatabase();
   });
 
   it('debe rechazar acceso a /auth/me sin cabecera Authorization (HTTP 401)', async () => {

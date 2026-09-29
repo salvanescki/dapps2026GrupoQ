@@ -40,9 +40,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="search-bar-wrapper">
-      <span className="search-icon" aria-hidden="true">
-        🔍
-      </span>
       <input
         type="text"
         className="search-input"
