@@ -1,19 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: [CONSTITUTION_VERSION] (unratified template) → 1.0.0
+- Version change: 1.0.0 → 1.1.0
 - Ratification Date: 2026-09-13
-- Last Amended Date: 2026-09-13
-- Modified principles:
-  - PRINCIPLE_1_NAME → I. Arquitectura en 5 Capas y Backend Stateless
-  - PRINCIPLE_2_NAME → II. Rich Domain Model y Domain-Driven Design (DDD)
-  - PRINCIPLE_3_NAME → III. Estrategia de Testing Rigurosa y Testcontainers
-  - PRINCIPLE_4_NAME → IV. Política Estricta de Inmutabilidad de Tests
-  - PRINCIPLE_5_NAME → V. Convenciones de Idioma y Terminología Técnica
-- Added sections:
-  - SECTION_2_NAME → Stack Tecnológico y Estándares de Arquitectura
-  - SECTION_3_NAME → Definición de Terminado (Definition of Done - DoD)
-- Removed sections: None (all template sections populated).
-- Follow-up TODOs: None.
+- Last Amended Date: 2026-10-05
+- Modified principles: None
+- Added sections: None
+- Material additions / updates:
+  - Stack Tecnológico y Estándares de Arquitectura: Incorporación de Graphify (de Graphify Labs) como herramienta oficial de análisis y navegación del conocimiento del repositorio, restringida exclusivamente a su versión open source CLI.
+- Removed sections: None
+- Follow-up TODOs: None
 -->
 
 # Football Player Token Marketplace (Grupo Q) Constitution
@@ -61,6 +56,7 @@ El ecosistema tecnológico aprobado comprende:
 - **Testing:** Jest como runner de pruebas y Testcontainers para integración con PostgreSQL real.
 - **Documentación de API:** Todos los endpoints públicos y privados de la API REST **MUST** estar exhaustivamente documentados bajo el estándar OpenAPI (Swagger).
 - **Herramientas de Consumo:** La colección de Postman del repositorio **MUST** mantenerse sincronizada con los nuevos contratos y endpoints expuestos.
+- **Análisis y Navegación del Conocimiento:** Graphify (de Graphify Labs) se incorpora como herramienta oficial para el análisis y la navegación del conocimiento del repositorio. Su utilización **MUST** realizarse exclusivamente a través de su versión open source CLI.
 
 ## Definición de Terminado (Definition of Done - DoD)
 
@@ -79,4 +75,4 @@ Esta Constitución rige de manera soberana sobre cualquier otra práctica, conve
   - **MINOR:** Incorporación de nuevos principios, secciones o directrices sustanciales.
   - **PATCH:** Correcciones de redacción, aclaraciones o ajustes menores sin alteración de reglas.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-09-13
+**Version**: 1.1.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-10-05
