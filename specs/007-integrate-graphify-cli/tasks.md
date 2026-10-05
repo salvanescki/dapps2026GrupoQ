@@ -26,9 +26,9 @@
 
 **Purpose**: Project initialization, Git hygiene, and script scaffolding
 
-- [ ] T001 Configure Git exclusion rules for `graphify-out/`, `.graphify_*.json`, `.graphify_cache/`, and `.venv-graphify/` in `.gitignore`
-- [ ] T002 [P] Create root `package.json` with npm convenience script `"graphify": "./scripts/graphify.sh"` and repository metadata
-- [ ] T003 [P] Create project scripts directory and initialize executable runner shell script skeleton in `scripts/graphify.sh`
+- [X] T001 Configure Git exclusion rules for `graphify-out/`, `.graphify_*.json`, `.graphify_cache/`, and `.venv-graphify/` in `.gitignore`
+- [X] T002 [P] Create root `package.json` with npm convenience script `"graphify": "./scripts/graphify.sh"` and repository metadata
+- [X] T003 [P] Create project scripts directory and initialize executable runner shell script skeleton in `scripts/graphify.sh`
 
 ---
 
@@ -38,9 +38,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Implement Python runtime version validation (`python3 >= 3.10`) and package management detection (`pipx`, `uv`, or local isolated `.venv-graphify`) in `scripts/graphify.sh`
-- [ ] T005 [P] Implement offline safety enforcement, strict rejection of MCP flags/servers (`--mcp`, `graphify-mcp`), and rejection of cloud endpoints/hosted sync in `scripts/graphify.sh`
-- [ ] T006 [P] Implement command-line argument parsing, subcommands dispatcher (`scan`, `report`, `view`, `query`, `clean`), and `--help` CLI interface in `scripts/graphify.sh` per `specs/007-integrate-graphify-cli/contracts/cli-runner.contract.md`
+- [X] T004 Implement Python runtime version validation (`python3 >= 3.10`) and package management detection (`pipx`, `uv`, or local isolated `.venv-graphify`) in `scripts/graphify.sh`
+- [X] T005 [P] Implement offline safety enforcement, strict rejection of MCP flags/servers (`--mcp`, `graphify-mcp`), and rejection of cloud endpoints/hosted sync in `scripts/graphify.sh`
+- [X] T006 [P] Implement command-line argument parsing, subcommands dispatcher (`scan`, `report`, `view`, `query`, `clean`), and `--help` CLI interface in `scripts/graphify.sh` per `specs/007-integrate-graphify-cli/contracts/cli-runner.contract.md`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -54,10 +54,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement repository target paths configuration (`target_paths: ['backend/src', 'frontend/src', 'specs', 'docs', 'docker-compose.yml']`) and ignore rules (`ignore_patterns: ['node_modules/**', 'dist/**', 'build/**', '.git/**', 'coverage/**', 'logs/**', 'postgres_data/**']`) in `scripts/graphify.sh`
-- [ ] T008 [US1] Implement Tree-sitter AST scan execution and output directory management (`output_dir: graphify-out/`) in `scripts/graphify.sh`
-- [ ] T009 [US1] Implement deterministic mode (`deterministic_mode: true`) and clean rerun flag `--clean` (clearing cache and regenerating `graph.json`, `graph.html`, and `GRAPH_REPORT.md`) in `scripts/graphify.sh`
-- [ ] T010 [US1] Add error handling and return codes (0=success, 1=prerequisite failure, 2=scan failure) for the `scan` subcommand in `scripts/graphify.sh`
+- [X] T007 [US1] Implement repository target paths configuration (`target_paths: ['backend/src', 'frontend/src', 'specs', 'docs', 'docker-compose.yml']`) and ignore rules (`ignore_patterns: ['node_modules/**', 'dist/**', 'build/**', '.git/**', 'coverage/**', 'logs/**', 'postgres_data/**']`) in `scripts/graphify.sh`
+- [X] T008 [US1] Implement Tree-sitter AST scan execution and output directory management (`output_dir: graphify-out/`) in `scripts/graphify.sh`
+- [X] T009 [US1] Implement deterministic mode (`deterministic_mode: true`) and clean rerun flag `--clean` (clearing cache and regenerating `graph.json`, `graph.html`, and `GRAPH_REPORT.md`) in `scripts/graphify.sh`
+- [X] T010 [US1] Add error handling and return codes (0=success, 1=prerequisite failure, 2=scan failure) for the `scan` subcommand in `scripts/graphify.sh`
 
 **Checkpoint**: At this point, User Story 1 is fully functional and can generate local repository knowledge graphs as an independent MVP.
 
@@ -71,10 +71,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] Implement `report` subcommand in `scripts/graphify.sh` to output central nodes (god nodes), Leiden communities, and architectural metrics from `graphify-out/GRAPH_REPORT.md` to stdout
-- [ ] T012 [P] [US2] Implement `query <término>` subcommand in `scripts/graphify.sh` to search nodes and traverse relationships in `graphify-out/graph.json`
-- [ ] T013 [US2] Implement `view` subcommand in `scripts/graphify.sh` to launch a zero-dependency local HTTP static server or open `graphify-out/graph.html` in the default browser without internet access
-- [ ] T014 [US2] Create Antigravity Workspace Skill definition in `.agents/skills/graphify/SKILL.md` with trigger `/graphify`, prompt handling, offline rules, and architectural context navigation per `specs/007-integrate-graphify-cli/contracts/antigravity-skill.contract.md`
+- [X] T011 [P] [US2] Implement `report` subcommand in `scripts/graphify.sh` to output central nodes (god nodes), Leiden communities, and architectural metrics from `graphify-out/GRAPH_REPORT.md` to stdout
+- [X] T012 [P] [US2] Implement `query <término>` subcommand in `scripts/graphify.sh` to search nodes and traverse relationships in `graphify-out/graph.json`
+- [X] T013 [US2] Implement `view` subcommand in `scripts/graphify.sh` to launch a zero-dependency local HTTP static server or open `graphify-out/graph.html` in the default browser without internet access
+- [X] T014 [US2] Create Antigravity Workspace Skill definition in `.agents/skills/graphify/SKILL.md` with trigger `/graphify`, prompt handling, offline rules, and architectural context navigation per `specs/007-integrate-graphify-cli/contracts/antigravity-skill.contract.md`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 work independently, enabling terminal and IDE knowledge navigation.
 
@@ -88,10 +88,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Implement `clean` subcommand in `scripts/graphify.sh` to wipe `graphify-out/`, `.graphify_cache/`, `.venv-graphify/`, and temporary JSON analysis files
-- [ ] T016 [P] [US3] Configure npm execution script `"graphify": "./scripts/graphify.sh"` and executable file permissions (`chmod +x`) in `package.json` and `scripts/graphify.sh`
-- [ ] T017 [P] [US3] Create comprehensive developer and architecture documentation in Spanish in `docs/graphify.md` covering prerequisites, installation, subcommands, exclusions, and offline guarantees
-- [ ] T018 [US3] Update `README.md` with the new Graphify CLI section, architectural navigation instructions, and developer tooling guide in Spanish
+- [X] T015 [US3] Implement `clean` subcommand in `scripts/graphify.sh` to wipe `graphify-out/`, `.graphify_cache/`, `.venv-graphify/`, and temporary JSON analysis files
+- [X] T016 [P] [US3] Configure npm execution script `"graphify": "./scripts/graphify.sh"` and executable file permissions (`chmod +x`) in `package.json` and `scripts/graphify.sh`
+- [X] T017 [P] [US3] Create comprehensive developer and architecture documentation in Spanish in `docs/graphify.md` covering prerequisites, installation, subcommands, exclusions, and offline guarantees
+- [X] T018 [US3] Update `README.md` with the new Graphify CLI section, architectural navigation instructions, and developer tooling guide in Spanish
 
 **Checkpoint**: All user stories are now independently functional, integrated into npm scripts, and fully documented in Spanish.
 
@@ -101,10 +101,10 @@
 
 **Purpose**: Validation, hygiene, and non-regression guarantees across the entire repository
 
-- [ ] T019 Verify Git isolation rules by running `git status --short` after executing all Graphify subcommands to confirm zero untracked artifacts per SC-004
-- [ ] T020 [P] Run backend regression test suite via `npm --prefix backend run test:unit` to verify 100% test immutability and zero regressions (Constitution Principle IV)
-- [ ] T021 [P] Run frontend test suite via `npm --prefix frontend test` to verify zero regressions on frontend components
-- [ ] T022 Execute end-to-end quickstart validation following all scenarios in `specs/007-integrate-graphify-cli/quickstart.md`
+- [X] T019 Verify Git isolation rules by running `git status --short` after executing all Graphify subcommands to confirm zero untracked artifacts per SC-004
+- [X] T020 [P] Run backend regression test suite via `npm --prefix backend run test:unit` to verify 100% test immutability and zero regressions (Constitution Principle IV)
+- [X] T021 [P] Run frontend test suite via `npm --prefix frontend test` to verify zero regressions on frontend components
+- [X] T022 Execute end-to-end quickstart validation following all scenarios in `specs/007-integrate-graphify-cli/quickstart.md`
 
 ---
 

@@ -1,0 +1,19 @@
+{
+  "name": "dapps2026-grupo-q",
+  "version": "1.0.0",
+  "description": "Football Player Token Marketplace - Grupo Q",
+  "private": true,
+  "scripts": {
+    "graphify": "./scripts/graphify.sh"
+  },
+  "keywords": [
+    "dapps",
+    "marketplace",
+    "token",
+    "graphify",
+    "nestjs",
+    "react"
+  ],
+  "author": "Grupo Q",
+  "license": "UNLICENSED"
+}

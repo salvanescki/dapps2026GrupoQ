@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.git/
+coverage/
+logs/
+postgres_data/
+.venv-graphify/
+graphify-out/

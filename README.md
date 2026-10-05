@@ -224,6 +224,37 @@ Después, abrir `http://localhost:5173/login` y autenticar un usuario creado med
 ### General
 
 - [Colección Postman](postman/football_tokens_auth.postman_collection.json)
+- [Guía de Graphify CLI](docs/graphify.md)
+- [Especificación de integración de Graphify](specs/007-integrate-graphify-cli/spec.md)
+
+## Análisis y Navegación del Grafo de Conocimiento (Graphify CLI)
+
+El proyecto incluye la herramienta open source **Graphify CLI** (Graphify Labs) para extraer, navegar y consultar localmente el grafo de conocimiento del repositorio mediante análisis sintáctico AST (Tree-sitter):
+
+- **100% Offline y Seguro**: Sin dependencias SaaS ni sincronización en la nube.
+- **Sin MCP**: No requiere ni utiliza servidores bajo el protocolo MCP, respetando la Constitución v1.1.0 del proyecto.
+- **Workspace Skill para Antigravity IDE**: Permite consultar relaciones arquitectónicas y entidades con `/graphify`.
+
+### Comandos Rápidos
+
+```bash
+# Escanear el repositorio y generar el grafo local (graphify-out/)
+npm run graphify -- scan
+
+# Ver el resumen de comunidades y abstracciones núcleo (god nodes)
+npm run graphify -- report
+
+# Consultar relaciones de una entidad (ej. Jugador)
+npm run graphify -- query Jugador
+
+# Abrir el visualizador interactivo local
+npm run graphify -- view
+
+# Limpiar artefactos generados
+npm run graphify -- clean
+```
+
+Para más detalles sobre la arquitectura, aislamiento de Git y opciones avanzadas, consulte la [Guía completa de Graphify](docs/graphify.md).
 
 ## Próximas capacidades del dominio
 
@@ -237,3 +268,4 @@ La visión funcional completa contempla:
 - Logs estructurados, correlation IDs, health checks, métricas, auditoría inmutable, caché y scheduler.
 
 Estas capacidades están descritas en el documento de visión funcional entregado para el proyecto y se incorporarán por iteraciones.
+

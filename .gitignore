@@ -33,3 +33,10 @@ Thumbs.db
 # Python bytecode cache
 __pycache__/
 *.py[cod]
+
+# Graphify CLI outputs & local caches
+graphify-out/
+.graphify_*.json
+.graphify_cache/
+.venv-graphify/
+
