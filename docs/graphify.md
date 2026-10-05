@@ -30,17 +30,26 @@ En este repositorio, Graphify se encuentra integrado como herramienta oficial de
 
 El proyecto ofrece dos métodos complementarios para ejecutar Graphify:
 
-### Método A: Script Orquestador del Repositorio (Recomendado)
-El proyecto incluye un script en `scripts/graphify.sh` que detecta automáticamente si `graphify` está instalado globalmente o, en su defecto, provisiona un entorno virtual aislado (`.venv-graphify`) sin alterar el sistema operativo ni requerir privilegios de superusuario (`sudo`).
+### Método A: Runner Multiplataforma del Repositorio (Recomendado)
+El proyecto incluye un runner universal en Python (`scripts/graphify.py`), junto con wrappers para Unix (`scripts/graphify.sh`) y Windows (`scripts/graphify.cmd`). Detecta automáticamente si `graphify` está instalado globalmente o, en su defecto, provisiona un entorno virtual aislado (`.venv-graphify`) sin alterar el sistema operativo ni requerir privilegios de superusuario (`sudo`).
 
-Se puede invocar directamente:
-```bash
-./scripts/graphify.sh [subcomando] [opciones]
-```
-O a través del script de npm en la raíz:
+Se puede invocar mediante npm en cualquier sistema operativo (Linux, Windows, macOS):
 ```bash
 npm run graphify -- [subcomando] [opciones]
 ```
+O directamente con Python:
+```bash
+python scripts/graphify.py [subcomando] [opciones]
+```
+O mediante el wrapper de tu sistema:
+```bash
+# Linux / macOS:
+./scripts/graphify.sh [subcomando] [opciones]
+
+# Windows (CMD / PowerShell):
+.\scripts\graphify.cmd [subcomando] [opciones]
+```
+
 
 ### Método B: Instalación Global en la Estación de Trabajo
 Si prefieres disponer del binario `graphify` de forma global en tu terminal:

@@ -30,7 +30,7 @@ El usuario puede invocar esta skill mediante el comando `/graphify` seguido de u
 Cuando el usuario formule preguntas sobre la arquitectura general del sistema, relaciones entre capas o dependencias (por ejemplo: *"¿Qué componentes del backend dependen del agregador Jugador?"*, *"¿Cómo fluye la información entre el Controller y el Repository?"*, o *"¿Cuáles son las entidades más conectadas del sistema?"*):
 1. **Verificar existencia del grafo**: Comprobar si `graphify-out/graph.json` y `graphify-out/GRAPH_REPORT.md` existen en la raíz del repositorio.
 2. **Generar si no existe**: Si los artefactos no existen, ejecutar `./scripts/graphify.sh scan`.
-3. **Consultar el grafo**: Utilizar `./scripts/graphify.sh query <concepto>` o inspeccionar `graphify-out/GRAPH_REPORT.md`.
+3. **Consultar el grafo**: Utilizar `./scripts/graphify.py query <concepto>` (o `./scripts/graphify.sh query <concepto>`) o inspeccionar `graphify-out/GRAPH_REPORT.md`.
 4. **Responder estructuradamente**: Sintetizar los hallazgos respetando la arquitectura de 5 capas (Controller → Service → Model → Repository) sin volcar archivos JSON crudos en la respuesta.
 
 ---
@@ -42,7 +42,8 @@ Cuando el usuario formule preguntas sobre la arquitectura general del sistema, r
    - Queda terminantemente prohibido enviar datos o telemetría a `graphify.com`, endpoints en la nube o solicitar API keys externas.
 2. **Preservación del Context Window**:
    - Nunca vuelques el contenido íntegro de `graphify-out/graph.json` en el chat (el archivo contiene cientos de nodos y miles de relaciones).
-   - Utiliza `./scripts/graphify.sh query <término>` o filtra con scripts específicos de Python/Node para extraer únicamente la subred relevante.
+   - Utiliza `python scripts/graphify.py query <término>` (o `./scripts/graphify.sh query <término>`) o filtra con scripts específicos de Python/Node para extraer únicamente la subred relevante.
+
 3. **Convenciones Lingüísticas (Principio V)**:
    - Toda respuesta, análisis, resumen de nodos y explicaciones de arquitectura deben formularse en **español**.
    - Los términos técnicos internacionales (`Controller`, `Service`, `Repository`, `AST`, `Tree-sitter`, `Leiden`, `CLI`) se conservan en inglés.

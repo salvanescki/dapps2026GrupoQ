@@ -4,7 +4,7 @@
   "description": "Football Player Token Marketplace - Grupo Q",
   "private": true,
   "scripts": {
-    "graphify": "./scripts/graphify.sh"
+    "graphify": "node ./scripts/graphify-runner.js"
   },
   "keywords": [
     "dapps",
