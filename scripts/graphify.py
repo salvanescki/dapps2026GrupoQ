@@ -103,15 +103,24 @@ def resolve_graphify_binary() -> str:
     if VENV_DIR.exists():
         shutil.rmtree(VENV_DIR, ignore_errors=True)
 
-    # Intentar creación estándar con ensurepip
-    venv_created = False
+    # Comprobar disponibilidad de ensurepip antes de intentar creación estándar
+    has_ensurepip = False
     try:
-        venv.create(VENV_DIR, with_pip=True)
-        venv_created = True
-    except Exception:
-        venv_created = False
+        import ensurepip  # noqa: F401
+        has_ensurepip = True
+    except (ImportError, Exception):
+        has_ensurepip = False
 
-    # Si falló (ej. distribuciones minimalistas sin paquete python3-venv/ensurepip)
+    # Intentar creación estándar con ensurepip si está disponible en el sistema
+    venv_created = False
+    if has_ensurepip:
+        try:
+            venv.create(VENV_DIR, with_pip=True)
+            venv_created = True
+        except (Exception, SystemExit):
+            venv_created = False
+
+    # Si no hay ensurepip o falló (ej. distribuciones Debian/Ubuntu sin paquete python3-venv)
     if not venv_created or not pip_exe.exists():
         if VENV_DIR.exists():
             shutil.rmtree(VENV_DIR, ignore_errors=True)
