@@ -7,6 +7,7 @@ module.exports = {
   },
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
+  coverageReporters: ['text', ['lcov', { projectRoot: '..' }], 'html', 'json'],
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@src/(.*)$': '<rootDir>/src/$1',
