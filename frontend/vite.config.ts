@@ -26,5 +26,16 @@ export default defineConfig({
     setupFiles: './tests/setup.ts',
     css: true,
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', ['lcov', { projectRoot: path.resolve(__dirname, '..') }], 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/**/*.d.ts',
+      ],
+    },
   },
 });
