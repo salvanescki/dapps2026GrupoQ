@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CoverageThresholdsContract",
+  "description": "Especificación contractual de los umbrales de cobertura obligatorios según el Principio VI de la Constitution",
+  "type": "object",
+  "required": ["backend", "frontend"],
+  "properties": {
+    "backend": {
+      "type": "object",
+      "required": ["runner", "metrics", "enforcement"],
+      "properties": {
+        "runner": { "type": "string", "enum": ["jest"] },
+        "configFile": { "type": "string", "enum": ["backend/jest.config.js"] },
+        "command": { "type": "string", "enum": ["npm run test:cov"] },
+        "metrics": {
+          "type": "object",
+          "required": ["lines", "branches"],
+          "properties": {
+            "lines": { "type": "number", "minimum": 80, "maximum": 100 },
+            "branches": { "type": "number", "minimum": 80, "maximum": 100 },
+            "functions": { "type": "number", "minimum": 80, "maximum": 100 },
+            "statements": { "type": "number", "minimum": 80, "maximum": 100 }
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "properties": {
+            "exitOnThresholdFailure": { "type": "boolean", "const": true }
+          }
+        }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "required": ["runner", "metrics", "enforcement"],
+      "properties": {
+        "runner": { "type": "string", "enum": ["vitest"] },
+        "configFile": { "type": "string", "enum": ["frontend/vite.config.ts"] },
+        "command": { "type": "string", "enum": ["npm run test:coverage"] },
+        "metrics": {
+          "type": "object",
+          "required": ["lines", "branches"],
+          "properties": {
+            "lines": { "type": "number", "minimum": 80, "maximum": 100 },
+            "branches": { "type": "number", "minimum": 80, "maximum": 100 },
+            "functions": { "type": "number", "minimum": 80, "maximum": 100 },
+            "statements": { "type": "number", "minimum": 80, "maximum": 100 }
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "properties": {
+            "exitOnThresholdFailure": { "type": "boolean", "const": true }
+          }
+        }
+      }
+    }
+  }
+}
