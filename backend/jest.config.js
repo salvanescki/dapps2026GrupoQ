@@ -5,9 +5,24 @@ module.exports = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
-  collectCoverageFrom: ['src/**/*.(t|j)s'],
+  collectCoverageFrom: [
+    'src/**/*.(t|j)s',
+    '!src/main.ts',
+    '!src/**/*.module.ts',
+    '!src/**/*.dto.ts',
+    '!src/**/*.interface.ts',
+    '!src/config/database.config.ts',
+  ],
   coverageDirectory: './coverage',
   coverageReporters: ['text', ['lcov', { projectRoot: '..' }], 'html', 'json'],
+  coverageThreshold: {
+    global: {
+      lines: 80,
+      branches: 80,
+      functions: 80,
+      statements: 80,
+    },
+  },
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@src/(.*)$': '<rootDir>/src/$1',
