@@ -9,6 +9,10 @@ dist/
 build/
 *.tsbuildinfo
 coverage/
+**/coverage/
+coverage/unit/
+coverage/integration/
+coverage/e2e/
 *.lcov
 
 # Environment variables

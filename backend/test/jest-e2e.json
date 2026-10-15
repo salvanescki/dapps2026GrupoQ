@@ -1,0 +1,23 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testMatch": [
+    "<rootDir>/test/e2e/**/*.spec.ts",
+    "<rootDir>/test/e2e/**/*.e2e-spec.ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": ["src/controllers/**/*.ts"],
+  "coverageDirectory": "./coverage/e2e",
+  "coverageReporters": ["text", ["lcov", { "projectRoot": ".." }]],
+  "testEnvironment": "node",
+  "testTimeout": 60000,
+  "moduleNameMapper": {
+    "^@src/(.*)$": "<rootDir>/src/$1",
+    "^@domain/(.*)$": "<rootDir>/src/domain/$1",
+    "^@services/(.*)$": "<rootDir>/src/services/$1",
+    "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",
+    "^@data-access/(.*)$": "<rootDir>/src/data-access/$1"
+  }
+}
