@@ -22,12 +22,12 @@ describe('Button Component', () => {
     expect(button).toHaveClass('btn-secondary', 'btn-lg');
 
     rerender(
-      <Button variant="outline" size="sm">
+      <Button variant="ghost" size="sm">
         Accion
       </Button>
     );
     button = screen.getByRole('button', { name: /accion/i });
-    expect(button).toHaveClass('btn-outline', 'btn-sm');
+    expect(button).toHaveClass('btn-ghost', 'btn-sm');
   });
 
   it('debe mostrar estado de carga con spinner y texto alternativo', () => {

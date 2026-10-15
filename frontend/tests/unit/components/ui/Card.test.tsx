@@ -27,11 +27,11 @@ describe('Card Component', () => {
     expect(card).toHaveClass('card-solid', 'card-padding-lg');
 
     rerender(
-      <Card variant="outline" padding="sm" className="custom-extra" data-testid="card-test">
+      <Card variant="bordered" padding="sm" className="custom-extra" data-testid="card-test">
         Test
       </Card>
     );
     card = screen.getByTestId('card-test');
-    expect(card).toHaveClass('card-outline', 'card-padding-sm', 'custom-extra');
+    expect(card).toHaveClass('card-bordered', 'card-padding-sm', 'custom-extra');
   });
 });

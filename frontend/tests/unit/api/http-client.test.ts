@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { httpRequest, HttpError } from '../../../src/api/http-client';
 
 describe('http-client', () => {
-  const originalFetch = global.fetch;
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
   });
 
   describe('HttpError', () => {
@@ -26,7 +26,7 @@ describe('http-client', () => {
   describe('httpRequest', () => {
     it('debe realizar petición exitosa y parsear respuesta JSON', async () => {
       const mockData = { id: 1, name: 'Item Test' };
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(mockData),
@@ -35,13 +35,13 @@ describe('http-client', () => {
       const res = await httpRequest<typeof mockData>('/test-endpoint');
 
       expect(res).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledWith('/api/test-endpoint', {
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/test-endpoint', {
         headers: { 'Content-Type': 'application/json' },
       });
     });
 
     it('debe lanzar HttpError con codigo 0 si fetch falla a nivel de red', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+      globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
 
       await expect(httpRequest('/network-failure')).rejects.toThrow(
         'No fue posible conectar con el servidor. Verifique su conexión o intente más tarde.'
@@ -49,7 +49,7 @@ describe('http-client', () => {
     });
 
     it('debe extraer mensaje del servidor cuando es un string', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
         json: vi.fn().mockResolvedValue({ mensaje: 'Datos inválidos' }),
@@ -61,7 +61,7 @@ describe('http-client', () => {
     });
 
     it('debe extraer y unir mensajes del servidor cuando es un arreglo de strings', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
         json: vi.fn().mockResolvedValue({
@@ -75,7 +75,7 @@ describe('http-client', () => {
     });
 
     it('debe usar mensaje por defecto si la respuesta de error no es JSON o no tiene campo mensaje', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
