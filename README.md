@@ -91,9 +91,14 @@ Comandos disponibles:
 | `npm run start:prod` | Ejecuta `dist/main` |
 | `npm run format` | Formatea fuentes y tests con Prettier |
 | `npm test` | Ejecuta toda la suite Jest |
-| `npm run test:unit` | Tests unitarios de dominio |
-| `npm run test:integration` | Tests de integración con Testcontainers |
-| `npm run test:cov` | Tests backend con reporte de cobertura |
+| `npm run test:unit` | Tests unitarios aislados de dominio (< 10s, sin Docker/red) |
+| `npm run test:unit:cov` | Tests unitarios con reporte en `coverage/unit` |
+| `npm run test:integration` | Tests de integración con Testcontainers PostgreSQL |
+| `npm run test:integration:cov` | Tests de integración con reporte en `coverage/integration` |
+| `npm run test:e2e` | Tests E2E de flujos de endpoints completos con Testcontainers |
+| `npm run test:e2e:cov` | Tests E2E con reporte en `coverage/e2e` |
+| `npm run test:all` | Ejecuta secuencialmente todos los perfiles (`unit`, `integration`, `e2e`) |
+| `npm run test:cov` | Tests backend con reporte de cobertura global |
 
 ### Endpoints disponibles
 
@@ -154,30 +159,46 @@ Comandos disponibles:
 | `npm run preview` | Sirve el build localmente |
 | `npm test` | Ejecuta tests con Vitest |
 | `npm run test:watch` | Ejecuta Vitest en modo watch |
-| `npm run test:coverage` | Tests frontend con reporte de cobertura |
+| `npm run test:unit` | Tests unitarios puros (< 5s, sin dependencias de renderizado complejo) |
+| `npm run test:unit:coverage` | Tests unitarios con reporte en `coverage/unit` |
+| `npm run test:integration` | Tests de integración de componentes y vistas |
+| `npm run test:integration:coverage` | Tests de integración con reporte en `coverage/integration` |
+| `npm run test:e2e` | Tests E2E de flujos críticos de usuario (CUJ-01, CUJ-02, CUJ-03) |
+| `npm run test:e2e:coverage` | Tests E2E con reporte en `coverage/e2e` |
+| `npm run test:all` | Ejecuta secuencialmente todos los perfiles (`unit`, `integration`, `e2e`) |
+| `npm run test:coverage` | Tests frontend con reporte de cobertura global |
 
-## Pruebas y cobertura
+## Pruebas y cobertura por perfiles
 
-Ejecutar las validaciones del backend:
+El proyecto implementa una estrategia de testing estandarizada y segregada en tres perfiles independientes:
+
+| Perfil | Alcance Backend | Alcance Frontend | Requiere Docker | Directorio de Cobertura |
+| --- | --- | --- | --- | --- |
+| **Unitario** (`unit`) | Lógica pura de dominio (`src/domain/**/*.ts`) | Servicios puros y validaciones (`src/utils/`, `storage.service.ts`) | **No** (ejecución offline) | `./coverage/unit` |
+| **Integración** (`integration`) | Servicios y repositorios TypeORM (`src/services/`, `src/data-access/`) | Vistas y componentes con estado montados (`tests/integration/`, `tests/views/`) | **Sí** en backend (Testcontainers PostgreSQL) | `./coverage/integration` |
+| **End-to-End** (`e2e`) | Flujos HTTP completos en NestJS (`test/e2e/**/*.spec.ts`) | Recorridos integrales de usuario (CUJ-01, CUJ-02, CUJ-03) | **Sí** en backend (Testcontainers PostgreSQL) | `./coverage/e2e` |
+
+### Comandos de ejecución rápida
 
 ```bash
-cd backend
-npm run test:unit
-npm run test:integration
-npm run test:cov
+# Validar pruebas unitarias aisladas (feedback < 15 segundos sin Docker):
+cd backend && npm run test:unit
+cd ../frontend && npm run test:unit
+
+# Validar integración (requiere Docker Engine activo para Testcontainers en backend):
+cd backend && npm run test:integration:cov
+cd ../frontend && npm run test:integration:coverage
+
+# Validar flujos de extremo a extremo (E2E):
+cd backend && npm run test:e2e:cov
+cd ../frontend && npm run test:e2e:coverage
+
+# Ejecución secuencial integral de todos los perfiles:
+cd backend && npm run test:all
+cd ../frontend && npm run test:all
 ```
 
-Los tests de integración crean PostgreSQL efímeros con Testcontainers y requieren Docker disponible. No dependen de la base local del `docker-compose.yml`.
-
-Ejecutar las validaciones del frontend:
-
-```bash
-cd frontend
-npm test
-npm run test:coverage
-```
-
-Los reportes de cobertura se generan localmente en las carpetas de salida de Jest y Vitest. El badge de cobertura de este README indica cómo obtener la métrica local; no representa un porcentaje publicado en un servicio externo.
+Los reportes de cobertura LCOV se generan de forma aislada en `./coverage/unit/lcov.info`, `./coverage/integration/lcov.info` y `./coverage/e2e/lcov.info`, permitiendo su ingesta consolidada y sin colisiones en SonarQube Cloud según la propiedad `sonar.javascript.lcov.reportPaths`.
 
 ## Flujo de desarrollo completo
 
