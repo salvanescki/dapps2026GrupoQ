@@ -1,19 +1,13 @@
 <!--
 Sync Impact Report:
-- Version change: [CONSTITUTION_VERSION] (unratified template) → 1.0.0
+- Version change: 1.0.0 → 1.1.0
 - Ratification Date: 2026-09-13
-- Last Amended Date: 2026-09-13
-- Modified principles:
-  - PRINCIPLE_1_NAME → I. Arquitectura en 5 Capas y Backend Stateless
-  - PRINCIPLE_2_NAME → II. Rich Domain Model y Domain-Driven Design (DDD)
-  - PRINCIPLE_3_NAME → III. Estrategia de Testing Rigurosa y Testcontainers
-  - PRINCIPLE_4_NAME → IV. Política Estricta de Inmutabilidad de Tests
-  - PRINCIPLE_5_NAME → V. Convenciones de Idioma y Terminología Técnica
+- Last Amended Date: 2026-10-15
+- Modified principles: None (principles I to V preserved intact)
 - Added sections:
-  - SECTION_2_NAME → Stack Tecnológico y Estándares de Arquitectura
-  - SECTION_3_NAME → Definición de Terminado (Definition of Done - DoD)
-- Removed sections: None (all template sections populated).
-- Follow-up TODOs: None.
+  - VI. Calidad de Testing: Test Coverage Mínimo (nuevo principio de cobertura mínima del 80% de líneas y branches por stack, regla de no regresión en PRs y enforcement con ratchet en CI)
+- Removed sections: None
+- Follow-up TODOs: None
 -->
 
 # Football Player Token Marketplace (Grupo Q) Constitution
@@ -51,6 +45,12 @@ El código fuente y sus artefactos respetan un estándar lingüístico dual rigu
 - **Español:** Toda la documentación, especificaciones, comentarios explicativos y mensajes de error orientados al usuario o cliente API **MUST** redactarse en español. Los conceptos y nombres del dominio en identificadores de código (variables, métodos, entidades, tablas) **MUST** formularse en español sin acentos y sin la letra 'ñ' (ejemplo: `jugador`, `cotizacion`, `desempeno`, `activo`).
 - **Inglés:** Términos técnicos, patrones de diseño, componentes arquitectónicos, palabras reservadas y terminología normativa **MUST** mantenerse en inglés (ejemplo: `Controller`, `Service`, `Repository`, `Stateless`, `A.C.I.D.`, `Testcontainers`, `L1 Cache`).
 
+### VI. Calidad de Testing: Test Coverage Mínimo
+Todo el código de producción del proyecto **MUST** mantener estándares estrictos de cobertura de pruebas:
+- **Umbral Mínimo:** Todo el código de producción, tanto en backend como en frontend, **MUST** mantener un mínimo de 80% de cobertura de líneas (*lines*) y 80% de bifurcaciones (*branches*). Este umbral aplica de forma independiente y por separado a cada stack, quedando prohibido compensar mediante un promedio combinado.
+- **Cobertura de Nuevas Features:** Toda nueva funcionalidad o cambio **MUST** incluir sus tests correspondientes dentro del mismo PR y **MUST NOT** reducir el coverage global existente. Adicionalmente, el código nuevo incorporado **MUST** contar con al menos un 80% de cobertura propia en líneas y branches.
+- **Enforcement en CI & Ratchet:** El pipeline de CI **MUST** fallar de manera automática si el coverage cae por debajo del umbral vigente. Con el objetivo de alcanzar la meta final del 90%, los umbrales de CI podrán incrementarse de forma escalonada, pero bajo ninguna circunstancia se permitirá reducir el umbral respecto de su valor anterior (*ratchet effect*).
+
 ## Stack Tecnológico y Estándares de Arquitectura
 
 El ecosistema tecnológico aprobado comprende:
@@ -79,4 +79,4 @@ Esta Constitución rige de manera soberana sobre cualquier otra práctica, conve
   - **MINOR:** Incorporación de nuevos principios, secciones o directrices sustanciales.
   - **PATCH:** Correcciones de redacción, aclaraciones o ajustes menores sin alteración de reglas.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-09-13
+**Version**: 1.1.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-10-15
