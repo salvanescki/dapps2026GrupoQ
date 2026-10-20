@@ -21,7 +21,8 @@
     "test:integration:cov": "jest --config ./test/jest-integration.json --runInBand --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "test:e2e:cov": "jest --config ./test/jest-e2e.json --runInBand --coverage",
-    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e"
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "playwright:install": "playwright install chromium --with-deps"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.5",
@@ -38,6 +39,9 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.11.3",
+    "playwright": "^1.64.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.20"

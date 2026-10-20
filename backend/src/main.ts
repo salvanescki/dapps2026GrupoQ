@@ -26,6 +26,7 @@ async function bootstrap() {
     )
     .setVersion('1.0.0')
     .addBearerAuth()
+    .addTag('scraping', 'Gestión del proceso de scraping de estadísticas WhoScored')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
