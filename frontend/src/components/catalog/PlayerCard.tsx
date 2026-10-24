@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import type { Jugador, PosicionJugador } from '../../types/player.types';
 
-interface PlayerCardProps {
+export interface PlayerCardProps {
   player: Jugador;
+  onSelect?: (id: string) => void;
 }
 
 function getPositionBadgeClass(posicion: PosicionJugador): string {
@@ -20,11 +21,17 @@ function getPositionBadgeClass(posicion: PosicionJugador): string {
   }
 }
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onSelect }) => {
   const [crestError, setCrestError] = useState(false);
 
   return (
-    <article className="player-card" data-testid={`player-card-${player.id}`}>
+    <article
+      className="player-card"
+      data-testid={`player-card-${player.id}`}
+      onClick={() => onSelect?.(player.id)}
+      style={onSelect ? { cursor: 'pointer' } : undefined}
+      aria-label={`Ver detalle de ${player.nombre}`}
+    >
       <div className="player-card-header">
         <div className="player-identity">
           <h3 className="player-name">{player.nombre}</h3>

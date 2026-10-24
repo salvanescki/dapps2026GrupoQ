@@ -2,6 +2,7 @@ import type {
   FiltroJugadoresParams,
   RespuestaCatalogoJugadores,
   Jugador,
+  JugadorDetalle,
   OpcionesFiltroRespuesta,
 } from '../types/player.types';
 import { httpRequest } from './http-client';
@@ -26,8 +27,13 @@ export async function getPlayers(
   return httpRequest<RespuestaCatalogoJugadores>(endpoint);
 }
 
-export async function getPlayerById(id: string): Promise<Jugador> {
-  return httpRequest<Jugador>(`/players/${id}`);
+export async function getPlayerById(
+  id: string,
+  signal?: AbortSignal,
+): Promise<JugadorDetalle> {
+  return signal
+    ? httpRequest<JugadorDetalle>(`/players/${id}`, { signal })
+    : httpRequest<JugadorDetalle>(`/players/${id}`);
 }
 
 export async function getPlayerFilterOptions(): Promise<OpcionesFiltroRespuesta> {

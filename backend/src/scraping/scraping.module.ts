@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EstadisticaJugadorOrmEntity } from './data-access/estadistica-jugador.orm-entity';
 import { EjecucionScrapingOrmEntity } from './data-access/ejecucion-scraping.orm-entity';
@@ -18,7 +18,7 @@ import { PlayersModule } from '../players/players.module';
       EstadisticaJugadorOrmEntity,
       EjecucionScrapingOrmEntity,
     ]),
-    PlayersModule,
+    forwardRef(() => PlayersModule),
   ],
   controllers: [ScrapingController],
   providers: [
