@@ -20,6 +20,22 @@ import {
   getScrapingConfig,
 } from '../../config/scraping.config';
 
+export interface EquipoWhoScoredDescubierto {
+  whoScoredTeamId: string;
+  nombre: string;
+  url: string;
+}
+
+export interface EstructuraCompeticionWhoScored {
+  tournamentId: number;
+  seasonId: number;
+  stageId: number;
+  competencia: string;
+  etapa: string;
+  temporadaEtiqueta?: string;
+  equipos: EquipoWhoScoredDescubierto[];
+}
+
 export interface RawWhoScoredPlayerStats {
   whoScoredId: string;
   nombre: string;
@@ -102,6 +118,96 @@ export class WhoScoredPlaywrightService
         this.browser = null;
       }
     }
+  }
+
+  public async descubrirEstructuraCompeticion(
+    config: LigaScrapingConfig,
+  ): Promise<EstructuraCompeticionWhoScored> {
+    const browser = await this.obtenerNavegador();
+    const context: BrowserContext = await browser.newContext({
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      viewport: { width: 1920, height: 1080 },
+      locale: 'en-GB',
+    });
+
+    const page: Page = await context.newPage();
+    let competencia = config.nombreTorneo || config.liga;
+    let etapa = 'Regular Season';
+    let equipos: EquipoWhoScoredDescubierto[] = [];
+
+    try {
+      await this.configurarInterceptores(page);
+      const url = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
+      this.logger.log(`Descubriendo competición WhoScored (${config.liga}): ${url}`);
+
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+
+      try {
+        const titulo = await page.$eval(
+          'h1, .tournament-title, .header-title',
+          (el) => el.textContent?.trim() || '',
+        );
+        if (titulo) {
+          competencia = titulo.split(/\d{4}\/\d{4}/)[0].trim() || competencia;
+        }
+      } catch {
+        // Fallback a config
+      }
+
+      try {
+        const etapaTexto = await page.$eval(
+          '#stages option:checked, .stage-name',
+          (el) => el.textContent?.trim() || '',
+        );
+        if (etapaTexto) {
+          etapa = etapaTexto;
+        }
+      } catch {
+        // Fallback
+      }
+
+      try {
+        equipos = await page.$$eval(
+          'table.standings a.team-link, #standings a.team-link, a[href*="/Teams/"]',
+          (links) => {
+            const seen = new Set<string>();
+            const res: { whoScoredTeamId: string; nombre: string; url: string }[] = [];
+            for (const a of links) {
+              const href = a.getAttribute('href') || '';
+              const match = href.match(/\/Teams\/(\d+)/i);
+              if (match) {
+                const id = match[1];
+                if (!seen.has(id)) {
+                  seen.add(id);
+                  res.push({
+                    whoScoredTeamId: id,
+                    nombre: a.textContent?.trim() || '',
+                    url: href,
+                  });
+                }
+              }
+            }
+            return res;
+          },
+        );
+      } catch {
+        equipos = [];
+      }
+    } finally {
+      await page.close().catch(() => null);
+      await context.close().catch(() => null);
+    }
+
+    return {
+      tournamentId: config.tournamentId,
+      seasonId: config.seasonId,
+      stageId: config.stageId,
+      competencia,
+      etapa,
+      temporadaEtiqueta: this.scrapingConfig.seasonLabel,
+      equipos,
+    };
   }
 
   private async configurarInterceptores(page: Page): Promise<void> {

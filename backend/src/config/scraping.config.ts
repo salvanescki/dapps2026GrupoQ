@@ -8,21 +8,24 @@ export interface LigaScrapingConfig {
   tournamentId: number;
   seasonId: number;
   stageId: number;
+  nombreTorneo?: string;
 }
 
 export interface ScrapingConfig {
   delayMinMs: number;
   delayMaxMs: number;
   seasonLabel: string;
+  minJugadoresPorLiga: number;
+  minJugadoresGlobal: number;
   leagueConfigs: LigaScrapingConfig[];
 }
 
 export const DEFAULT_LEAGUE_CONFIGS: LigaScrapingConfig[] = [
-  { liga: 'PL', regionId: 252, tournamentId: 2, seasonId: 12345, stageId: 22345 },
-  { liga: 'LL', regionId: 206, tournamentId: 4, seasonId: 12346, stageId: 22346 },
-  { liga: 'SA', regionId: 108, tournamentId: 5, seasonId: 12347, stageId: 22347 },
-  { liga: 'BL', regionId: 81, tournamentId: 3, seasonId: 12348, stageId: 22348 },
-  { liga: 'L1', regionId: 74, tournamentId: 22, seasonId: 12349, stageId: 22349 },
+  { liga: 'PL', regionId: 252, tournamentId: 2, seasonId: 12345, stageId: 22345, nombreTorneo: 'Premier League' },
+  { liga: 'LL', regionId: 206, tournamentId: 4, seasonId: 12346, stageId: 22346, nombreTorneo: 'LaLiga' },
+  { liga: 'SA', regionId: 108, tournamentId: 5, seasonId: 12347, stageId: 22347, nombreTorneo: 'Serie A' },
+  { liga: 'BL', regionId: 81, tournamentId: 3, seasonId: 12348, stageId: 22348, nombreTorneo: 'Bundesliga' },
+  { liga: 'L1', regionId: 74, tournamentId: 22, seasonId: 12349, stageId: 22349, nombreTorneo: 'Ligue 1' },
 ];
 
 export const getScrapingConfig = (): ScrapingConfig => {
@@ -37,9 +40,11 @@ export const getScrapingConfig = (): ScrapingConfig => {
   }
 
   return {
-    delayMinMs: Number.parseInt(process.env.WHOSCORED_DELAY_MIN_MS || '2000', 10),
-    delayMaxMs: Number.parseInt(process.env.WHOSCORED_DELAY_MAX_MS || '5000', 10),
+    delayMinMs: Number.parseInt(process.env.WHOSCORED_DELAY_MIN_MS || '1500', 10),
+    delayMaxMs: Number.parseInt(process.env.WHOSCORED_DELAY_MAX_MS || '3500', 10),
     seasonLabel: process.env.WHOSCORED_SEASON_LABEL || '2025/2026',
+    minJugadoresPorLiga: Number.parseInt(process.env.WHOSCORED_MIN_JUGADORES_LIGA || '350', 10),
+    minJugadoresGlobal: Number.parseInt(process.env.WHOSCORED_MIN_JUGADORES_GLOBAL || '2000', 10),
     leagueConfigs,
   };
 };

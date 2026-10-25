@@ -108,12 +108,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Manejo de discrepancias de temporada con registro de advertencia sin abortar el proceso.
 
 ### Tests para Bloque 2
-- [ ] T015 [P] [US1] Crear test unitario en `backend/test/unit/scraping/whoscored-descubrimiento.spec.ts` con fixtures de DOM para validar extracción de `tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa` y lista de equipos (`whoScoredTeamId`, `nombre`, `url`) para Premier League, La Liga, Serie A, Bundesliga y Ligue 1.
+- [X] T015 [P] [US1] Crear test unitario en `backend/test/unit/scraping/whoscored-descubrimiento.spec.ts` con fixtures de DOM para validar extracción de `tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa` y lista de equipos (`whoScoredTeamId`, `nombre`, `url`) para Premier League, La Liga, Serie A, Bundesliga y Ligue 1.
 
 ### Implementación para Bloque 2
-- [ ] T016 [P] [US1] Configurar parámetros base de las 5 ligas en `backend/src/config/scraping.config.ts`: definir hints de torneos, temporada deportiva objetivo (`2025/2026`), pausas humanas configurables (1.5s - 3.5s) y umbrales operativos por liga (mínimo 350 jugadores por liga, mínimo 2000 jugadores global).
-- [ ] T017 [US1] Implementar métodos de descubrimiento dinámico en `backend/src/scraping/services/whoscored-playwright.service.ts`: navegación a URL de torneo, extracción de metadatos de torneo/etapa y resolución de la nómina de equipos participantes retornando interfaz tipada `EstructuraCompeticionWhoScored`.
-- [ ] T018 [US1] Ejecutar y validar tests del Bloque 2: verificar que `npm run test:unit -- test/unit/scraping/whoscored-descubrimiento.spec.ts` pase al 100%.
+- [X] T016 [P] [US1] Configurar parámetros base de las 5 ligas en `backend/src/config/scraping.config.ts`: definir hints de torneos, temporada deportiva objetivo (`2025/2026`), pausas humanas configurables (1.5s - 3.5s) y umbrales operativos por liga (mínimo 350 jugadores por liga, mínimo 2000 jugadores global).
+- [X] T017 [US1] Implementar métodos de descubrimiento dinámico en `backend/src/scraping/services/whoscored-playwright.service.ts`: navegación a URL de torneo, extracción de metadatos de torneo/etapa y resolución de la nómina de equipos participantes retornando interfaz tipada `EstructuraCompeticionWhoScored`.
+- [X] T018 [US1] Ejecutar y validar tests del Bloque 2: verificar que `npm run test:unit -- test/unit/scraping/whoscored-descubrimiento.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 2**: Descubrimiento dinámico de competición y equipos operativo. Listo para Commit 2.
 
