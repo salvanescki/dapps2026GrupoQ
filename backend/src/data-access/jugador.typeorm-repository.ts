@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Jugador, CriterioFiltroJugador } from '../domain/jugador.entity';
 import {
   IJugadorRepository,
@@ -16,19 +16,27 @@ export class JugadorTypeOrmRepository implements IJugadorRepository {
     private readonly ormRepository: Repository<JugadorOrmEntity>,
   ) {}
 
-  async guardar(jugador: Jugador): Promise<Jugador> {
+  async guardar(
+    jugador: Jugador,
+    transactionalEntityManager?: EntityManager,
+  ): Promise<Jugador> {
+    const manager = transactionalEntityManager || this.ormRepository.manager;
     const ormEntity = JugadorMapper.toOrm(jugador);
-    const guardado = await this.ormRepository.save(ormEntity);
+    const guardado = await manager.save(ormEntity);
     return JugadorMapper.toDomain(guardado);
   }
 
-  async guardarMuchos(jugadores: Jugador[]): Promise<void> {
+  async guardarMuchos(
+    jugadores: Jugador[],
+    transactionalEntityManager?: EntityManager,
+  ): Promise<void> {
+    if (!jugadores || jugadores.length === 0) return;
+    const manager = transactionalEntityManager || this.ormRepository.manager;
     const ormEntities = jugadores.map((j) => JugadorMapper.toOrm(j));
-    // Guardar por lotes de 100 para optimizar rendimiento de inserción masiva
     const batchSize = 100;
     for (let i = 0; i < ormEntities.length; i += batchSize) {
       const batch = ormEntities.slice(i, i + batchSize);
-      await this.ormRepository.save(batch);
+      await manager.save(batch);
     }
   }
 

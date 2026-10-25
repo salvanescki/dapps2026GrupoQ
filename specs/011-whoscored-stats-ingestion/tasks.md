@@ -266,12 +266,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Idempotencia estricta comprobada en PostgreSQL real: re-ejecución idéntica produce 0 registros duplicados.
 
 ### Tests para Bloque 7
-- [ ] T035 [P] [US6] Crear test de integración con Testcontainers en `backend/test/integration/scraping/scraping-publicacion-liga.integration.spec.ts` para verificar publicación atómica en PostgreSQL real: commit transaccional por liga, aislamiento de fallos (forzar error en 1 liga y verificar que las restantes se publican y la fallida queda inalterada), e idempotencia estricta (re-ejecutar corrida idéntica comprobando 0 inserciones duplicadas).
+- [X] T035 [P] [US6] Crear test de integración con Testcontainers en `backend/test/integration/scraping/scraping-publicacion-liga.integration.spec.ts` para verificar publicación atómica en PostgreSQL real: commit transaccional por liga, aislamiento de fallos (forzar error en 1 liga y verificar que las restantes se publican y la fallida queda inalterada), e idempotencia estricta (re-ejecutar corrida idéntica comprobando 0 inserciones duplicadas).
 
 ### Implementación para Bloque 7
-- [ ] T036 [US6] Extender `backend/src/data-access/jugador.typeorm-repository.ts` para soportar parámetro opcional `transactionalEntityManager?: EntityManager` en los métodos de persistencia y actualización de ficha de jugador.
-- [ ] T037 [US6] Implementar orquestación transaccional por liga con `DataSource.transaction` en `backend/src/scraping/services/scraping.service.ts`: coordinar la persistencia de estadísticas asociadas y jugadores enriquecidos delegando en `EstadisticaJugadorTypeOrmRepository.guardarMuchos` y `JugadorTypeOrmRepository` bajo el ámbito del `EntityManager` transaccional únicamente para ligas con validaciones aprobadas.
-- [ ] T038 [US6] Ejecutar y validar tests del Bloque 7: verificar que `npm run test:integration -- test/integration/scraping/scraping-publicacion-liga.integration.spec.ts` pase al 100%.
+- [X] T036 [US6] Extender `backend/src/data-access/jugador.typeorm-repository.ts` para soportar parámetro opcional `transactionalEntityManager?: EntityManager` en los métodos de persistencia y actualización de ficha de jugador.
+- [X] T037 [US6] Implementar orquestación transaccional por liga con `DataSource.transaction` en `backend/src/scraping/services/scraping.service.ts`: coordinar la persistencia de estadísticas asociadas y jugadores enriquecidos delegando en `EstadisticaJugadorTypeOrmRepository.guardarMuchos` y `JugadorTypeOrmRepository` bajo el ámbito del `EntityManager` transaccional únicamente para ligas con validaciones aprobadas.
+- [X] T038 [US6] Ejecutar y validar tests del Bloque 7: verificar que `npm run test:integration -- test/integration/scraping/scraping-publicacion-liga.integration.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 7**: Publicación transaccional e idempotente por liga validada en PostgreSQL. Listo para Commit 7.
 

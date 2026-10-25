@@ -1,6 +1,7 @@
 import { Jugador, CriterioFiltroJugador } from './jugador.entity';
 import { Equipo } from './equipo.entity';
 import { Liga } from './liga.entity';
+import type { EntityManager } from 'typeorm';
 
 export interface ResultadoBusquedaJugadores {
   items: Jugador[];
@@ -8,8 +9,14 @@ export interface ResultadoBusquedaJugadores {
 }
 
 export interface IJugadorRepository {
-  guardar(jugador: Jugador): Promise<Jugador>;
-  guardarMuchos(jugadores: Jugador[]): Promise<void>;
+  guardar(
+    jugador: Jugador,
+    transactionalEntityManager?: EntityManager,
+  ): Promise<Jugador>;
+  guardarMuchos(
+    jugadores: Jugador[],
+    transactionalEntityManager?: EntityManager,
+  ): Promise<void>;
   buscarPorId(id: string): Promise<Jugador | null>;
   buscarPorExternalId(externalId: number): Promise<Jugador | null>;
   buscarConFiltros(criterio: CriterioFiltroJugador): Promise<ResultadoBusquedaJugadores>;

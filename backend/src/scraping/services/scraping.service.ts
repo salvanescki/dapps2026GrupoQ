@@ -4,7 +4,10 @@ import {
   Logger,
   NotFoundException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import {
   WhoScoredPlaywrightService,
   RawWhoScoredPlayerStats,
@@ -68,8 +71,40 @@ export class ScrapingService {
     private readonly ejecucionRepo: IEjecucionScrapingRepository,
     @Inject(I_JUGADOR_REPOSITORY)
     private readonly jugadorRepo: IJugadorRepository,
+    @Optional()
+    @InjectDataSource()
+    private readonly dataSource?: DataSource,
   ) {
     this.config = getScrapingConfig();
+  }
+
+  public async publicarLigaTransaccional(
+    estadisticas: EstadisticaJugador[],
+    jugadoresEnriquecidos: Jugador[] = [],
+  ): Promise<void> {
+    if (this.dataSource && this.dataSource.isInitialized) {
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        if (
+          jugadoresEnriquecidos.length > 0 &&
+          typeof this.jugadorRepo?.guardarMuchos === 'function'
+        ) {
+          await this.jugadorRepo.guardarMuchos(jugadoresEnriquecidos, manager);
+        }
+        if (estadisticas.length > 0) {
+          await this.estadisticaRepo.guardarMuchos(estadisticas, manager);
+        }
+      });
+    } else {
+      if (
+        jugadoresEnriquecidos.length > 0 &&
+        typeof this.jugadorRepo?.guardarMuchos === 'function'
+      ) {
+        await this.jugadorRepo.guardarMuchos(jugadoresEnriquecidos);
+      }
+      if (estadisticas.length > 0) {
+        await this.estadisticaRepo.guardarMuchos(estadisticas);
+      }
+    }
   }
 
   public deduplicarYConsolidarJugadores(records: RawWhoScoredPlayerStats[]): {
@@ -264,13 +299,43 @@ export class ScrapingService {
         const jugadoresLocales = busquedaLocal.items;
 
         // Extraer datos WhoScored
-        const rawStatsMap = await this.playwrightService.extraerEstadisticasLiga(
-          leagueConfig,
+        let rawStatsMap: Map<string, RawWhoScoredPlayerStats>;
+        if (typeof this.playwrightService.extraerEstadisticasLigaPorEquipos === 'function') {
+          try {
+            const resExtraccion = await this.playwrightService.extraerEstadisticasLigaPorEquipos(leagueConfig);
+            rawStatsMap = resExtraccion.jugadores;
+          } catch {
+            rawStatsMap = await this.playwrightService.extraerEstadisticasLiga(leagueConfig);
+          }
+        } else {
+          rawStatsMap = await this.playwrightService.extraerEstadisticasLiga(leagueConfig);
+        }
+
+        // Deduplicación por whoScoredPlayerId
+        const { deduplicados } = this.deduplicarYConsolidarJugadores(
+          Array.from(rawStatsMap.values()),
         );
 
-        const estadisticasAGuardar: EstadisticaJugador[] = [];
+        // Validación de salvaguarda de cobertura si está configurada (minJugadoresPorLiga > 0)
+        if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 0) {
+          const valCob = this.validarCoberturaLiga(deduplicados, this.config.minJugadoresPorLiga);
+          if (!valCob.valida) {
+            this.logger.warn(
+              `Liga ${leagueConfig.liga} rechazada por cobertura insuficiente (${valCob.totalConMinutos} < ${this.config.minJugadoresPorLiga})`,
+            );
+            ejecucion.registrarError({
+              liga: leagueConfig.liga,
+              mensaje: `Liga rechazada por cobertura insuficiente (${valCob.totalConMinutos} jugadores con minutos)`,
+              timestamp: new Date(),
+            });
+            continue;
+          }
+        }
 
-        for (const [rawId, raw] of rawStatsMap.entries()) {
+        const estadisticasAGuardar: EstadisticaJugador[] = [];
+        const jugadoresEnriquecidos: Jugador[] = [];
+
+        for (const raw of deduplicados) {
           const matchLocal = this.normalizador.buscarCoincidencia(
             raw.nombre,
             raw.equipoNombre,
@@ -289,11 +354,18 @@ export class ScrapingService {
             continue;
           }
 
+          if (!matchLocal.whoScoredPlayerId && raw.whoScoredId) {
+            matchLocal.asociarWhoScored(raw.whoScoredId);
+            jugadoresEnriquecidos.push(matchLocal);
+          }
+
           try {
             const entidad = EstadisticaJugador.crear({
               jugadorId: matchLocal.id,
               temporada: this.config.seasonLabel,
               liga: leagueConfig.liga,
+              competencia: leagueConfig.nombreTorneo || leagueConfig.liga,
+              etapa: 'Regular Season',
               fuente: 'whoscored',
               fechaActualizacion: new Date(),
               partidosJugados: raw.partidosJugados ?? 0,
@@ -335,8 +407,8 @@ export class ScrapingService {
           }
         }
 
-        if (estadisticasAGuardar.length > 0) {
-          await this.estadisticaRepo.guardarMuchos(estadisticasAGuardar);
+        if (estadisticasAGuardar.length > 0 || jugadoresEnriquecidos.length > 0) {
+          await this.publicarLigaTransaccional(estadisticasAGuardar, jugadoresEnriquecidos);
         }
       }
 
