@@ -5,7 +5,11 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { WhoScoredPlaywrightService } from './whoscored-playwright.service';
+import {
+  WhoScoredPlaywrightService,
+  RawWhoScoredPlayerStats,
+  IncidenciaScraping,
+} from './whoscored-playwright.service';
 import { NormalizadorJugadorService } from './normalizador-jugador.service';
 import {
   IEstadisticaJugadorRepository,
@@ -57,6 +61,90 @@ export class ScrapingService {
     private readonly jugadorRepo: IJugadorRepository,
   ) {
     this.config = getScrapingConfig();
+  }
+
+  public deduplicarYConsolidarJugadores(records: RawWhoScoredPlayerStats[]): {
+    deduplicados: RawWhoScoredPlayerStats[];
+    incidencias: IncidenciaScraping[];
+  } {
+    const agrupados = new Map<string, RawWhoScoredPlayerStats[]>();
+    for (const r of records) {
+      const key = r.whoScoredId;
+      if (!agrupados.has(key)) {
+        agrupados.set(key, []);
+      }
+      agrupados.get(key)!.push(r);
+    }
+
+    const deduplicados: RawWhoScoredPlayerStats[] = [];
+    const incidencias: IncidenciaScraping[] = [];
+
+    for (const [whoScoredId, lista] of agrupados.entries()) {
+      if (lista.length === 1) {
+        deduplicados.push(lista[0]);
+      } else {
+        const ordenados = [...lista].sort(
+          (a, b) => (b.minutosJugados ?? 0) - (a.minutosJugados ?? 0),
+        );
+        const top1Min = ordenados[0].minutosJugados ?? 0;
+        const top2Min = ordenados[1].minutosJugados ?? 0;
+
+        if (top1Min === top2Min) {
+          this.logger.warn(
+            `Transferencia ambigua detectada para jugador WhoScored ${whoScoredId} (${ordenados[0].nombre}) con minutos idénticos (${top1Min}). Exclusión preventiva.`,
+          );
+          incidencias.push({
+            tipo: 'TRANSFERENCIA_AMBIGUA_EXCLUIDA',
+            equipoId: whoScoredId,
+            equipoNombre: ordenados[0].nombre,
+            detalle: `Jugador con múltiples registros WhoScored y minutos idénticos (${top1Min}) sin contexto cronológico confiable. Excluido preventivamente.`,
+          });
+        } else {
+          deduplicados.push(ordenados[0]);
+        }
+      }
+    }
+
+    return { deduplicados, incidencias };
+  }
+
+  public validarCoberturaLiga(
+    jugadores: RawWhoScoredPlayerStats[],
+    minRequerido = 350,
+  ): { valida: boolean; totalConMinutos: number; motivo?: string } {
+    const totalConMinutos = jugadores.filter(
+      (j) => (j.minutosJugados ?? 0) > 0,
+    ).length;
+
+    if (totalConMinutos < minRequerido) {
+      return {
+        valida: false,
+        totalConMinutos,
+        motivo: 'rechazada_cobertura_insuficiente',
+      };
+    }
+
+    return {
+      valida: true,
+      totalConMinutos,
+    };
+  }
+
+  public validarCoberturaGlobal(
+    totalConMinutosGlobal: number,
+    minRequerido = 2000,
+  ): { valida: boolean; totalConMinutos: number; motivo?: string } {
+    if (totalConMinutosGlobal < minRequerido) {
+      return {
+        valida: false,
+        totalConMinutos: totalConMinutosGlobal,
+        motivo: 'rechazada_cobertura_global_insuficiente',
+      };
+    }
+    return {
+      valida: true,
+      totalConMinutos: totalConMinutosGlobal,
+    };
   }
 
   public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {

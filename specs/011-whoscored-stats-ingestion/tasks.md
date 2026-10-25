@@ -202,12 +202,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Verificación de umbral global >= 2.000 jugadores en corrida de 5 ligas.
 
 ### Tests para Bloque 5
-- [ ] T027 [P] [US4] Crear test unitario en `backend/test/unit/scraping/scraping-agregacion-deduplicacion.spec.ts` con fixtures determinísticos: prueba de jugador transferido con métricas acumuladas oficiales (sin sumar de nuevo), prueba de jugador transferido ambiguo sin contexto cronológico ni diferencia de minutos (exclusión preventiva e incidencia), rechazo de liga con 349 jugadores por cobertura insuficiente, y aprobación de liga con >= 350 jugadores.
+- [X] T027 [P] [US4] Crear test unitario en `backend/test/unit/scraping/scraping-agregacion-deduplicacion.spec.ts` con fixtures determinísticos: prueba de jugador transferido con métricas acumuladas oficiales (sin sumar de nuevo), prueba de jugador transferido ambiguo sin contexto cronológico ni diferencia de minutos (exclusión preventiva e incidencia), rechazo de liga con 349 jugadores por cobertura insuficiente, y aprobación de liga con >= 350 jugadores.
 
 ### Implementación para Bloque 5
-- [ ] T028 [US4] Implementar agregación y deduplicación por `whoScoredPlayerId` en `backend/src/scraping/services/scraping.service.ts`: consolidación de registros por liga, resolución de transferencias conservando acumulados oficiales, evaluación de club con mayor cantidad de minutos como último fallback explícito, y exclusión preventiva con anotación de incidencia ante ambigüedad sin inventar datos.
-- [ ] T029 [US4] Implementar validación de salvaguarda de cobertura mínima en `backend/src/scraping/services/scraping.service.ts`: verificar que la nómina consolidada cuente con al menos 350 jugadores con minutos para la liga (y 2000 jugadores en corrida global), marcando la liga como `rechazada_cobertura_insuficiente` y bloqueando el avance a publicación ante extracciones truncadas.
-- [ ] T030 [US4] Ejecutar y validar tests del Bloque 5: verificar que `npm run test:unit -- test/unit/scraping/scraping-agregacion-deduplicacion.spec.ts` pase al 100%.
+- [X] T028 [US4] Implementar agregación y deduplicación por `whoScoredPlayerId` en `backend/src/scraping/services/scraping.service.ts`: consolidación de registros por liga, resolución de transferencias conservando acumulados oficiales, evaluación de club con mayor cantidad de minutos como último fallback explícito, y exclusión preventiva con anotación de incidencia ante ambigüedad sin inventar datos.
+- [X] T029 [US4] Implementar validación de salvaguarda de cobertura mínima en `backend/src/scraping/services/scraping.service.ts`: verificar que la nómina consolidada cuente con al menos 350 jugadores con minutos para la liga (y 2000 jugadores en corrida global), marcando la liga como `rechazada_cobertura_insuficiente` y bloqueando el avance a publicación ante extracciones truncadas.
+- [X] T030 [US4] Ejecutar y validar tests del Bloque 5: verificar que `npm run test:unit -- test/unit/scraping/scraping-agregacion-deduplicacion.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 5**: Agregación, deduplicación rigurosa y salvaguardas de cobertura por liga operativas. Listo para Commit 5.
 
