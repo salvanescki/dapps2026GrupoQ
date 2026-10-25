@@ -93,6 +93,13 @@ export class EjecucionScraping {
     this._detalle.push(error);
   }
 
+  public registrarDetalle(item: any): void {
+    if (this._estado !== 'en_progreso') {
+      throw new ReglaDeNegocioException('Solo se pueden registrar detalles en una ejecución en progreso.');
+    }
+    this._detalle.push(item);
+  }
+
   public finalizarExitoso(fin: Date = new Date()): void {
     if (this._estado !== 'en_progreso') {
       throw new ReglaDeNegocioException(`No se puede finalizar exitosamente una ejecución con estado '${this._estado}'.`);

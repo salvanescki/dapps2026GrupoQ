@@ -3,8 +3,10 @@ import {
   OnModuleInit,
   OnModuleDestroy,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { chromium } from 'playwright-extra';
+import { ScrapingCacheService } from './scraping-cache.service';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stealthPluginPkg = require('puppeteer-extra-plugin-stealth');
@@ -92,7 +94,9 @@ export class WhoScoredPlaywrightService
   private browser: Browser | null = null;
   private scrapingConfig: ScrapingConfig;
 
-  constructor() {
+  constructor(
+    @Optional() private readonly cacheService?: ScrapingCacheService,
+  ) {
     this.scrapingConfig = getScrapingConfig();
   }
 
@@ -140,6 +144,16 @@ export class WhoScoredPlaywrightService
   public async descubrirEstructuraCompeticion(
     config: LigaScrapingConfig,
   ): Promise<EstructuraCompeticionWhoScored> {
+    if (this.cacheService) {
+      const cached = await this.cacheService.obtenerEstructuraCompeticion(
+        config.nombreTorneo || config.liga,
+        this.scrapingConfig.seasonLabel,
+      );
+      if (cached) {
+        return cached;
+      }
+    }
+
     const browser = await this.obtenerNavegador();
     const context: BrowserContext = await browser.newContext({
       userAgent:
@@ -216,7 +230,7 @@ export class WhoScoredPlaywrightService
       await context.close().catch(() => null);
     }
 
-    return {
+    const resEstructura: EstructuraCompeticionWhoScored = {
       tournamentId: config.tournamentId,
       seasonId: config.seasonId,
       stageId: config.stageId,
@@ -225,6 +239,16 @@ export class WhoScoredPlaywrightService
       temporadaEtiqueta: this.scrapingConfig.seasonLabel,
       equipos,
     };
+
+    if (this.cacheService && equipos.length > 0) {
+      await this.cacheService.guardarEstructuraCompeticion(
+        config.nombreTorneo || config.liga,
+        this.scrapingConfig.seasonLabel,
+        resEstructura,
+      );
+    }
+
+    return resEstructura;
   }
 
   public async consultarFeedEquipo(

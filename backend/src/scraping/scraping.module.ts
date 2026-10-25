@@ -8,6 +8,7 @@ import { I_ESTADISTICA_JUGADOR_REPOSITORY } from './domain/estadistica-jugador.r
 import { I_EJECUCION_SCRAPING_REPOSITORY } from './domain/ejecucion-scraping.repository.interface';
 import { WhoScoredPlaywrightService } from './services/whoscored-playwright.service';
 import { NormalizadorJugadorService } from './services/normalizador-jugador.service';
+import { ScrapingCacheService } from './services/scraping-cache.service';
 import { ScrapingService } from './services/scraping.service';
 import { ScrapingController } from './controllers/scraping.controller';
 import { PlayersModule } from '../players/players.module';
@@ -22,6 +23,7 @@ import { PlayersModule } from '../players/players.module';
   ],
   controllers: [ScrapingController],
   providers: [
+    ScrapingCacheService,
     WhoScoredPlaywrightService,
     NormalizadorJugadorService,
     ScrapingService,
@@ -37,6 +39,7 @@ import { PlayersModule } from '../players/players.module';
     EjecucionScrapingTypeOrmRepository,
   ],
   exports: [
+    ScrapingCacheService,
     WhoScoredPlaywrightService,
     NormalizadorJugadorService,
     ScrapingService,

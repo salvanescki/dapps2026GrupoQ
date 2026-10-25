@@ -410,6 +410,15 @@ export class ScrapingService {
         if (estadisticasAGuardar.length > 0 || jugadoresEnriquecidos.length > 0) {
           await this.publicarLigaTransaccional(estadisticasAGuardar, jugadoresEnriquecidos);
         }
+
+        ejecucion.registrarDetalle({
+          liga: leagueConfig.liga,
+          descubiertos: rawStatsMap.size,
+          deduplicados: deduplicados.length,
+          asociados: estadisticasAGuardar.length,
+          descartados: deduplicados.length - estadisticasAGuardar.length,
+          timestamp: new Date(),
+        });
       }
 
       ejecucion.finalizarExitoso();
