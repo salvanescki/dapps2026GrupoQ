@@ -139,12 +139,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Validación estricta del esquema mínimo de `RawWhoScoredFeedItem` (`playerId`, `name`, `minsPlayed`, `goals`, `assists`, `rating`), lanzando `WhoScoredFeedIncompatibleException` si el JSON no cumple el contrato.
 
 ### Tests para Bloque 3
-- [ ] T019 [P] [US3] Crear test unitario en `backend/test/unit/scraping/whoscored-feed-adapter.spec.ts` para validar warmup de sesión stealth, captura de cookies, cabeceras requeridas (`User-Agent`, `Referer`), validación de esquema de payload JSON con fixtures válidos e inválidos, y lanzamiento de `WhoScoredFeedIncompatibleException` ante respuestas corruptas.
+- [X] T019 [P] [US3] Crear test unitario en `backend/test/unit/scraping/whoscored-feed-adapter.spec.ts` para validar warmup de sesión stealth, captura de cookies, cabeceras requeridas (`User-Agent`, `Referer`), validación de esquema de payload JSON con fixtures válidos e inválidos, y lanzamiento de `WhoScoredFeedIncompatibleException` ante respuestas corruptas.
 
 ### Implementación para Bloque 3
-- [ ] T020 [P] [US3] Definir interfaces de contrato y excepciones en `backend/src/scraping/services/whoscored-feed-adapter.interface.ts` alineadas con `contracts/whoscored-feed.contract.md`: interfaz `RawWhoScoredFeedItem` (`playerId`, `name`, `teamId`, `teamName`, `apps`, `minsPlayed`, `goals`, `assists`, `rating`), interfaz `WhoScoredFeedResponse`, y clase `WhoScoredFeedIncompatibleException`.
-- [ ] T021 [US3] Implementar bootstrap de sesión y cliente del adaptador de feed en `backend/src/scraping/services/whoscored-playwright.service.ts`: inicialización stealth, resolución de retos anti-bot, inyección de cookies en peticiones HTTP al feed de WhoScored y validación rigurosa del payload retornado antes de entregarlo a capas superiores.
-- [ ] T022 [US3] Ejecutar y validar tests del Bloque 3: verificar que `npm run test:unit -- test/unit/scraping/whoscored-feed-adapter.spec.ts` pase al 100%.
+- [X] T020 [P] [US3] Definir interfaces de contrato y excepciones en `backend/src/scraping/services/whoscored-feed-adapter.interface.ts` alineadas con `contracts/whoscored-feed.contract.md`: interfaz `RawWhoScoredFeedItem` (`playerId`, `name`, `teamId`, `teamName`, `apps`, `minsPlayed`, `goals`, `assists`, `rating`), interfaz `WhoScoredFeedResponse`, y clase `WhoScoredFeedIncompatibleException`.
+- [X] T021 [US3] Implementar bootstrap de sesión y cliente del adaptador de feed en `backend/src/scraping/services/whoscored-playwright.service.ts`: inicialización stealth, resolución de retos anti-bot, inyección de cookies en peticiones HTTP al feed de WhoScored y validación rigurosa del payload retornado antes de entregarlo a capas superiores.
+- [X] T022 [US3] Ejecutar y validar tests del Bloque 3: verificar que `npm run test:unit -- test/unit/scraping/whoscored-feed-adapter.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 3**: Adaptador de feed validado y gobernanza de sesión operativa. Listo para Commit 3.
 

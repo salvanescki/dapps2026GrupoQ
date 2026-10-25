@@ -15,6 +15,11 @@ const stealthPlugin: () => any =
 
 import { Browser, BrowserContext, Page } from 'playwright';
 import {
+  validarWhoScoredFeedPayload,
+  WhoScoredFeedIncompatibleException,
+  RawWhoScoredFeedItem,
+} from './whoscored-feed-adapter.interface';
+import {
   LigaScrapingConfig,
   ScrapingConfig,
   getScrapingConfig,
@@ -208,6 +213,34 @@ export class WhoScoredPlaywrightService
       temporadaEtiqueta: this.scrapingConfig.seasonLabel,
       equipos,
     };
+  }
+
+  public async consultarFeedEquipo(
+    context: BrowserContext,
+    stageId: number,
+    teamId: string,
+    refererUrl: string,
+  ): Promise<RawWhoScoredFeedItem[]> {
+    const feedUrl = `https://www.whoscored.com/StatisticsFeed/1/GetPlayerStatistics?category=summary&subcategory=all&statsAccumulationType=0&isCurrent=true&stageId=${stageId}&teamIds=${teamId}&numberOfPlayersToPick=50`;
+
+    const response = await context.request.get(feedUrl, {
+      headers: {
+        Referer: refererUrl,
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+
+    if (response.status() !== 200) {
+      throw new WhoScoredFeedIncompatibleException(
+        `El feed retornó status HTTP ${response.status()}`,
+      );
+    }
+
+    const json = await response.json();
+    return validarWhoScoredFeedPayload(json);
   }
 
   private async configurarInterceptores(page: Page): Promise<void> {
