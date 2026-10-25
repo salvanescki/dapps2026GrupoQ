@@ -23,13 +23,22 @@ import {
   IJugadorRepository,
   I_JUGADOR_REPOSITORY,
 } from '../../domain/jugador.repository.interface';
-import { CriterioFiltroJugador } from '../../domain/jugador.entity';
+import { Jugador, CriterioFiltroJugador } from '../../domain/jugador.entity';
 import { EstadisticaJugador } from '../domain/estadistica-jugador.entity';
 import {
   EjecucionScraping,
   ErrorScrapingDetalle,
 } from '../domain/ejecucion-scraping.entity';
 import { getScrapingConfig, ScrapingConfig } from '../../config/scraping.config';
+
+export interface ResultadoAsociacionLocal {
+  asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }>;
+  descartados: Array<{ raw: RawWhoScoredPlayerStats; motivo: string }>;
+  enriquecidos: Jugador[];
+  tasaAsociacion: number;
+  valida: boolean;
+  motivo?: string;
+}
 
 export interface EstadisticasJugadorResponse {
   jugador: {
@@ -144,6 +153,89 @@ export class ScrapingService {
     return {
       valida: true,
       totalConMinutos: totalConMinutosGlobal,
+    };
+  }
+
+  public asociarJugadoresLocales(
+    rawStats: RawWhoScoredPlayerStats[],
+    jugadoresLocales: Jugador[],
+    minTasa = 85,
+  ): ResultadoAsociacionLocal {
+    const asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }> = [];
+    const descartados: Array<{ raw: RawWhoScoredPlayerStats; motivo: string }> = [];
+    const enriquecidos: Jugador[] = [];
+
+    for (const raw of rawStats) {
+      const matchNivel1 = jugadoresLocales.filter(
+        (j) => j.whoScoredPlayerId && j.whoScoredPlayerId === raw.whoScoredId,
+      );
+
+      if (matchNivel1.length === 1) {
+        asociados.push({ jugador: matchNivel1[0], stats: raw });
+        continue;
+      }
+
+      if (matchNivel1.length > 1) {
+        descartados.push({
+          raw,
+          motivo: `Ambigüedad: múltiples jugadores locales comparten whoScoredPlayerId=${raw.whoScoredId}`,
+        });
+        continue;
+      }
+
+      const normRawName = this.normalizador.normalizarTexto(raw.nombre);
+      const normRawTeam = this.normalizador.normalizarTexto(raw.equipoNombre);
+
+      const candidatos = jugadoresLocales.filter((j) => {
+        const normLocalName = this.normalizador.normalizarTexto(j.nombre);
+        if (normLocalName !== normRawName) return false;
+
+        if (normRawTeam && j.equipo?.nombre) {
+          const normLocalTeam = this.normalizador.normalizarTexto(j.equipo.nombre);
+          const normLocalShort = j.equipo.nombreCorto
+            ? this.normalizador.normalizarTexto(j.equipo.nombreCorto)
+            : '';
+          const matchClub =
+            normLocalTeam.includes(normRawTeam) ||
+            normRawTeam.includes(normLocalTeam) ||
+            (normLocalShort && (normLocalShort.includes(normRawTeam) || normRawTeam.includes(normLocalShort)));
+          if (!matchClub) return false;
+        }
+
+        return true;
+      });
+
+      if (candidatos.length === 1) {
+        const candidato = candidatos[0];
+        if (!candidato.whoScoredPlayerId) {
+          candidato.asociarWhoScored(raw.whoScoredId);
+          enriquecidos.push(candidato);
+        }
+        asociados.push({ jugador: candidato, stats: raw });
+      } else if (candidatos.length > 1) {
+        descartados.push({
+          raw,
+          motivo: `ambigüedad detectada: ${candidatos.length} jugadores con el mismo nombre normalizado en el club local. Descarte preventivo.`,
+        });
+      } else {
+        descartados.push({
+          raw,
+          motivo: 'No encontrado en catálogo local',
+        });
+      }
+    }
+
+    const total = rawStats.length;
+    const tasaAsociacion = total === 0 ? 100 : (asociados.length / total) * 100;
+    const valida = tasaAsociacion >= minTasa;
+
+    return {
+      asociados,
+      descartados,
+      enriquecidos,
+      tasaAsociacion,
+      valida,
+      motivo: valida ? undefined : 'rechazada_baja_asociacion',
     };
   }
 

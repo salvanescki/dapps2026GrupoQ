@@ -7,6 +7,12 @@ export class NormalizadorJugadorService {
     if (!texto) return '';
     return texto
       .toLowerCase()
+      .replace(/ø/g, 'o')
+      .replace(/æ/g, 'ae')
+      .replace(/œ/g, 'oe')
+      .replace(/ß/g, 'ss')
+      .replace(/ð/g, 'd')
+      .replace(/ł/g, 'l')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9\s]/g, ' ')

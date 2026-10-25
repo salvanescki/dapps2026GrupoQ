@@ -235,12 +235,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Rechazo de liga cuya tasa de asociación resulte < 85% (`rechazada_baja_asociacion`).
 
 ### Tests para Bloque 6
-- [ ] T031 [P] [US5] Crear test unitario en `backend/test/unit/scraping/scraping-asociacion-local.spec.ts` para validar asociación local: coincidencia directa Nivel 1 por `whoScoredPlayerId`, coincidencia Nivel 2 por normalización estricta y equipo local con enriquecimiento de ID WhoScored, descarte preventivo ante múltiples jugadores con el mismo nombre normalizado, y rechazo de liga con tasa de asociación inferior al 85%.
+- [X] T031 [P] [US5] Crear test unitario en `backend/test/unit/scraping/scraping-asociacion-local.spec.ts` para validar asociación local: coincidencia directa Nivel 1 por `whoScoredPlayerId`, coincidencia Nivel 2 por normalización estricta y equipo local con enriquecimiento de ID WhoScored, descarte preventivo ante múltiples jugadores con el mismo nombre normalizado, y rechazo de liga con tasa de asociación inferior al 85%.
 
 ### Implementación para Bloque 6
-- [ ] T032 [US5] Implementar lógica de asociación en dos niveles en `backend/src/scraping/services/scraping.service.ts`: Nivel 1 por `whoScoredPlayerId` directo; Nivel 2 mediante `NormalizadorJugadorService.normalizarNombre()` comparado contra la plantilla del equipo local en base de datos, descartando candidatos ambiguos sin inventar coincidencias difusas.
-- [ ] T033 [US5] Implementar enriquecimiento de jugadores locales con `asociarWhoScored` y validación de umbral de asociación (>= 85%) en `backend/src/scraping/services/scraping.service.ts`, marcando la liga como `rechazada_baja_asociacion` y bloqueando la publicación si no se alcanza el porcentaje requerido.
-- [ ] T034 [US5] Ejecutar y validar tests del Bloque 6: verificar que `npm run test:unit -- test/unit/scraping/scraping-asociacion-local.spec.ts` pase al 100%.
+- [X] T032 [US5] Implementar lógica de asociación en dos niveles en `backend/src/scraping/services/scraping.service.ts`: Nivel 1 por `whoScoredPlayerId` directo; Nivel 2 mediante `NormalizadorJugadorService.normalizarNombre()` comparado contra la plantilla del equipo local en base de datos, descartando candidatos ambiguos sin inventar coincidencias difusas.
+- [X] T033 [US5] Implementar enriquecimiento de jugadores locales con `asociarWhoScored` y validación de umbral de asociación (>= 85%) en `backend/src/scraping/services/scraping.service.ts`, marcando la liga como `rechazada_baja_asociacion` y bloqueando la publicación si no se alcanza el porcentaje requerido.
+- [X] T034 [US5] Ejecutar y validar tests del Bloque 6: verificar que `npm run test:unit -- test/unit/scraping/scraping-asociacion-local.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 6**: Asociación certera en dos niveles y umbral de 85% operativos. Listo para Commit 6.
 
