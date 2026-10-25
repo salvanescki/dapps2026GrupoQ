@@ -5,7 +5,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { chromium } from 'playwright-extra';
-import stealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const stealthPluginPkg = require('puppeteer-extra-plugin-stealth');
+const stealthPlugin: () => any =
+  typeof stealthPluginPkg === 'function'
+    ? stealthPluginPkg
+    : (stealthPluginPkg as any)?.default ?? stealthPluginPkg;
+
 import { Browser, BrowserContext, Page } from 'playwright';
 import {
   LigaScrapingConfig,
@@ -64,10 +71,15 @@ export class WhoScoredPlaywrightService
     await this.cerrarNavegador();
   }
 
+  private static stealthRegistrado = false;
+
   public async obtenerNavegador(): Promise<Browser> {
     if (!this.browser || !this.browser.isConnected()) {
       this.logger.log('Inicializando instancia Chromium con plugin Stealth...');
-      chromium.use(stealthPlugin());
+      if (!WhoScoredPlaywrightService.stealthRegistrado) {
+        chromium.use(stealthPlugin());
+        WhoScoredPlaywrightService.stealthRegistrado = true;
+      }
       this.browser = await chromium.launch({
         headless: true,
         args: [
@@ -186,10 +198,17 @@ export class WhoScoredPlaywrightService
         const href = playerLink?.getAttribute('href') || '';
         const idMatch = href.match(/\/Players\/(\d+)/i);
         const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
-        const nombre = playerLink?.textContent?.trim() || '';
+        let nombre = '';
+        if (playerLink) {
+          const clone = playerLink.cloneNode(true) as HTMLElement;
+          clone.querySelector('.table-ranking')?.remove();
+          nombre = clone.textContent?.trim() || '';
+          nombre = nombre.replace(/^\d+\s*/, '').trim();
+        }
 
         const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
-        const equipoNombre = teamLink?.textContent?.trim() || '';
+        let equipoNombre = teamLink?.textContent?.trim() || '';
+        equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
 
         const getCol = (colName: string) => {
           const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);

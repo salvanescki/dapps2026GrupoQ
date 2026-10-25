@@ -124,4 +124,18 @@ describe('WhoScoredPlaywrightService (Unit Tests)', () => {
     handlerGuardado(routeDoc);
     expect(routeDoc.continue).toHaveBeenCalled();
   });
+
+  it('debe inicializar el navegador con el plugin stealth sin lanzar errores', async () => {
+    const uninitializedService = new WhoScoredPlaywrightService();
+    const { chromium } = require('playwright-extra');
+    const mockLaunch = jest.spyOn(chromium, 'launch').mockResolvedValue(mockBrowser);
+    const mockUse = jest.spyOn(chromium, 'use').mockImplementation((() => {}) as any);
+
+    const browser = await uninitializedService.obtenerNavegador();
+    expect(browser).toBe(mockBrowser);
+    expect(mockLaunch).toHaveBeenCalled();
+
+    mockLaunch.mockRestore();
+    mockUse.mockRestore();
+  });
 });

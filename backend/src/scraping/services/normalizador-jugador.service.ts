@@ -20,7 +20,8 @@ export class NormalizadorJugadorService {
     ligaCodigo: string,
     jugadoresLocales: Jugador[],
   ): Jugador | null {
-    const normWS = this.normalizarTexto(nombreWhoScored);
+    let normWS = this.normalizarTexto(nombreWhoScored);
+    normWS = normWS.replace(/^\d+\s*/, '').trim();
     if (!normWS) return null;
 
     const normEquipoWS = this.normalizarTexto(equipoWhoScored);
