@@ -320,11 +320,11 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 
 **Propósito**: Ejecutar la validación completa en los tres niveles de ejecución claramente separados, documentar la suite y ratificar el cumplimiento irrestricto de la Constitution.
 
-- [ ] T046 [P] Validar Nivel 1 (Tests Unitarios Mockeados en Aislamiento Absoluto): ejecutar `npm run test:unit` en `backend/` verificando 100% PASS sin requerir PostgreSQL, Redis ni conexión externa a WhoScored, garantizando 0 modificaciones en tests preexistentes.
-- [ ] T047 [P] Validar Nivel 2 (Integración y Migración con Testcontainers): ejecutar `npm run test:integration` en `backend/` verificando que la migración incremental y la persistencia transaccional funcionen correctamente sobre PostgreSQL real sin duplicación de filas.
-- [ ] T048 Validar Nivel 3 (Compilación y Verificación del Runner Scraper): ejecutar `npm run build` en `backend/` verificando compilación TypeScript estricta sin errores de tipos y comprobar que el runner `backend/src/run-scraper.ts` ejecute el pipeline completo de scraping bajo demanda conforme a `quickstart.md`.
-- [ ] T049 [P] Sincronizar y actualizar documentación OpenAPI y colección Postman en `backend/` (o directorio de especificación) reflejando fielmente los esquemas de respuestas y contratos REST validados.
-- [ ] T050 Validar cumplimiento de métricas constitucionales de testing (Principio VI): ejecutar reporte de cobertura en `backend/` verificando que todo el código nuevo alcance al menos 80% de líneas y 80% de bifurcaciones (branches) sin degradar las métricas previas.
+- [X] T046 [P] Validar Nivel 1 (Tests Unitarios Mockeados en Aislamiento Absoluto): ejecutar `npm run test:unit` en `backend/` verificando 100% PASS sin requerir PostgreSQL, Redis ni conexión externa a WhoScored, garantizando 0 modificaciones en tests preexistentes.
+- [X] T047 [P] Validar Nivel 2 (Integración y Migración con Testcontainers): ejecutar `npm run test:integration` en `backend/` verificando que la migración incremental y la persistencia transaccional funcionen correctamente sobre PostgreSQL real sin duplicación de filas.
+- [X] T048 Validar Nivel 3 (Compilación y Verificación del Runner Scraper): ejecutar `npm run build` en `backend/` verificando compilación TypeScript estricta sin errores de tipos y comprobar que el runner `backend/src/run-scraper.ts` ejecute el pipeline completo de scraping bajo demanda conforme a `quickstart.md`.
+- [X] T049 [P] Sincronizar y actualizar documentación OpenAPI y colección Postman en `backend/` (o directorio de especificación) reflejando fielmente los esquemas de respuestas y contratos REST validados.
+- [X] T050 Validar cumplimiento de métricas constitucionales de testing (Principio VI): ejecutar reporte de cobertura en `backend/` verificando que todo el código nuevo alcance al menos 80% de líneas y 80% de bifurcaciones (branches) sin degradar las métricas previas.
 
 ---
 

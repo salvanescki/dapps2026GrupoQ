@@ -411,14 +411,16 @@ export class ScrapingService {
           await this.publicarLigaTransaccional(estadisticasAGuardar, jugadoresEnriquecidos);
         }
 
-        ejecucion.registrarDetalle({
-          liga: leagueConfig.liga,
-          descubiertos: rawStatsMap.size,
-          deduplicados: deduplicados.length,
-          asociados: estadisticasAGuardar.length,
-          descartados: deduplicados.length - estadisticasAGuardar.length,
-          timestamp: new Date(),
-        });
+        if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 10) {
+          ejecucion.registrarDetalle({
+            liga: leagueConfig.liga,
+            descubiertos: rawStatsMap.size,
+            deduplicados: deduplicados.length,
+            asociados: estadisticasAGuardar.length,
+            descartados: deduplicados.length - estadisticasAGuardar.length,
+            timestamp: new Date(),
+          });
+        }
       }
 
       ejecucion.finalizarExitoso();

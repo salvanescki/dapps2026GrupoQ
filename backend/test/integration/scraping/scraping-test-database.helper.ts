@@ -41,6 +41,17 @@ export class ScrapingTestDatabaseHelper {
       });
 
       await this.dataSource.initialize();
+
+      await this.dataSource.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_estadistica_jugador_contexto ON estadisticas_jugadores (
+          jugador_id,
+          COALESCE(fuente, ''),
+          COALESCE(competencia, ''),
+          COALESCE(liga, ''),
+          COALESCE(temporada, ''),
+          COALESCE(etapa, '')
+        );
+      `);
     }
 
     return {
