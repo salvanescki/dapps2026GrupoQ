@@ -1,6 +1,19 @@
 .DEFAULT_GOAL := dev
 
-.PHONY: dev
+.PHONY: dev scraper scrape scrape-docker playwright-install
+
+playwright-install:
+	cd backend && npx playwright install chromium
+
+scraper: scrape
+
+scrape:
+	docker compose up -d postgres
+	cd backend && npx playwright install chromium
+	cd backend && npm run scraper:run
+
+scrape-docker:
+	docker compose --profile scraper run --rm scraper
 
 ifeq ($(OS),Windows_NT)
 

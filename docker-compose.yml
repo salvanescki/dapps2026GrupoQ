@@ -12,5 +12,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  scraper:
+    image: mcr.microsoft.com/playwright:v1.49.0-noble
+    container_name: football_tokens_scraper
+    working_dir: /workspace/backend
+    volumes:
+      - .:/workspace
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgrespassword
+      DB_NAME: football_tokens_db
+      JWT_SECRET: super_secreto_para_desarrollo_tokens_2026_grupo_q
+    depends_on:
+      - postgres
+    profiles:
+      - scraper
+    command: sh -c "npm run build && node dist/run-scraper.js"
+
 volumes:
   postgres_data:

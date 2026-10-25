@@ -32,6 +32,11 @@ export class ScrapingCacheService implements OnModuleDestroy {
             connectTimeout: 2000,
           });
         }
+        if (this.redisClient) {
+          this.redisClient.on('error', () => {
+            // Error de conexión manejado por degradación controlada
+          });
+        }
       } catch (err) {
         this.logger.warn(`No se pudo inicializar cliente Redis: ${(err as Error).message}`);
         this.redisClient = null;

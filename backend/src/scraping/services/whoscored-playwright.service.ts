@@ -169,10 +169,38 @@ export class WhoScoredPlaywrightService
 
     try {
       await this.configurarInterceptores(page);
-      const url = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
+      const url =
+        config.seasonId && config.seasonId !== 12345
+          ? `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`
+          : `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}`;
       this.logger.log(`Descubriendo competición WhoScored (${config.liga}): ${url}`);
 
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+
+      try {
+        const meta = await page.evaluate(() => {
+          let sId: number | null = null;
+          let stId: number | null = null;
+          const links = Array.from(document.querySelectorAll('a[href*="/stages/" i], a[href*="/seasons/" i]'));
+          for (const a of links) {
+            const m = (a.getAttribute('href') || '').match(/seasons\/(\d+)\/stages\/(\d+)/i);
+            if (m) {
+              sId = Number(m[1]);
+              stId = Number(m[2]);
+              break;
+            }
+          }
+          return { seasonId: sId, stageId: stId };
+        });
+        if (meta.seasonId) {
+          config.seasonId = meta.seasonId;
+        }
+        if (meta.stageId) {
+          config.stageId = meta.stageId;
+        }
+      } catch {
+        // Fallback a config
+      }
 
       try {
         const titulo = await page.$eval(
@@ -200,7 +228,7 @@ export class WhoScoredPlaywrightService
 
       try {
         equipos = await page.$$eval(
-          'table.standings a.team-link, #standings a.team-link, a[href*="/Teams/"]',
+          'table.standings a.team-link, #standings a.team-link, a[href*="/Teams/" i], a[href*="/teams/" i]',
           (links) => {
             const seen = new Set<string>();
             const res: { whoScoredTeamId: string; nombre: string; url: string }[] = [];
@@ -256,26 +284,51 @@ export class WhoScoredPlaywrightService
     stageId: number,
     teamId: string,
     refererUrl: string,
+    page?: Page,
   ): Promise<RawWhoScoredFeedItem[]> {
     const feedUrl = `https://www.whoscored.com/StatisticsFeed/1/GetPlayerStatistics?category=summary&subcategory=all&statsAccumulationType=0&isCurrent=true&stageId=${stageId}&teamIds=${teamId}&numberOfPlayersToPick=50`;
 
-    const response = await context.request.get(feedUrl, {
-      headers: {
-        Referer: refererUrl,
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        Accept: 'application/json, text/javascript, */*; q=0.01',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
+    let json: any = null;
 
-    if (response.status() !== 200) {
-      throw new WhoScoredFeedIncompatibleException(
-        `El feed retornó status HTTP ${response.status()}`,
-      );
+    if (page && !page.isClosed()) {
+      try {
+        json = await page.evaluate(async (url) => {
+          const res = await fetch(url, {
+            headers: {
+              Accept: 'application/json, text/javascript, */*; q=0.01',
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return await res.json();
+        }, feedUrl);
+      } catch {
+        json = null;
+      }
     }
 
-    const json = await response.json();
+    if (!json) {
+      const response = await context.request.get(feedUrl, {
+        headers: {
+          Referer: refererUrl,
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          Accept: 'application/json, text/javascript, */*; q=0.01',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+
+      if (response.status() !== 200) {
+        throw new WhoScoredFeedIncompatibleException(
+          `El feed retornó status HTTP ${response.status()}`,
+        );
+      }
+
+      json = await response.json();
+    }
+
     return validarWhoScoredFeedPayload(json);
   }
 
@@ -327,6 +380,12 @@ export class WhoScoredPlaywrightService
       if (!listaEquipos || listaEquipos.length === 0) {
         const estructura = await this.descubrirEstructuraCompeticion(config);
         listaEquipos = estructura.equipos;
+        if (estructura.stageId) {
+          config.stageId = estructura.stageId;
+        }
+        if (estructura.seasonId) {
+          config.seasonId = estructura.seasonId;
+        }
       }
 
       const refererUrl = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
@@ -345,6 +404,7 @@ export class WhoScoredPlaywrightService
               config.stageId,
               equipo.whoScoredTeamId,
               refererUrl,
+              page,
             );
           } catch (err: any) {
             const isRateLimit = err?.status === 429 || String(err?.message).includes('429');
