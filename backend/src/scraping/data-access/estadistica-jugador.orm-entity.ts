@@ -10,7 +10,6 @@ import {
 import { JugadorOrmEntity } from '../../data-access/jugador.orm-entity';
 
 @Entity('estadisticas_jugadores')
-@Unique('uq_estadistica_jugador_temporada', ['jugadorId', 'temporada'])
 export class EstadisticaJugadorOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
@@ -30,6 +29,12 @@ export class EstadisticaJugadorOrmEntity {
   @Index('idx_estadisticas_liga')
   @Column({ type: 'varchar', length: 10 })
   liga: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  competencia: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  etapa: string | null;
 
   @Column({ type: 'varchar', length: 50, default: 'whoscored' })
   fuente: string;

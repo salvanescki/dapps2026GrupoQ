@@ -6,18 +6,20 @@ export interface EstadisticaJugadorProps {
   jugadorId: string;
   temporada: string;
   liga: string;
+  competencia?: string | null;
+  etapa?: string | null;
   fuente?: string;
   fechaActualizacion?: Date;
-  partidosJugados: number;
-  minutosJugados: number;
-  goles: number;
-  asistencias: number;
+  partidosJugados?: number;
+  minutosJugados?: number;
+  goles?: number;
+  asistencias?: number;
   tirosPorPartido?: number | null;
   precisionPase?: number | null;
   duelosAereosGanadosPorPartido?: number | null;
   rating?: number | null;
-  tarjetasAmarillas: number;
-  tarjetasRojas: number;
+  tarjetasAmarillas?: number;
+  tarjetasRojas?: number;
   regatesCompletadosPorPartido?: number | null;
   pasesClavePorPartido?: number | null;
   xgPorPartido?: number | null;
@@ -40,6 +42,8 @@ export class EstadisticaJugador {
   private readonly _jugadorId: string;
   private readonly _temporada: string;
   private readonly _liga: string;
+  private _competencia: string | null;
+  private _etapa: string | null;
   private readonly _fuente: string;
   private _fechaActualizacion: Date;
   private _partidosJugados: number;
@@ -73,6 +77,8 @@ export class EstadisticaJugador {
     this._jugadorId = props.jugadorId;
     this._temporada = props.temporada;
     this._liga = props.liga;
+    this._competencia = props.competencia?.trim() || null;
+    this._etapa = props.etapa?.trim() || null;
     this._fuente = props.fuente?.trim() || 'whoscored';
     this._fechaActualizacion = props.fechaActualizacion || new Date();
     this._partidosJugados = props.partidosJugados ?? 0;
@@ -119,6 +125,18 @@ export class EstadisticaJugador {
 
     if (!this._liga || this._liga.trim().length === 0) {
       throw new ReglaDeNegocioException('La liga es obligatoria.');
+    }
+
+    if (this._competencia && this._competencia.length > 100) {
+      throw new ReglaDeNegocioException(
+        'La competencia no puede superar los 100 caracteres.',
+      );
+    }
+
+    if (this._etapa && this._etapa.length > 50) {
+      throw new ReglaDeNegocioException(
+        'La etapa no puede superar los 50 caracteres.',
+      );
     }
 
     if (this._goles < 0) {
@@ -180,6 +198,12 @@ export class EstadisticaJugador {
     if (props.porcentajeAtajadas !== undefined) this._porcentajeAtajadas = props.porcentajeAtajadas;
     if (props.erroresQueGeneraronGol !== undefined) this._erroresQueGeneraronGol = props.erroresQueGeneraronGol;
     if (props.autogoles !== undefined) this._autogoles = props.autogoles;
+    if (props.competencia !== undefined) {
+      this._competencia = props.competencia ? props.competencia.trim() : null;
+    }
+    if (props.etapa !== undefined) {
+      this._etapa = props.etapa ? props.etapa.trim() : null;
+    }
     this._fechaActualizacion = props.fechaActualizacion || new Date();
 
     this.validarInvariantes();
@@ -190,6 +214,8 @@ export class EstadisticaJugador {
   public get jugadorId(): string { return this._jugadorId; }
   public get temporada(): string { return this._temporada; }
   public get liga(): string { return this._liga; }
+  public get competencia(): string | null { return this._competencia; }
+  public get etapa(): string | null { return this._etapa; }
   public get fuente(): string { return this._fuente; }
   public get fechaActualizacion(): Date { return this._fechaActualizacion; }
   public get partidosJugados(): number { return this._partidosJugados; }

@@ -9,6 +9,7 @@ export class JugadorMapper {
     return Jugador.crear({
       id: orm.id,
       externalId: orm.externalId,
+      whoScoredPlayerId: orm.whoScoredPlayerId,
       nombre: orm.nombre,
       posicion: orm.posicion as PosicionJugador,
       posicionOriginal: orm.posicionOriginal,
@@ -30,6 +31,7 @@ export class JugadorMapper {
     const orm = new JugadorOrmEntity();
     orm.id = domain.id;
     orm.externalId = domain.externalId;
+    orm.whoScoredPlayerId = domain.whoScoredPlayerId;
     orm.nombre = domain.nombre;
     orm.posicion = domain.posicion;
     orm.posicionOriginal = domain.posicionOriginal;

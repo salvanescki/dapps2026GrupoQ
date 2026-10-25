@@ -15,6 +15,8 @@ export class EstadisticaJugadorMapper {
       jugadorId: orm.jugadorId,
       temporada: orm.temporada,
       liga: orm.liga,
+      competencia: orm.competencia,
+      etapa: orm.etapa,
       fuente: orm.fuente,
       fechaActualizacion: orm.fechaActualizacion,
       partidosJugados: orm.partidosJugados,
@@ -52,6 +54,8 @@ export class EstadisticaJugadorMapper {
     orm.jugadorId = domain.jugadorId;
     orm.temporada = domain.temporada;
     orm.liga = domain.liga;
+    orm.competencia = domain.competencia;
+    orm.etapa = domain.etapa;
     orm.fuente = domain.fuente;
     orm.fechaActualizacion = domain.fechaActualizacion;
     orm.partidosJugados = domain.partidosJugados;
