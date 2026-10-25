@@ -41,6 +41,18 @@ export interface EstructuraCompeticionWhoScored {
   equipos: EquipoWhoScoredDescubierto[];
 }
 
+export interface IncidenciaScraping {
+  tipo: string;
+  equipoId?: string;
+  equipoNombre?: string;
+  detalle: string;
+}
+
+export interface ResultadoExtraccionLiga {
+  jugadores: Map<string, RawWhoScoredPlayerStats>;
+  incidencias: IncidenciaScraping[];
+}
+
 export interface RawWhoScoredPlayerStats {
   whoScoredId: string;
   nombre: string;
@@ -241,6 +253,139 @@ export class WhoScoredPlaywrightService
 
     const json = await response.json();
     return validarWhoScoredFeedPayload(json);
+  }
+
+  public async pausaRateLimit(ms: number = 10000): Promise<void> {
+    this.logger.warn(`Pausa por rate limiting (HTTP 429) de ${ms}ms...`);
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  public async extraerEquipoDesdeDOM(
+    page: Page,
+    equipo: EquipoWhoScoredDescubierto,
+    config?: LigaScrapingConfig,
+  ): Promise<RawWhoScoredPlayerStats[]> {
+    this.logger.warn(
+      `Ejecutando fallback DOM observable para equipo ${equipo.nombre} (${equipo.whoScoredTeamId})`,
+    );
+    const url = equipo.url.startsWith('http')
+      ? equipo.url
+      : `https://www.whoscored.com${equipo.url}`;
+
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await this.delayHumano(1000, 2000);
+
+    const acumulador = new Map<string, RawWhoScoredPlayerStats>();
+    await this.extraerFilasTabla(page, 'summary', acumulador);
+    return Array.from(acumulador.values());
+  }
+
+  public async extraerEstadisticasLigaPorEquipos(
+    config: LigaScrapingConfig,
+    equipos?: EquipoWhoScoredDescubierto[],
+  ): Promise<ResultadoExtraccionLiga> {
+    const browser = await this.obtenerNavegador();
+    const context: BrowserContext = await browser.newContext({
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      viewport: { width: 1920, height: 1080 },
+      locale: 'en-GB',
+    });
+
+    const page: Page = await context.newPage();
+    const jugadores = new Map<string, RawWhoScoredPlayerStats>();
+    const incidencias: IncidenciaScraping[] = [];
+
+    try {
+      await this.configurarInterceptores(page);
+
+      let listaEquipos = equipos;
+      if (!listaEquipos || listaEquipos.length === 0) {
+        const estructura = await this.descubrirEstructuraCompeticion(config);
+        listaEquipos = estructura.equipos;
+      }
+
+      const refererUrl = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
+
+      for (const equipo of listaEquipos) {
+        await this.delayHumano(1500, 3500);
+        let items: RawWhoScoredFeedItem[] | null = null;
+        let intentos = 0;
+        const maxIntentos = 3;
+
+        while (intentos < maxIntentos && items === null) {
+          intentos++;
+          try {
+            items = await this.consultarFeedEquipo(
+              context,
+              config.stageId,
+              equipo.whoScoredTeamId,
+              refererUrl,
+            );
+          } catch (err: any) {
+            const isRateLimit = err?.status === 429 || String(err?.message).includes('429');
+            if (isRateLimit) {
+              await this.pausaRateLimit(10000);
+            } else if (err instanceof WhoScoredFeedIncompatibleException) {
+              break;
+            } else if (intentos < maxIntentos) {
+              await new Promise((r) => setTimeout(r, 1000 * intentos));
+            }
+          }
+        }
+
+        if (items && items.length > 0) {
+          for (const item of items) {
+            const whoScoredId = String(item.playerId);
+            const stats: RawWhoScoredPlayerStats = {
+              whoScoredId,
+              nombre: item.name,
+              equipoNombre: item.teamName || equipo.nombre,
+              partidosJugados: item.apps ?? 0,
+              minutosJugados: item.minsPlayed ?? 0,
+              goles: item.goals ?? 0,
+              asistencias: item.assists ?? 0,
+              rating: item.rating !== null && item.rating !== undefined ? Number(item.rating) : null,
+              tarjetasAmarillas: item.yellowCard ?? 0,
+              tarjetasRojas: item.redCard ?? 0,
+            };
+            jugadores.set(whoScoredId, stats);
+          }
+        } else {
+          this.logger.warn(
+            `Activando fallback DOM observable para equipo ${equipo.nombre} (${equipo.whoScoredTeamId})`,
+          );
+          incidencias.push({
+            tipo: 'FALLBACK_DOM_ACTIVADO',
+            equipoId: equipo.whoScoredTeamId,
+            equipoNombre: equipo.nombre,
+            detalle: `Fallback DOM activado tras falla o incompatibilidad en el feed para equipo ${equipo.nombre}`,
+          });
+
+          try {
+            const statsDom = await this.extraerEquipoDesdeDOM(page, equipo, config);
+            for (const s of statsDom) {
+              jugadores.set(s.whoScoredId, s);
+            }
+          } catch (domErr: any) {
+            this.logger.error(
+              `Fallo de extracción en equipo ${equipo.nombre} (${equipo.whoScoredTeamId}) tanto en feed como en DOM: ${domErr.message}`,
+            );
+            incidencias.push({
+              tipo: 'EQUIPO_FALLIDO_AISLADO',
+              equipoId: equipo.whoScoredTeamId,
+              equipoNombre: equipo.nombre,
+              detalle: `Aislamiento de falla: ${domErr.message}`,
+            });
+          }
+        }
+      }
+    } finally {
+      await page.close().catch(() => null);
+      await context.close().catch(() => null);
+    }
+
+    return { jugadores, incidencias };
   }
 
   private async configurarInterceptores(page: Page): Promise<void> {

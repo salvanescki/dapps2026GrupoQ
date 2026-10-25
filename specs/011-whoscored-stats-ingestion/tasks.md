@@ -170,12 +170,12 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 - Fallback DOM explícito y observable ante falla del feed, emitiendo log `WARN` y registrando incidencia en auditoría sin eludir las reglas de cobertura.
 
 ### Tests para Bloque 4
-- [ ] T023 [P] [US3] Crear test unitario en `backend/test/unit/scraping/scraping-extraccion-equipo.spec.ts` para validar simulación de extracción por equipo: aplicación de retardos entre consultas, política de 3 reintentos con backoff, pausa de 10s ante HTTP 429, aislamiento de falla en 1 equipo continuando con los restantes, y activación observable del fallback DOM con log de advertencia.
+- [X] T023 [P] [US3] Crear test unitario en `backend/test/unit/scraping/scraping-extraccion-equipo.spec.ts` para validar simulación de extracción por equipo: aplicación de retardos entre consultas, política de 3 reintentos con backoff, pausa de 10s ante HTTP 429, aislamiento de falla en 1 equipo continuando con los restantes, y activación observable del fallback DOM con log de advertencia.
 
 ### Implementación para Bloque 4
-- [ ] T024 [US3] Implementar ciclo de extracción por equipo en `backend/src/scraping/services/whoscored-playwright.service.ts`: iteración sobre el catálogo de equipos descubiertos, aplicación de pausas reguladas con jitter (1.5s a 3.5s), reintentos exponenciales ante fallas transitorias y aislamiento estricto de errores por equipo.
-- [ ] T025 [US3] Implementar fallback DOM explícito y observable en `backend/src/scraping/services/whoscored-playwright.service.ts` como alternativa de extracción ante incompatibilidad o falla del feed HTTP, emitiendo advertencia `WARN` en el logger y anotando el evento como incidente auditable.
-- [ ] T026 [US3] Ejecutar y validar tests del Bloque 4: verificar que `npm run test:unit -- test/unit/scraping/scraping-extraccion-equipo.spec.ts` pase al 100%.
+- [X] T024 [US3] Implementar ciclo de extracción por equipo en `backend/src/scraping/services/whoscored-playwright.service.ts`: iteración sobre el catálogo de equipos descubiertos, aplicación de pausas reguladas con jitter (1.5s a 3.5s), reintentos exponenciales ante fallas transitorias y aislamiento estricto de errores por equipo.
+- [X] T025 [US3] Implementar fallback DOM explícito y observable en `backend/src/scraping/services/whoscored-playwright.service.ts` como alternativa de extracción ante incompatibilidad o falla del feed HTTP, emitiendo advertencia `WARN` en el logger y anotando el evento como incidente auditable.
+- [X] T026 [US3] Ejecutar y validar tests del Bloque 4: verificar que `npm run test:unit -- test/unit/scraping/scraping-extraccion-equipo.spec.ts` pase al 100%.
 
 **Checkpoint Bloque 4**: Extracción equipo por equipo resiliente con fallback DOM observable operativa. Listo para Commit 4.
 
