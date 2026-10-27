@@ -274,6 +274,19 @@ export class ScrapingService {
     };
   }
 
+  private async cargarJugadoresLocales(ligaCodigo: string): Promise<Jugador[]> {
+    const limite = 50;
+    const jugadores: Jugador[] = [];
+    for (let pagina = 1; ; pagina++) {
+      const { items, total } = await this.jugadorRepo.buscarConFiltros(
+        new CriterioFiltroJugador({ ligaCodigo, pagina, limite }),
+      );
+      jugadores.push(...items);
+      if (items.length < limite || jugadores.length >= total) break;
+    }
+    return jugadores;
+  }
+
   public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {
     const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
     if (enProgreso) {
@@ -291,12 +304,7 @@ export class ScrapingService {
         this.logger.log(`Procesando liga ${leagueConfig.liga}...`);
 
         // Obtener jugadores locales para cotejar
-        const criterio = new CriterioFiltroJugador({
-          ligaCodigo: leagueConfig.liga,
-          limite: 1000,
-        });
-        const busquedaLocal = await this.jugadorRepo.buscarConFiltros(criterio);
-        const jugadoresLocales = busquedaLocal.items;
+        const jugadoresLocales = await this.cargarJugadoresLocales(leagueConfig.liga);
 
         // Extraer datos WhoScored
         let rawStatsMap: Map<string, RawWhoScoredPlayerStats>;
@@ -332,33 +340,47 @@ export class ScrapingService {
           }
         }
 
-        const estadisticasAGuardar: EstadisticaJugador[] = [];
-        const jugadoresEnriquecidos: Jugador[] = [];
+        const asociacion = this.asociarJugadoresLocales(deduplicados, jugadoresLocales);
+        const asociados = [...asociacion.asociados];
+        const jugadoresEnriquecidos = [...asociacion.enriquecidos];
 
-        for (const raw of deduplicados) {
-          const matchLocal = this.normalizador.buscarCoincidencia(
-            raw.nombre,
-            raw.equipoNombre,
-            leagueConfig.liga,
-            jugadoresLocales,
-          );
+        for (const { raw, motivo } of asociacion.descartados) {
+          const respaldo =
+            motivo === 'No encontrado en catálogo local'
+              ? this.normalizador.buscarCoincidencia(
+                  raw.nombre,
+                  raw.equipoNombre,
+                  leagueConfig.liga,
+                  jugadoresLocales,
+                )
+              : null;
 
-          if (!matchLocal) {
-            const errorDetalle: ErrorScrapingDetalle = {
-              liga: leagueConfig.liga,
-              jugadorNombre: raw.nombre,
-              mensaje: `No se encontró jugador en la base de datos local para nombre='${raw.nombre}' equipo='${raw.equipoNombre || 'N/A'}'`,
-              timestamp: new Date(),
-            };
-            ejecucion.registrarError(errorDetalle);
+          if (respaldo) {
+            if (!respaldo.whoScoredPlayerId && raw.whoScoredId) {
+              respaldo.asociarWhoScored(raw.whoScoredId);
+              jugadoresEnriquecidos.push(respaldo);
+            }
+            asociados.push({ jugador: respaldo, stats: raw });
             continue;
           }
 
-          if (!matchLocal.whoScoredPlayerId && raw.whoScoredId) {
-            matchLocal.asociarWhoScored(raw.whoScoredId);
-            jugadoresEnriquecidos.push(matchLocal);
-          }
+          ejecucion.registrarError({
+            liga: leagueConfig.liga,
+            jugadorNombre: raw.nombre,
+            mensaje: `No se encontró jugador en la base de datos local para nombre='${raw.nombre}' equipo='${raw.equipoNombre || 'N/A'}' (${motivo})`,
+            timestamp: new Date(),
+          });
+        }
 
+        if (!asociacion.valida) {
+          this.logger.warn(
+            `Liga ${leagueConfig.liga}: tasa de asociación exacta baja (${asociacion.tasaAsociacion.toFixed(1)}%)`,
+          );
+        }
+
+        const estadisticasAGuardar: EstadisticaJugador[] = [];
+
+        for (const { jugador: matchLocal, stats: raw } of asociados) {
           try {
             const entidad = EstadisticaJugador.crear({
               jugadorId: matchLocal.id,

@@ -90,7 +90,7 @@ Cada bloque técnico del plan se implementa, prueba y valida como una unidad de 
 
 ## Phase 3: Bloque 2 - Descubrimiento de Competición y Equipos [US1] [US3] (Priority: P2)
 
-**Objetivo**: Resolver dinámicamente y validar para cada una de las 5 grandes ligas (PL, LL, SA, BL, L1) la estructura competitiva en WhoScored (`tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa`) y el catálogo canónico de equipos participantes con sus respectivos `whoScoredTeamId` y nombres, separando esta fase de la extracción de métricas.
+**Objetivo**: Resolver dinámicamente y validar para cada una de las 5 grandes ligas (PL, PD, SA, BL1, FL1) la estructura competitiva en WhoScored (`tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa`) y el catálogo canónico de equipos participantes con sus respectivos `whoScoredTeamId` y nombres, separando esta fase de la extracción de métricas.
 
 **Archivos Concretos**:
 - `backend/src/config/scraping.config.ts`

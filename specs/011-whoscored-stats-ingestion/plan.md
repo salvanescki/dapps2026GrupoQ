@@ -32,7 +32,7 @@ Dado que la rama `feat/scraping-whoscored` carece de la Feature 01 de identidad 
 **Project Type**: Web-service REST API modular en NestJS  
 **Performance Goals**: Extracción completa de las 5 ligas en < 10 minutos con pausas de cortesía, tasa de asociación determinística >= 85%, publicación transaccional en < 5 segundos por liga  
 **Constraints**: Pausas reguladas (1.5s - 3.5s) entre equipos; 0 modificaciones destructivas en tests existentes; arquitectura en 5 capas; sin cambios de frontend ni microservicios  
-**Scale/Scope**: 5 ligas europeas fijas (PL, LL, SA, BL, L1), ~98 equipos, ~2.500 jugadores activos y sus correspondientes 25 métricas de rendimiento  
+**Scale/Scope**: 5 ligas europeas fijas (PL, PD, SA, BL1, FL1), ~98 equipos, ~2.500 jugadores activos y sus correspondientes 25 métricas de rendimiento  
 
 ---
 
@@ -182,7 +182,7 @@ Mediano (~300 líneas modificadas/añadidas, 1 archivo de migración, 4 archivos
 ### Bloque 2: Descubrimiento de Competición y Equipos
 
 #### Objetivo
-Resolver dinámicamente y validar para cada una de las 5 grandes ligas (PL, LL, SA, BL, L1) la estructura competitiva en WhoScored (`tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa`) y el catálogo canónico de equipos participantes con sus respectivos `whoScoredTeamId` y nombres, separando esta fase de la extracción de métricas.
+Resolver dinámicamente y validar para cada una de las 5 grandes ligas (PL, PD, SA, BL1, FL1) la estructura competitiva en WhoScored (`tournamentId`, `seasonId`, `stageId`, `competencia`, `etapa`) y el catálogo canónico de equipos participantes con sus respectivos `whoScoredTeamId` y nombres, separando esta fase de la extracción de métricas.
 
 #### Archivos Existentes Candidatos
 - `backend/src/config/scraping.config.ts`

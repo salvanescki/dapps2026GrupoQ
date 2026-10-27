@@ -20,7 +20,7 @@ Representa el conjunto de estadisticas de rendimiento de un jugador para la temp
 | `id` | `string` (UUID) | Identificador unico del registro | No |
 | `jugadorId` | `string` (UUID) | FK a la entidad `Jugador` existente | No |
 | `temporada` | `string` | Temporada activa (ej: `"2025/2026"`) | No |
-| `liga` | `string` | Codigo de liga (ej: `"PL"`, `"LL"`, `"SA"`, `"BL"`, `"L1"`) | No |
+| `liga` | `string` | Codigo de liga (ej: `"PL"`, `"PD"`, `"SA"`, `"BL1"`, `"FL1"`) | No |
 | `fuente` | `string` | Origen de los datos (siempre `"whoscored"`) | No |
 | `fechaActualizacion` | `Date` | Fecha de la ultima actualizacion del registro | No |
 | `partidosJugados` | `number` | Total de apariciones (titulares + suplentes) | No |
@@ -202,10 +202,10 @@ CREATE INDEX idx_ejecuciones_inicio ON ejecuciones_scraping (inicio DESC);
 // Ejemplo de WHOSCORED_LEAGUE_CONFIGS
 [
   { "liga": "PL", "regionId": 252, "tournamentId": 2, "seasonId": 12345, "stageId": 22345 },
-  { "liga": "LL", "regionId": 206, "tournamentId": 4, "seasonId": 12346, "stageId": 22346 },
+  { "liga": "PD", "regionId": 206, "tournamentId": 4, "seasonId": 12346, "stageId": 22346 },
   { "liga": "SA", "regionId": 108, "tournamentId": 5, "seasonId": 12347, "stageId": 22347 },
-  { "liga": "BL", "regionId": 81,  "tournamentId": 3, "seasonId": 12348, "stageId": 22348 },
-  { "liga": "L1", "regionId": 74,  "tournamentId": 22,"seasonId": 12349, "stageId": 22349 }
+  { "liga": "BL1", "regionId": 81,  "tournamentId": 3, "seasonId": 12348, "stageId": 22348 },
+  { "liga": "FL1", "regionId": 74,  "tournamentId": 22,"seasonId": 12349, "stageId": 22349 }
 ]
 ```
 

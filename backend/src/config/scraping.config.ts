@@ -22,10 +22,10 @@ export interface ScrapingConfig {
 
 export const DEFAULT_LEAGUE_CONFIGS: LigaScrapingConfig[] = [
   { liga: 'PL', regionId: 252, tournamentId: 2, seasonId: 12345, stageId: 22345, nombreTorneo: 'Premier League' },
-  { liga: 'LL', regionId: 206, tournamentId: 4, seasonId: 12346, stageId: 22346, nombreTorneo: 'LaLiga' },
+  { liga: 'PD', regionId: 206, tournamentId: 4, seasonId: 12346, stageId: 22346, nombreTorneo: 'LaLiga' },
   { liga: 'SA', regionId: 108, tournamentId: 5, seasonId: 12347, stageId: 22347, nombreTorneo: 'Serie A' },
-  { liga: 'BL', regionId: 81, tournamentId: 3, seasonId: 12348, stageId: 22348, nombreTorneo: 'Bundesliga' },
-  { liga: 'L1', regionId: 74, tournamentId: 22, seasonId: 12349, stageId: 22349, nombreTorneo: 'Ligue 1' },
+  { liga: 'BL1', regionId: 81, tournamentId: 3, seasonId: 12348, stageId: 22348, nombreTorneo: 'Bundesliga' },
+  { liga: 'FL1', regionId: 74, tournamentId: 22, seasonId: 12349, stageId: 22349, nombreTorneo: 'Ligue 1' },
 ];
 
 export const getScrapingConfig = (): ScrapingConfig => {

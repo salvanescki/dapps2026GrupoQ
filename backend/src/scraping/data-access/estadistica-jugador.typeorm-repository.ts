@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager } from 'typeorm';
 import { EstadisticaJugador } from '../domain/estadistica-jugador.entity';
@@ -8,12 +8,34 @@ import { EstadisticaJugadorMapper } from './estadistica-jugador.mapper';
 
 @Injectable()
 export class EstadisticaJugadorTypeOrmRepository
-  implements IEstadisticaJugadorRepository
+  implements IEstadisticaJugadorRepository, OnModuleInit
 {
+  private readonly logger = new Logger(EstadisticaJugadorTypeOrmRepository.name);
+
   constructor(
     @InjectRepository(EstadisticaJugadorOrmEntity)
     private readonly ormRepository: Repository<EstadisticaJugadorOrmEntity>,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    try {
+      await this.ormRepository.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_estadistica_jugador_contexto
+        ON estadisticas_jugadores (
+          jugador_id,
+          COALESCE(fuente, ''),
+          COALESCE(competencia, ''),
+          COALESCE(liga, ''),
+          COALESCE(temporada, ''),
+          COALESCE(etapa, '')
+        )
+      `);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo asegurar el índice único de estadísticas: ${(error as Error).message}`,
+      );
+    }
+  }
 
   async guardar(
     estadistica: EstadisticaJugador,

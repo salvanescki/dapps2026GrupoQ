@@ -82,7 +82,7 @@ export interface EstadisticaJugadorProps {
   id?: string;
   jugadorId: string;
   temporada?: string | null;   // Ej: "2025/2026" (nullable para soportar datos legacy)
-  liga?: string | null;        // Ej: "PL", "LL", "SA", "BL", "L1" (nullable)
+  liga?: string | null;        // Ej: "PL", "PD", "SA", "BL1", "FL1" (nullable)
   competencia?: string | null; // Ej: "Premier League", "LaLiga" (nullable)
   etapa?: string | null;       // Ej: "Regular Season", "22345" (nullable)
   fuente?: string | null;      // Default en nueva ingesta: "whoscored" (nullable en legacy)

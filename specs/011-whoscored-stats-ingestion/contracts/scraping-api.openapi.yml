@@ -22,7 +22,7 @@ paths:
       tags: [scraping]
       summary: Ejecutar scraping manualmente
       description: |
-        Dispara el proceso de scraping de estadísticas WhoScored para las 5 grandes ligas europeas (PL, LL, SA, BL, L1).
+        Dispara el proceso de scraping de estadísticas WhoScored para las 5 grandes ligas europeas (PL, PD, SA, BL1, FL1).
         La ejecución es asíncrona; retorna inmediatamente (HTTP 202) con el ID de la ejecución iniciada.
         Requiere autenticación con Bearer Token JWT.
       operationId: ejecutarScraping
