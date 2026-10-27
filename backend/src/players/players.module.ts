@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LigaOrmEntity } from '../data-access/liga.orm-entity';
 import { EquipoOrmEntity } from '../data-access/equipo.orm-entity';
@@ -15,6 +15,7 @@ import { FootballDataClient } from '../services/clients/football-data.client';
 import { SincronizacionJugadoresService } from '../services/sincronizacion-jugadores.service';
 import { JugadorService } from '../services/jugador.service';
 import { PlayersController } from '../controllers/players.controller';
+import { ScrapingModule } from '../scraping/scraping.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PlayersController } from '../controllers/players.controller';
       EquipoOrmEntity,
       JugadorOrmEntity,
     ]),
+    forwardRef(() => ScrapingModule),
   ],
   controllers: [PlayersController],
   providers: [

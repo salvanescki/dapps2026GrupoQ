@@ -7,6 +7,7 @@ import { FilterModal } from '../components/catalog/FilterModal';
 import { ActiveFiltersBar } from '../components/catalog/ActiveFiltersBar';
 import { PlayerGrid } from '../components/catalog/PlayerGrid';
 import { EmptyState } from '../components/catalog/EmptyState';
+import { PlayerDetailModal } from '../components/player-detail/PlayerDetailModal';
 import { Navbar } from '../components/layout/Navbar';
 import { Alert } from '../components/ui/Alert';
 import '../styles/catalog.css';
@@ -15,6 +16,7 @@ import '../styles/components.css';
 export const PlayersCatalogView: React.FC = () => {
   const { logout } = useAuth();
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   const {
     filters,
@@ -145,7 +147,10 @@ export const PlayersCatalogView: React.FC = () => {
 
         {!loading && players.length > 0 && (
           <>
-            <PlayerGrid players={players} />
+            <PlayerGrid
+              players={players}
+              onPlayerSelect={(id) => setSelectedPlayerId(id)}
+            />
 
             <div
               ref={sentinelRef}
@@ -178,6 +183,11 @@ export const PlayersCatalogView: React.FC = () => {
         filterOptions={filterOptions}
         onApply={applyFilters}
         onReset={handleResetFilters}
+      />
+
+      <PlayerDetailModal
+        playerId={selectedPlayerId}
+        onClose={() => setSelectedPlayerId(null)}
       />
     </div>
   );

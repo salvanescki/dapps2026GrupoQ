@@ -7,6 +7,7 @@ export class EquipoMapper {
     return Equipo.crear({
       id: orm.id,
       externalId: orm.externalId,
+      whoScoredTeamId: orm.whoScoredTeamId,
       nombre: orm.nombre,
       nombreCorto: orm.nombreCorto,
       tla: orm.tla,
@@ -22,6 +23,7 @@ export class EquipoMapper {
     const orm = new EquipoOrmEntity();
     orm.id = domain.id;
     orm.externalId = domain.externalId;
+    orm.whoScoredTeamId = domain.whoScoredTeamId;
     orm.nombre = domain.nombre;
     orm.nombreCorto = domain.nombreCorto;
     orm.tla = domain.tla;

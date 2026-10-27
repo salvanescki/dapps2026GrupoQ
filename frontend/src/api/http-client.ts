@@ -25,7 +25,10 @@ export async function httpRequest<T>(
       },
       ...options,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
     throw new HttpError(
       0,
       'No fue posible conectar con el servidor. Verifique su conexión o intente más tarde.'

@@ -21,6 +21,7 @@ export const POSICIONES_VALIDAS: PosicionJugador[] = [
 export interface JugadorProps {
   id?: string;
   externalId: number;
+  whoScoredPlayerId?: string | null;
   nombre: string;
   posicion?: PosicionJugador;
   posicionOriginal?: string | null;
@@ -70,6 +71,7 @@ export class CriterioFiltroJugador {
 export class Jugador {
   private readonly _id: string;
   private readonly _externalId: number;
+  private _whoScoredPlayerId: string | null;
   private readonly _nombre: string;
   private readonly _posicion: PosicionJugador;
   private readonly _posicionOriginal: string | null;
@@ -87,6 +89,7 @@ export class Jugador {
   private constructor(props: JugadorProps) {
     this._id = props.id || generarId();
     this._externalId = props.externalId;
+    this._whoScoredPlayerId = props.whoScoredPlayerId?.trim() || null;
     this._nombre = props.nombre?.trim();
     this._posicionOriginal = props.posicionOriginal?.trim() || null;
     this._posicion =
@@ -199,6 +202,16 @@ export class Jugador {
     }
   }
 
+  public asociarWhoScored(whoScoredId: string): void {
+    if (!whoScoredId || whoScoredId.trim().length === 0) {
+      throw new ReglaDeNegocioException(
+        'El whoScoredId no puede ser vacío.',
+      );
+    }
+    this._whoScoredPlayerId = whoScoredId.trim();
+    this._actualizadoEn = new Date();
+  }
+
   public actualizarEquipo(nuevoEquipoId: string, nuevaLigaId: string): void {
     if (!nuevoEquipoId || nuevoEquipoId.trim().length === 0) {
       throw new ReglaDeNegocioException('El nuevo equipoId es requerido.');
@@ -250,6 +263,12 @@ export class Jugador {
   }
   public get externalId(): number {
     return this._externalId;
+  }
+  public get footballDataId(): number {
+    return this._externalId;
+  }
+  public get whoScoredPlayerId(): string | null {
+    return this._whoScoredPlayerId;
   }
   public get nombre(): string {
     return this._nombre;

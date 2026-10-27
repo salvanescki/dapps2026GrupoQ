@@ -1,0 +1,297 @@
+openapi: "3.1.0"
+info:
+  title: Scraping & Player Stats Module API
+  description: |
+    Endpoints del módulo de scraping de estadísticas WhoScored e ingesta de datos.
+    Expone ejecución manual del scraping, auditoría de ejecuciones y consulta de estadísticas por jugador.
+  version: "1.1.0"
+  contact:
+    name: Grupo Q - dapps2026
+
+servers:
+  - url: /api
+    description: Backend API base path
+
+tags:
+  - name: scraping
+    description: Gestión del proceso de scraping de WhoScored y estadísticas de jugadores
+
+paths:
+  /scraping/ejecutar:
+    post:
+      tags: [scraping]
+      summary: Ejecutar scraping manualmente
+      description: |
+        Dispara el proceso de scraping de estadísticas WhoScored para las 5 grandes ligas europeas (PL, PD, SA, BL1, FL1).
+        La ejecución es asíncrona; retorna inmediatamente (HTTP 202) con el ID de la ejecución iniciada.
+        Requiere autenticación con Bearer Token JWT.
+      operationId: ejecutarScraping
+      security:
+        - bearerAuth: []
+      responses:
+        "202":
+          description: Ejecución iniciada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionScrapingIniciadaResponse"
+              example:
+                ejecucionId: "a5832f26-f3f9-499a-ab79-f15200a35044"
+                mensaje: "Proceso de scraping iniciado correctamente."
+                inicio: "2026-10-25T13:20:44.000Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Ya existe una ejecución en progreso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                statusCode: 409
+                message: "Ya existe una ejecución de scraping en progreso."
+                error: "Conflict"
+
+  /scraping/ejecuciones:
+    get:
+      tags: [scraping]
+      summary: Listar historial de ejecuciones
+      description: |
+        Retorna el historial paginado de ejecuciones de scraping ordenado por fecha de inicio descendente.
+        Requiere autenticación con Bearer Token JWT.
+      operationId: listarEjecuciones
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limite
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Cantidad máxima de ejecuciones a retornar
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página
+      responses:
+        "200":
+          description: Historial de ejecuciones obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionesListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /scraping/ejecuciones/{id}:
+    get:
+      tags: [scraping]
+      summary: Obtener detalle de una ejecución de scraping
+      description: |
+        Retorna el detalle completo de una corrida incluyendo lista de errores o métricas por liga en detalle JSONB.
+        Requiere autenticación con Bearer Token JWT.
+      operationId: obtenerEjecucion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de la ejecución de scraping (UUID)
+      responses:
+        "200":
+          description: Detalle de ejecución obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionScrapingDetalleResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /scraping/jugadores/{id}/estadisticas:
+    get:
+      tags: [scraping]
+      summary: Consultar estadísticas vigentes de un jugador
+      description: |
+        Retorna las estadísticas del jugador para la temporada activa diferenciando por rol (jugador de campo vs portero).
+        Endpoint público.
+      operationId: obtenerEstadisticasJugador
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID del jugador (UUID)
+        - name: temporada
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "2025/2026"
+          description: Temporada a consultar (default: temporada activa configurada)
+      responses:
+        "200":
+          description: Estadísticas del jugador obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstadisticasJugadorResponse"
+        "404":
+          description: Jugador o estadísticas no encontradas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                statusCode: 404
+                message: "Jugador con ID '...' no encontrado."
+                error: "Not Found"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    EjecucionScrapingIniciadaResponse:
+      type: object
+      required: [ejecucionId, mensaje, inicio]
+      properties:
+        ejecucionId:
+          type: string
+          format: uuid
+          description: ID de la ejecución iniciada
+        mensaje:
+          type: string
+        inicio:
+          type: string
+          format: date-time
+
+    EjecucionScrapingSummary:
+      type: object
+      required: [id, inicio, estado, jugadoresProcesados, errores]
+      properties:
+        id:
+          type: string
+          format: uuid
+        inicio:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+          nullable: true
+        estado:
+          type: string
+          enum: [en_progreso, exitoso, fallido]
+        jugadoresProcesados:
+          type: integer
+          minimum: 0
+        errores:
+          type: integer
+          minimum: 0
+
+    EjecucionScrapingDetalleResponse:
+      allOf:
+        - $ref: "#/components/schemas/EjecucionScrapingSummary"
+        - type: object
+          properties:
+            detalle:
+              type: array
+              items:
+                type: object
+                description: Evento de auditoría, descarte o incidencia de liga
+
+    EjecucionesListResponse:
+      type: object
+      required: [datos, total, pagina, limite]
+      properties:
+        datos:
+          type: array
+          items:
+            $ref: "#/components/schemas/EjecucionScrapingSummary"
+        total:
+          type: integer
+        pagina:
+          type: integer
+        limite:
+          type: integer
+
+    EstadisticasJugadorResponse:
+      type: object
+      required: [jugador, temporada, liga, rol, estadisticas, fechaActualizacion]
+      properties:
+        jugador:
+          type: object
+          required: [id, nombre, posicion]
+          properties:
+            id:
+              type: string
+              format: uuid
+            nombre:
+              type: string
+            posicion:
+              type: string
+            dorsal:
+              type: integer
+              nullable: true
+        temporada:
+          type: string
+          example: "2025/2026"
+        liga:
+          type: string
+          example: "PL"
+        rol:
+          type: string
+          enum: [jugador_campo, portero]
+        estadisticas:
+          type: object
+          description: Métricas detalladas según rol
+        fechaActualizacion:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [statusCode, message]
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Token JWT ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 401
+            message: "No autorizado."
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 404
+            message: "Recurso no encontrado."

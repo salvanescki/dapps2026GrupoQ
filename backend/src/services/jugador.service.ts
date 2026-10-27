@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  Optional,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -12,6 +13,11 @@ import {
   I_EQUIPO_REPOSITORY,
   I_LIGA_REPOSITORY,
 } from '../domain/jugador.repository.interface';
+import {
+  IEstadisticaJugadorRepository,
+  I_ESTADISTICA_JUGADOR_REPOSITORY,
+} from '../scraping/domain/estadistica-jugador.repository.interface';
+import { EstadisticaJugador } from '../scraping/domain/estadistica-jugador.entity';
 import { SincronizacionJugadoresService } from './sincronizacion-jugadores.service';
 import {
   CriterioFiltroJugador,
@@ -21,6 +27,7 @@ import {
   FiltroJugadoresDto,
   RespuestaCatalogoJugadoresDto,
   JugadorItemDto,
+  EstadisticasJugadorDto,
   OpcionesFiltroRespuestaDto,
   POSICIONES_FILTRO,
 } from '../controllers/dto/filtro-jugadores.dto';
@@ -34,6 +41,9 @@ export class JugadorService {
     private readonly equipoRepository: IEquipoRepository,
     @Inject(I_LIGA_REPOSITORY)
     private readonly ligaRepository: ILigaRepository,
+    @Optional()
+    @Inject(I_ESTADISTICA_JUGADOR_REPOSITORY)
+    private readonly estadisticaRepository: IEstadisticaJugadorRepository,
     private readonly sincronizacionService: SincronizacionJugadoresService,
   ) {}
 
@@ -89,7 +99,17 @@ export class JugadorService {
     if (!jugador) {
       throw new NotFoundException('Jugador no encontrado.');
     }
-    return this.mapearAJugadorItemDto(jugador);
+
+    let estadisticaActiva: EstadisticasJugadorDto | null = null;
+    if (this.estadisticaRepository) {
+      const estadisticas =
+        await this.estadisticaRepository.buscarPorJugador(jugador.id);
+      if (estadisticas && estadisticas.length > 0) {
+        estadisticaActiva = this.mapearAEstadisticasDto(estadisticas[0]);
+      }
+    }
+
+    return this.mapearAJugadorItemDto(jugador, estadisticaActiva);
   }
 
   async obtenerOpcionesFiltro(): Promise<OpcionesFiltroRespuestaDto> {
@@ -131,8 +151,48 @@ export class JugadorService {
     return this.sincronizacionService.sincronizarLigasYPlanteles();
   }
 
-  private mapearAJugadorItemDto(j: Jugador): JugadorItemDto {
-    return {
+  private mapearAEstadisticasDto(
+    e: EstadisticaJugador,
+  ): EstadisticasJugadorDto {
+    const dto: EstadisticasJugadorDto = {
+      temporada: e.temporada,
+      liga: e.liga,
+      partidosJugados: e.partidosJugados,
+      minutosJugados: e.minutosJugados,
+      goles: e.goles,
+      asistencias: e.asistencias,
+      tarjetasAmarillas: e.tarjetasAmarillas,
+      tarjetasRojas: e.tarjetasRojas,
+    };
+
+    if (e.rating !== null && e.rating !== undefined) dto.rating = e.rating;
+    if (e.tirosPorPartido !== null && e.tirosPorPartido !== undefined) dto.tirosPorPartido = e.tirosPorPartido;
+    if (e.precisionPase !== null && e.precisionPase !== undefined) dto.precisionPase = e.precisionPase;
+    if (e.duelosAereosGanadosPorPartido !== null && e.duelosAereosGanadosPorPartido !== undefined) dto.duelosAereosGanadosPorPartido = e.duelosAereosGanadosPorPartido;
+    if (e.regatesCompletadosPorPartido !== null && e.regatesCompletadosPorPartido !== undefined) dto.regatesCompletadosPorPartido = e.regatesCompletadosPorPartido;
+    if (e.pasesClavePorPartido !== null && e.pasesClavePorPartido !== undefined) dto.pasesClavePorPartido = e.pasesClavePorPartido;
+    if (e.xgPorPartido !== null && e.xgPorPartido !== undefined) dto.xgPorPartido = e.xgPorPartido;
+    if (e.xaPorPartido !== null && e.xaPorPartido !== undefined) dto.xaPorPartido = e.xaPorPartido;
+    if (e.grandesOcasionesPorPartido !== null && e.grandesOcasionesPorPartido !== undefined) dto.grandesOcasionesPorPartido = e.grandesOcasionesPorPartido;
+    if (e.entradasPorPartido !== null && e.entradasPorPartido !== undefined) dto.entradasPorPartido = e.entradasPorPartido;
+    if (e.intercepccionesPorPartido !== null && e.intercepccionesPorPartido !== undefined) dto.intercepccionesPorPartido = e.intercepccionesPorPartido;
+    if (e.despejesPorPartido !== null && e.despejesPorPartido !== undefined) dto.despejesPorPartido = e.despejesPorPartido;
+    if (e.pasesPorPartido !== null && e.pasesPorPartido !== undefined) dto.pasesPorPartido = e.pasesPorPartido;
+    if (e.centrosPorPartido !== null && e.centrosPorPartido !== undefined) dto.centrosPorPartido = e.centrosPorPartido;
+    if (e.atajadas !== null && e.atajadas !== undefined) dto.atajadas = e.atajadas;
+    if (e.golesRecibidos !== null && e.golesRecibidos !== undefined) dto.golesRecibidos = e.golesRecibidos;
+    if (e.porcentajeAtajadas !== null && e.porcentajeAtajadas !== undefined) dto.porcentajeAtajadas = e.porcentajeAtajadas;
+    if (e.erroresQueGeneraronGol !== null && e.erroresQueGeneraronGol !== undefined) dto.erroresQueGeneraronGol = e.erroresQueGeneraronGol;
+    if (e.autogoles !== null && e.autogoles !== undefined) dto.autogoles = e.autogoles;
+
+    return dto;
+  }
+
+  private mapearAJugadorItemDto(
+    j: Jugador,
+    estadisticas?: EstadisticasJugadorDto | null,
+  ): JugadorItemDto {
+    const dto: JugadorItemDto = {
       id: j.id,
       externalId: j.externalId,
       nombre: j.nombre,
@@ -156,5 +216,11 @@ export class JugadorService {
         emblemaUrl: j.liga?.emblemaUrl || undefined,
       },
     };
+
+    if (estadisticas !== undefined) {
+      dto.estadisticas = estadisticas;
+    }
+
+    return dto;
   }
 }

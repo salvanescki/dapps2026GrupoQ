@@ -4,6 +4,7 @@ import { generarId } from '../common/utils/generar-id';
 export interface EquipoProps {
   id?: string;
   externalId: number;
+  whoScoredTeamId?: string | null;
   nombre: string;
   nombreCorto?: string | null;
   tla?: string | null;
@@ -16,17 +17,19 @@ export interface EquipoProps {
 export class Equipo {
   private readonly _id: string;
   private readonly _externalId: number;
+  private _whoScoredTeamId: string | null;
   private readonly _nombre: string;
   private readonly _nombreCorto: string | null;
   private readonly _tla: string | null;
   private readonly _escudoUrl: string | null;
   private readonly _ligaId: string;
   private readonly _creadoEn: Date;
-  private readonly _actualizadoEn: Date;
+  private _actualizadoEn: Date;
 
   private constructor(props: EquipoProps) {
     this._id = props.id || generarId();
     this._externalId = props.externalId;
+    this._whoScoredTeamId = props.whoScoredTeamId?.trim() || null;
     this._nombre = props.nombre?.trim();
     this._nombreCorto = props.nombreCorto ? props.nombreCorto.trim() : null;
     this._tla = props.tla ? props.tla.trim() : null;
@@ -62,6 +65,16 @@ export class Equipo {
     }
   }
 
+  public asociarWhoScored(whoScoredId: string): void {
+    if (!whoScoredId || whoScoredId.trim().length === 0) {
+      throw new ReglaDeNegocioException(
+        'El whoScoredId no puede ser vacío.',
+      );
+    }
+    this._whoScoredTeamId = whoScoredId.trim();
+    this._actualizadoEn = new Date();
+  }
+
   public perteneceALiga(ligaId: string): boolean {
     if (!ligaId) return false;
     return this._ligaId.toLowerCase() === ligaId.trim().toLowerCase();
@@ -73,6 +86,12 @@ export class Equipo {
   }
   public get externalId(): number {
     return this._externalId;
+  }
+  public get footballDataId(): number {
+    return this._externalId;
+  }
+  public get whoScoredTeamId(): string | null {
+    return this._whoScoredTeamId;
   }
   public get nombre(): string {
     return this._nombre;
