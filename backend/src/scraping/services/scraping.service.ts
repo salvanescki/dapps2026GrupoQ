@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ConflictException,
   Optional,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
@@ -58,7 +59,7 @@ export interface EstadisticasJugadorResponse {
 }
 
 @Injectable()
-export class ScrapingService {
+export class ScrapingService implements OnModuleInit {
   private readonly logger = new Logger(ScrapingService.name);
   private readonly config: ScrapingConfig;
 
@@ -76,6 +77,32 @@ export class ScrapingService {
     private readonly dataSource?: DataSource,
   ) {
     this.config = getScrapingConfig();
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.recuperarEjecucionesAtascadas();
+  }
+
+  public async recuperarEjecucionesAtascadas(): Promise<void> {
+    try {
+      const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
+      if (enProgreso) {
+        this.logger.warn(
+          `Se detectó ejecución previa huérfana/atascada (${enProgreso.id}) al inicializar. Finalizándola como fallida...`,
+        );
+        enProgreso.finalizarFallido({
+          liga: 'GLOBAL',
+          mensaje: 'Ejecución interrumpida por reinicio del servidor o proceso huérfano',
+          timestamp: new Date(),
+        });
+        await this.ejecucionRepo.guardar(enProgreso);
+        this.logger.log(`Ejecución huérfana ${enProgreso.id} marcada como fallida.`);
+      }
+    } catch (err) {
+      this.logger.error(
+        `Error al recuperar ejecuciones atascadas: ${(err as Error).message}`,
+      );
+    }
   }
 
   public async publicarLigaTransaccional(
@@ -231,6 +258,8 @@ export class ScrapingService {
             ? this.normalizador.normalizarTexto(j.equipo.nombreCorto)
             : '';
           const matchClub =
+            this.normalizador.coincidenClubes(raw.equipoNombre, j.equipo.nombre) ||
+            (j.equipo.nombreCorto && this.normalizador.coincidenClubes(raw.equipoNombre, j.equipo.nombreCorto)) ||
             normLocalTeam.includes(normRawTeam) ||
             normRawTeam.includes(normLocalTeam) ||
             (normLocalShort && (normLocalShort.includes(normRawTeam) || normRawTeam.includes(normLocalShort)));
@@ -290,9 +319,24 @@ export class ScrapingService {
   public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {
     const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
     if (enProgreso) {
-      throw new ConflictException(
-        'Ya existe una ejecución de scraping en progreso.',
-      );
+      const STALE_TIMEOUT_MS =
+        Number(process.env.WHOSCORED_STALE_EXECUTION_TIMEOUT_MS) || 15 * 60 * 1000;
+      const duracionMs = Date.now() - enProgreso.inicio.getTime();
+      if (duracionMs > STALE_TIMEOUT_MS) {
+        this.logger.warn(
+          `Ejecución previa ${enProgreso.id} atascada en progreso por ${Math.round(duracionMs / 60000)} min. Finalizándola como fallida para recuperar el servicio...`,
+        );
+        enProgreso.finalizarFallido({
+          liga: 'GLOBAL',
+          mensaje: 'Ejecución interrumpida o expirada por timeout (stale execution recovery)',
+          timestamp: new Date(),
+        });
+        await this.ejecucionRepo.guardar(enProgreso);
+      } else {
+        throw new ConflictException(
+          'Ya existe una ejecución de scraping en progreso.',
+        );
+      }
     }
 
     const ejecucion = EjecucionScraping.iniciar();
@@ -378,7 +422,7 @@ export class ScrapingService {
           );
         }
 
-        const estadisticasAGuardar: EstadisticaJugador[] = [];
+        const estadisticasMap = new Map<string, EstadisticaJugador>();
 
         for (const { jugador: matchLocal, stats: raw } of asociados) {
           try {
@@ -417,8 +461,13 @@ export class ScrapingService {
               autogoles: raw.autogoles ?? null,
             });
 
-            estadisticasAGuardar.push(entidad);
-            ejecucion.incrementarJugadoresProcesados(1);
+            const existente = estadisticasMap.get(matchLocal.id);
+            if (!existente || (entidad.minutosJugados ?? 0) >= (existente.minutosJugados ?? 0)) {
+              if (!existente) {
+                ejecucion.incrementarJugadoresProcesados(1);
+              }
+              estadisticasMap.set(matchLocal.id, entidad);
+            }
           } catch (valErr) {
             ejecucion.registrarError({
               liga: leagueConfig.liga,
@@ -429,8 +478,13 @@ export class ScrapingService {
           }
         }
 
-        if (estadisticasAGuardar.length > 0 || jugadoresEnriquecidos.length > 0) {
-          await this.publicarLigaTransaccional(estadisticasAGuardar, jugadoresEnriquecidos);
+        const estadisticasAGuardar = Array.from(estadisticasMap.values());
+        const enriquecidosUnicos = Array.from(
+          new Map(jugadoresEnriquecidos.map((j) => [j.id, j])).values(),
+        );
+
+        if (estadisticasAGuardar.length > 0 || enriquecidosUnicos.length > 0) {
+          await this.publicarLigaTransaccional(estadisticasAGuardar, enriquecidosUnicos);
         }
 
         if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 10) {

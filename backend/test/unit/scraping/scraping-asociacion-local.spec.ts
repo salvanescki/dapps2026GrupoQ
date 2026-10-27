@@ -141,4 +141,59 @@ describe('ScrapingService - Asociación Local y Umbral >= 85% (Bloque 6)', () =>
     expect(resultado.motivo).toBe('rechazada_baja_asociacion');
     expect(resultado.tasaAsociacion).toBeCloseTo(33.33, 1);
   });
+
+  it('debe asociar correctamente clubes mediante diccionario de alias (ej: Man Utd <-> Manchester United FC)', () => {
+    const jugadorLocal = crearJugadorMock({
+      id: 'j-kobbie',
+      externalId: 201,
+      nombre: 'Kobbie Mainoo',
+      equipoNombre: 'Manchester United FC',
+    });
+
+    const raw: RawWhoScoredPlayerStats = {
+      whoScoredId: '422391',
+      nombre: 'Kobbie Mainoo',
+      equipoNombre: 'Man Utd',
+      minutosJugados: 750,
+    };
+
+    const resultado = service.asociarJugadoresLocales([raw], [jugadorLocal], 85);
+    expect(resultado.asociados.length).toBe(1);
+    expect(resultado.asociados[0].jugador.id).toBe('j-kobbie');
+  });
+
+  it('debe resolver discrepancias por sufijo Jr. o hipocorísticos a través del normalizador de respaldo', () => {
+    const jugadorLocalCasseres = crearJugadorMock({
+      id: 'j-casseres',
+      externalId: 301,
+      nombre: 'Cristian Cásseres Jr.',
+      equipoNombre: 'Toulouse FC',
+    });
+
+    const matchCasseres = normalizador.buscarCoincidencia(
+      'Cristian Cásseres',
+      'Toulouse',
+      'FL1',
+      [jugadorLocalCasseres],
+    );
+    expect(matchCasseres).toBeDefined();
+    expect(matchCasseres?.id).toBe('j-casseres');
+
+    const jugadorLocalBaena = crearJugadorMock({
+      id: 'j-baena',
+      externalId: 302,
+      nombre: 'Alejandro Baena',
+      equipoNombre: 'Club Atlético de Madrid',
+    });
+
+    const matchBaena = normalizador.buscarCoincidencia(
+      'Álex Baena',
+      'Atletico',
+      'PD',
+      [jugadorLocalBaena],
+    );
+    expect(matchBaena).toBeDefined();
+    expect(matchBaena?.id).toBe('j-baena');
+  });
 });
+

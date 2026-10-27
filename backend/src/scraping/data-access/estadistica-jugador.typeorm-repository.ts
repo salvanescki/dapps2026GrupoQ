@@ -55,9 +55,21 @@ export class EstadisticaJugadorTypeOrmRepository
       .map((e) => EstadisticaJugadorMapper.toOrm(e))
       .filter((e): e is EstadisticaJugadorOrmEntity => e !== null);
 
+    // Deduplicar dentro del lote por la clave única para evitar el error de Postgres
+    // "ON CONFLICT DO UPDATE command cannot affect row a second time"
+    const deduplicadosPorClave = new Map<string, EstadisticaJugadorOrmEntity>();
+    for (const orm of ormEntities) {
+      const clave = `${orm.jugadorId}#${orm.fuente || ''}#${orm.competencia || ''}#${orm.liga || ''}#${orm.temporada || ''}#${orm.etapa || ''}`;
+      const existente = deduplicadosPorClave.get(clave);
+      if (!existente || (orm.minutosJugados ?? 0) >= (existente.minutosJugados ?? 0)) {
+        deduplicadosPorClave.set(clave, orm);
+      }
+    }
+    const ormFinal = Array.from(deduplicadosPorClave.values());
+
     const batchSize = 100;
-    for (let i = 0; i < ormEntities.length; i += batchSize) {
-      const batch = ormEntities.slice(i, i + batchSize);
+    for (let i = 0; i < ormFinal.length; i += batchSize) {
+      const batch = ormFinal.slice(i, i + batchSize);
       await manager
         .createQueryBuilder()
         .insert()

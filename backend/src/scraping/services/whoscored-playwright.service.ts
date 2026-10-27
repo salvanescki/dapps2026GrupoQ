@@ -169,8 +169,10 @@ export class WhoScoredPlaywrightService
 
     try {
       await this.configurarInterceptores(page);
+      const esIdPlaceholder =
+        !config.seasonId || config.seasonId >= 10000 || String(config.seasonId).startsWith('1234');
       const url =
-        config.seasonId && config.seasonId !== 12345
+        !esIdPlaceholder && config.stageId && config.stageId < 20000
           ? `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`
           : `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}`;
       this.logger.log(`Descubriendo competición WhoScored (${config.liga}): ${url}`);
@@ -560,118 +562,176 @@ export class WhoScoredPlaywrightService
       return;
     }
 
-    const filas = await page.$$eval('#player-table-statistics-body tr', (rows) => {
-      return rows.map((tr) => {
-        const playerLink = tr.querySelector('a.player-link');
-        const href = playerLink?.getAttribute('href') || '';
-        const idMatch = href.match(/\/Players\/(\d+)/i);
-        const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
-        let nombre = '';
-        if (playerLink) {
-          const clone = playerLink.cloneNode(true) as HTMLElement;
-          clone.querySelector('.table-ranking')?.remove();
-          nombre = clone.textContent?.trim() || '';
-          nombre = nombre.replace(/^\d+\s*/, '').trim();
+    let pagina = 1;
+    const maxPaginas = 60;
+    let ultimoPrimerId: string | null = null;
+
+    while (pagina <= maxPaginas) {
+      const filas = await page.$$eval('#player-table-statistics-body tr', (rows) => {
+        return rows.map((tr) => {
+          const playerLink = tr.querySelector('a.player-link');
+          const href = playerLink?.getAttribute('href') || '';
+          const idMatch = href.match(/\/Players\/(\d+)/i);
+          const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
+          let nombre = '';
+          if (playerLink) {
+            const clone = playerLink.cloneNode(true) as HTMLElement;
+            clone.querySelector('.table-ranking')?.remove();
+            nombre = clone.textContent?.trim() || '';
+            nombre = nombre.replace(/^\d+\s*/, '').trim();
+          }
+
+          const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
+          let equipoNombre = teamLink?.textContent?.trim() || '';
+          equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
+
+          const getCol = (colName: string) => {
+            const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);
+            return el?.textContent?.trim() || '';
+          };
+
+          return {
+            whoScoredId,
+            nombre,
+            equipoNombre,
+            apps: getCol('apps'),
+            minsPlayed: getCol('minsPlayed'),
+            goal: getCol('goal'),
+            assistTotal: getCol('assistTotal'),
+            shotsPerGame: getCol('shotsPerGame'),
+            passSuccess: getCol('passSuccess'),
+            aerialWonPerGame: getCol('aerialWonPerGame'),
+            rating: getCol('rating'),
+            yellowCard: getCol('yellowCard'),
+            redCard: getCol('redCard'),
+            dribbleWonPerGame: getCol('dribbleWonPerGame'),
+            keyPassPerGame: getCol('keyPassPerGame'),
+            xgPerGame: getCol('xgPerGame'),
+            xaPerGame: getCol('xaPerGame'),
+            bigChancePerGame: getCol('bigChancePerGame'),
+            tacklePerGame: getCol('tacklePerGame'),
+            interceptionPerGame: getCol('interceptionPerGame'),
+            clearancePerGame: getCol('clearancePerGame'),
+            passesPerGame: getCol('passesPerGame'),
+            crossesPerGame: getCol('crossesPerGame'),
+            savePerGame: getCol('savePerGame'),
+            goalsConceded: getCol('goalsConceded'),
+            savePercentage: getCol('savePercentage'),
+            errorLeadToGoal: getCol('errorLeadToGoal'),
+            ownGoal: getCol('ownGoal'),
+          };
+        });
+      });
+
+      if (!filas || filas.length === 0) {
+        break;
+      }
+
+      for (const f of filas) {
+        if (!f.whoScoredId && !f.nombre) continue;
+        const id = f.whoScoredId || f.nombre;
+
+        let item = acumulador.get(id);
+        if (!item) {
+          item = {
+            whoScoredId: id,
+            nombre: f.nombre,
+            equipoNombre: f.equipoNombre,
+          };
+          acumulador.set(id, item);
         }
 
-        const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
-        let equipoNombre = teamLink?.textContent?.trim() || '';
-        equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
-
-        const getCol = (colName: string) => {
-          const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);
-          return el?.textContent?.trim() || '';
+        const parseNum = (val: string | undefined): number | null => {
+          if (!val || val === '-' || val === 'N/A') return null;
+          const n = Number.parseFloat(val);
+          return Number.isNaN(n) ? null : n;
         };
 
-        return {
-          whoScoredId,
-          nombre,
-          equipoNombre,
-          apps: getCol('apps'),
-          minsPlayed: getCol('minsPlayed'),
-          goal: getCol('goal'),
-          assistTotal: getCol('assistTotal'),
-          shotsPerGame: getCol('shotsPerGame'),
-          passSuccess: getCol('passSuccess'),
-          aerialWonPerGame: getCol('aerialWonPerGame'),
-          rating: getCol('rating'),
-          yellowCard: getCol('yellowCard'),
-          redCard: getCol('redCard'),
-          dribbleWonPerGame: getCol('dribbleWonPerGame'),
-          keyPassPerGame: getCol('keyPassPerGame'),
-          xgPerGame: getCol('xgPerGame'),
-          xaPerGame: getCol('xaPerGame'),
-          bigChancePerGame: getCol('bigChancePerGame'),
-          tacklePerGame: getCol('tacklePerGame'),
-          interceptionPerGame: getCol('interceptionPerGame'),
-          clearancePerGame: getCol('clearancePerGame'),
-          passesPerGame: getCol('passesPerGame'),
-          crossesPerGame: getCol('crossesPerGame'),
-          savePerGame: getCol('savePerGame'),
-          goalsConceded: getCol('goalsConceded'),
-          savePercentage: getCol('savePercentage'),
-          errorLeadToGoal: getCol('errorLeadToGoal'),
-          ownGoal: getCol('ownGoal'),
+        const parseIntVal = (val: string | undefined, defaultVal = 0): number => {
+          const n = parseNum(val);
+          return n !== null ? Math.round(n) : defaultVal;
         };
-      });
-    });
 
-    for (const f of filas) {
-      if (!f.whoScoredId && !f.nombre) continue;
-      const id = f.whoScoredId || f.nombre;
+        if (pestana === 'summary') {
+          item.partidosJugados = parseIntVal(f.apps, item.partidosJugados ?? 0);
+          item.minutosJugados = parseIntVal(f.minsPlayed, item.minutosJugados ?? 0);
+          item.goles = parseIntVal(f.goal, item.goles ?? 0);
+          item.asistencias = parseIntVal(f.assistTotal, item.asistencias ?? 0);
+          item.tirosPorPartido = parseNum(f.shotsPerGame) ?? item.tirosPorPartido ?? null;
+          item.precisionPase = parseNum(f.passSuccess) ?? item.precisionPase ?? null;
+          item.duelosAereosGanadosPorPartido = parseNum(f.aerialWonPerGame) ?? item.duelosAereosGanadosPorPartido ?? null;
+          item.rating = parseNum(f.rating) ?? item.rating ?? null;
+          item.tarjetasAmarillas = parseIntVal(f.yellowCard, item.tarjetasAmarillas ?? 0);
+          item.tarjetasRojas = parseIntVal(f.redCard, item.tarjetasRojas ?? 0);
+        }
 
-      let item = acumulador.get(id);
-      if (!item) {
-        item = {
-          whoScoredId: id,
-          nombre: f.nombre,
-          equipoNombre: f.equipoNombre,
-        };
-        acumulador.set(id, item);
+        if (pestana === 'offensive') {
+          item.regatesCompletadosPorPartido = parseNum(f.dribbleWonPerGame) ?? item.regatesCompletadosPorPartido ?? null;
+          item.pasesClavePorPartido = parseNum(f.keyPassPerGame) ?? item.pasesClavePorPartido ?? null;
+          item.grandesOcasionesPorPartido = parseNum(f.bigChancePerGame) ?? item.grandesOcasionesPorPartido ?? null;
+        }
+
+        if (pestana === 'defensive') {
+          item.entradasPorPartido = parseNum(f.tacklePerGame) ?? item.entradasPorPartido ?? null;
+          item.intercepccionesPorPartido = parseNum(f.interceptionPerGame) ?? item.intercepccionesPorPartido ?? null;
+          item.despejesPorPartido = parseNum(f.clearancePerGame) ?? item.despejesPorPartido ?? null;
+          item.atajadas = parseNum(f.savePerGame) ?? item.atajadas ?? null;
+          const gc = parseNum(f.goalsConceded);
+          if (gc !== null) item.golesRecibidos = Math.round(gc);
+        }
+
+        if (pestana === 'passing') {
+          item.pasesPorPartido = parseNum(f.passesPerGame) ?? item.pasesPorPartido ?? null;
+          item.centrosPorPartido = parseNum(f.crossesPerGame) ?? item.centrosPorPartido ?? null;
+        }
       }
 
-      const parseNum = (val: string | undefined): number | null => {
-        if (!val || val === '-' || val === 'N/A') return null;
-        const n = Number.parseFloat(val);
-        return Number.isNaN(n) ? null : n;
-      };
+      const primerIdActual = filas[0]?.whoScoredId || filas[0]?.nombre || '';
+      if (primerIdActual && primerIdActual === ultimoPrimerId) {
+        break;
+      }
+      ultimoPrimerId = primerIdActual;
 
-      const parseIntVal = (val: string | undefined, defaultVal = 0): number => {
-        const n = parseNum(val);
-        return n !== null ? Math.round(n) : defaultVal;
-      };
-
-      if (pestana === 'summary') {
-        item.partidosJugados = parseIntVal(f.apps, item.partidosJugados ?? 0);
-        item.minutosJugados = parseIntVal(f.minsPlayed, item.minutosJugados ?? 0);
-        item.goles = parseIntVal(f.goal, item.goles ?? 0);
-        item.asistencias = parseIntVal(f.assistTotal, item.asistencias ?? 0);
-        item.tirosPorPartido = parseNum(f.shotsPerGame) ?? item.tirosPorPartido ?? null;
-        item.precisionPase = parseNum(f.passSuccess) ?? item.precisionPase ?? null;
-        item.duelosAereosGanadosPorPartido = parseNum(f.aerialWonPerGame) ?? item.duelosAereosGanadosPorPartido ?? null;
-        item.rating = parseNum(f.rating) ?? item.rating ?? null;
-        item.tarjetasAmarillas = parseIntVal(f.yellowCard, item.tarjetasAmarillas ?? 0);
-        item.tarjetasRojas = parseIntVal(f.redCard, item.tarjetasRojas ?? 0);
+      let nextBtn: any = null;
+      try {
+        nextBtn = await page.$(
+          `#statistics-paging-${pestana} a#next, #statistics-paging-${pestana} a.next, a#next:not(.disabled), a.next:not(.disabled)`,
+        );
+      } catch {
+        nextBtn = null;
       }
 
-      if (pestana === 'offensive') {
-        item.regatesCompletadosPorPartido = parseNum(f.dribbleWonPerGame) ?? item.regatesCompletadosPorPartido ?? null;
-        item.pasesClavePorPartido = parseNum(f.keyPassPerGame) ?? item.pasesClavePorPartido ?? null;
-        item.grandesOcasionesPorPartido = parseNum(f.bigChancePerGame) ?? item.grandesOcasionesPorPartido ?? null;
+      if (!nextBtn) {
+        break;
       }
 
-      if (pestana === 'defensive') {
-        item.entradasPorPartido = parseNum(f.tacklePerGame) ?? item.entradasPorPartido ?? null;
-        item.intercepccionesPorPartido = parseNum(f.interceptionPerGame) ?? item.intercepccionesPorPartido ?? null;
-        item.despejesPorPartido = parseNum(f.clearancePerGame) ?? item.despejesPorPartido ?? null;
-        item.atajadas = parseNum(f.savePerGame) ?? item.atajadas ?? null;
-        const gc = parseNum(f.goalsConceded);
-        if (gc !== null) item.golesRecibidos = Math.round(gc);
+      let deshabilitado = true;
+      try {
+        const evalRes = await page.evaluate((btn: any) => {
+          if (!btn) return true;
+          const cl = btn.className || '';
+          return (
+            cl.includes('disabled') ||
+            btn.getAttribute('aria-disabled') === 'true' ||
+            btn.getAttribute('disabled') !== null ||
+            btn.style?.display === 'none'
+          );
+        }, nextBtn);
+        deshabilitado = evalRes === undefined ? true : Boolean(evalRes);
+      } catch {
+        deshabilitado = true;
       }
 
-      if (pestana === 'passing') {
-        item.pasesPorPartido = parseNum(f.passesPerGame) ?? item.pasesPorPartido ?? null;
-        item.centrosPorPartido = parseNum(f.crossesPerGame) ?? item.centrosPorPartido ?? null;
+      if (deshabilitado) {
+        break;
+      }
+
+      try {
+        await nextBtn.click();
+        pagina++;
+        await this.delayHumano(800, 1500);
+      } catch {
+        break;
       }
     }
   }

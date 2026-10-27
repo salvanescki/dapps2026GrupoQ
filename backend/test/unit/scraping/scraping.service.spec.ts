@@ -191,4 +191,39 @@ describe('ScrapingService (Unit Tests)', () => {
     expect(resultado.estadisticas.golesRecibidos).toBe(8);
     expect(resultado.estadisticas.porcentajeAtajadas).toBe(81.5);
   });
+
+  it('debe recuperar ejecuciones huérfanas en onModuleInit marcándolas como fallidas', async () => {
+    const ejecucionHuerfana = EjecucionScraping.reconstituir({
+      id: 'huerfana-1',
+      inicio: new Date(Date.now() - 3600000), // hace 1 hora
+      estado: 'en_progreso',
+    });
+
+    (mockEjecucionRepo.buscarEnProgreso as jest.Mock).mockResolvedValue(ejecucionHuerfana);
+
+    await service.onModuleInit();
+
+    expect(mockEjecucionRepo.guardar).toHaveBeenCalled();
+    expect(ejecucionHuerfana.estado).toBe('fallido');
+    expect(ejecucionHuerfana.fin).toBeDefined();
+  });
+
+  it('debe recuperar ejecuciones vencidas por timeout en ejecutarPipeline permitiendo nueva corrida', async () => {
+    const ejecucionVencida = EjecucionScraping.reconstituir({
+      id: 'vencida-1',
+      inicio: new Date(Date.now() - 10000000), // muy vieja (> 15 min)
+      estado: 'en_progreso',
+    });
+
+    (mockEjecucionRepo.buscarEnProgreso as jest.Mock).mockResolvedValue(ejecucionVencida);
+    (mockJugadorRepo.buscarConFiltros as jest.Mock).mockResolvedValue({ items: [], total: 0 });
+    (mockPlaywrightService.extraerEstadisticasLiga as jest.Mock).mockResolvedValue(new Map());
+
+    const nuevaEjecucion = await service.ejecutarPipeline('manual');
+
+    expect(ejecucionVencida.estado).toBe('fallido');
+    expect(nuevaEjecucion).toBeDefined();
+    expect(nuevaEjecucion.id).not.toBe('vencida-1');
+  });
 });
+

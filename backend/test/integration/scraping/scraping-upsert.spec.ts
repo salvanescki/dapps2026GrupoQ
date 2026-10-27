@@ -120,4 +120,35 @@ describe('Scraping Upsert & Idempotence (Integration Test)', () => {
       fechaActualizada.toISOString(),
     );
   });
+
+  it('debe tolerar múltiples registros del mismo jugador en el mismo lote sin lanzar error ON CONFLICT DO UPDATE', async () => {
+    const e1 = EstadisticaJugador.crear({
+      jugadorId: testJugadorId,
+      temporada: '2025/2026',
+      liga: 'PL',
+      partidosJugados: 5,
+      minutosJugados: 400,
+      goles: 2,
+    });
+
+    const e2 = EstadisticaJugador.crear({
+      jugadorId: testJugadorId,
+      temporada: '2025/2026',
+      liga: 'PL',
+      partidosJugados: 8,
+      minutosJugados: 700,
+      goles: 5,
+    });
+
+    // Enviar ambos en el mismo array batch
+    await expect(repository.guardarMuchos([e1, e2])).resolves.not.toThrow();
+
+    const resultado = await repository.buscarPorJugadorYTemporada(
+      testJugadorId,
+      '2025/2026',
+    );
+    expect(resultado).not.toBeNull();
+    expect(resultado!.minutosJugados).toBe(700);
+    expect(resultado!.goles).toBe(5);
+  });
 });
