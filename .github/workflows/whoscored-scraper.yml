@@ -12,6 +12,7 @@ jobs:
   scrape:
     name: Run WhoScored Scraping Pipeline
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: backend
@@ -35,6 +36,19 @@ jobs:
       - name: Build backend application
         run: npm run build
 
+      - name: Sync Football-Data Catalog
+        env:
+          NODE_ENV: production
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || '5432' }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_SSL: ${{ secrets.DB_SSL || 'false' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: node dist/run-sync-players.js
+
       - name: Run Scraper
         env:
           NODE_ENV: production
@@ -43,7 +57,9 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
+          DB_SSL: ${{ secrets.DB_SSL || 'false' }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
           WHOSCORED_SEASON_LABEL: ${{ vars.WHOSCORED_SEASON_LABEL || '2025/2026' }}
           WHOSCORED_DELAY_MIN_MS: ${{ vars.WHOSCORED_DELAY_MIN_MS || '2000' }}
           WHOSCORED_DELAY_MAX_MS: ${{ vars.WHOSCORED_DELAY_MAX_MS || '5000' }}
