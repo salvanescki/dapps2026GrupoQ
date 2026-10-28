@@ -110,6 +110,51 @@ export class WhoScoredPlaywrightService
 
   private static stealthRegistrado = false;
 
+  private obtenerProxyConfig():
+    | { server: string; username?: string; password?: string }
+    | undefined {
+    const raw =
+      process.env.SCRAPING_PROXY_URL ||
+      process.env.SCRAPING_PROXY_SERVER ||
+      process.env.HTTP_PROXY;
+    if (!raw) return undefined;
+
+    try {
+      const url = new URL(raw);
+      if (url.username || url.password) {
+        return {
+          server: `${url.protocol}//${url.host}`,
+          username: decodeURIComponent(url.username),
+          password: decodeURIComponent(url.password),
+        };
+      }
+    } catch {
+      // Usar raw directamente si no es parseable como URL completa
+    }
+
+    return {
+      server: raw,
+      username: process.env.SCRAPING_PROXY_USERNAME || undefined,
+      password: process.env.SCRAPING_PROXY_PASSWORD || undefined,
+    };
+  }
+
+  private async esperarSiHayChallenge(page: Page): Promise<void> {
+    try {
+      const isChallenge = await page.evaluate(
+        () =>
+          document.body?.innerText?.includes('security verification') ||
+          document.title?.includes('Just a moment'),
+      );
+      if (isChallenge) {
+        this.logger.log('Detectado challenge de Cloudflare, esperando resolución automática...');
+        await page.waitForTimeout(7000);
+      }
+    } catch {
+      // Ignorar error al verificar challenge
+    }
+  }
+
   public async obtenerNavegador(): Promise<Browser> {
     if (!this.browser || !this.browser.isConnected()) {
       this.logger.log('Inicializando instancia Chromium con plugin Stealth...');
@@ -117,8 +162,13 @@ export class WhoScoredPlaywrightService
         chromium.use(stealthPlugin());
         WhoScoredPlaywrightService.stealthRegistrado = true;
       }
+      const proxy = this.obtenerProxyConfig();
+      if (proxy) {
+        this.logger.log(`Chromium configurado con proxy: ${proxy.server}`);
+      }
       this.browser = await chromium.launch({
         headless: true,
+        proxy,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -178,6 +228,7 @@ export class WhoScoredPlaywrightService
       this.logger.log(`Descubriendo competición WhoScored (${config.liga}): ${url}`);
 
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+      await this.esperarSiHayChallenge(page);
 
       try {
         const meta = await page.evaluate(() => {
@@ -230,13 +281,13 @@ export class WhoScoredPlaywrightService
 
       try {
         equipos = await page.$$eval(
-          'table.standings a.team-link, #standings a.team-link, a[href*="/Teams/" i], a[href*="/teams/" i]',
+          'table.standings a.team-link, #standings a.team-link, a[href*="/teams/"], a[href*="/Teams/"]',
           (links) => {
             const seen = new Set<string>();
             const res: { whoScoredTeamId: string; nombre: string; url: string }[] = [];
             for (const a of links) {
               const href = a.getAttribute('href') || '';
-              const match = href.match(/\/Teams\/(\d+)/i);
+              const match = href.match(/\/teams\/(\d+)/i);
               if (match) {
                 const id = match[1];
                 if (!seen.has(id)) {
@@ -514,6 +565,7 @@ export class WhoScoredPlaywrightService
       this.logger.log(`Navegando a WhoScored (${config.liga}): ${url}`);
 
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await this.esperarSiHayChallenge(page);
       await this.delayHumano(1500, 3000);
 
       // Pestañas a consultar

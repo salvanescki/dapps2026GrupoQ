@@ -60,6 +60,7 @@ jobs:
           DB_SSL: ${{ secrets.DB_SSL || 'false' }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          SCRAPING_PROXY_URL: ${{ secrets.SCRAPING_PROXY_URL }}
           WHOSCORED_SEASON_LABEL: ${{ vars.WHOSCORED_SEASON_LABEL || '2025/2026' }}
           WHOSCORED_DELAY_MIN_MS: ${{ vars.WHOSCORED_DELAY_MIN_MS || '2000' }}
           WHOSCORED_DELAY_MAX_MS: ${{ vars.WHOSCORED_DELAY_MAX_MS || '5000' }}
