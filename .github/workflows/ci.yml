@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  deployments: write
 
 jobs:
   backend:
@@ -117,4 +118,18 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  api-link:
+    name: Backend API (Render)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, sonarcloud]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  
+    environment:
+      name: production
+      url: https://dapps2026grupoq.onrender.com
+  
+    steps:
+      - name: Register API URL
+        run: echo "Backend API is deployed on Render"
 
