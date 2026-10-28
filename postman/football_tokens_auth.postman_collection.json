@@ -326,7 +326,53 @@
               "path": ["players", "{{player_id}}"]
             },
             "description": "Obtiene la ficha técnica completa de un jugador por su identificador UUID."
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK - Jugador con Estadísticas de WhoScored",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/players/{{player_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["players", "{{player_id}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\",\n  \"externalId\": 3189,\n  \"nombre\": \"Bukayo Saka\",\n  \"posicion\": \"Delantero\",\n  \"posicionOriginal\": \"Right Winger\",\n  \"fechaNacimiento\": \"2001-09-05\",\n  \"nacionalidad\": \"England\",\n  \"dorsal\": 7,\n  \"equipo\": {\n    \"id\": \"b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22\",\n    \"nombre\": \"Arsenal FC\",\n    \"nombreCorto\": \"Arsenal\",\n    \"tla\": \"ARS\",\n    \"escudoUrl\": \"https://crests.football-data.org/57.png\"\n  },\n  \"liga\": {\n    \"id\": \"c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33\",\n    \"codigo\": \"PL\",\n    \"nombre\": \"Premier League\",\n    \"pais\": \"England\",\n    \"emblemaUrl\": \"https://crests.football-data.org/PL.png\"\n  },\n  \"estadisticas\": {\n    \"temporada\": \"2024/2025\",\n    \"liga\": \"Premier League\",\n    \"partidosJugados\": 35,\n    \"minutosJugados\": 2980,\n    \"goles\": 14,\n    \"asistencias\": 10,\n    \"tarjetasAmarillas\": 3,\n    \"tarjetasRojas\": 0,\n    \"rating\": 7.45,\n    \"tirosPorPartido\": 2.3,\n    \"precisionPase\": 82.1,\n    \"regatesCompletadosPorPartido\": 1.8,\n    \"pasesClavePorPartido\": 1.2,\n    \"xgPorPartido\": 0.41,\n    \"xaPorPartido\": 0.29\n  }\n}"
+            },
+            {
+              "name": "200 OK - Jugador sin Estadísticas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/players/{{player_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["players", "{{player_id}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\",\n  \"externalId\": 3189,\n  \"nombre\": \"Nuevo Jugador\",\n  \"posicion\": \"Defensa\",\n  \"nacionalidad\": \"Argentina\",\n  \"dorsal\": 4,\n  \"equipo\": {\n    \"id\": \"b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22\",\n    \"nombre\": \"Arsenal FC\"\n  },\n  \"liga\": {\n    \"id\": \"c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33\",\n    \"codigo\": \"PL\",\n    \"nombre\": \"Premier League\"\n  },\n  \"estadisticas\": null\n}"
+            }
+          ]
         },
         {
           "name": "5. Sincronización Manual de Jugadores",

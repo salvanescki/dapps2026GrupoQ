@@ -20,6 +20,15 @@ export class JugadorOrmEntity {
   @Column({ type: 'integer', unique: true, name: 'external_id' })
   externalId: number;
 
+  @Index('idx_jugadores_whoscored_id')
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    name: 'who_scored_player_id',
+  })
+  whoScoredPlayerId: string | null;
+
   @Column({ type: 'varchar', length: 150 })
   nombre: string;
 

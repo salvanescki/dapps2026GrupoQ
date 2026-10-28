@@ -1,0 +1,251 @@
+openapi: "3.1.0"
+info:
+  title: Scraping Module API
+  description: |
+    Endpoints del modulo de scraping de estadisticas WhoScored.
+    Expone ejecucion manual del scraping y consulta del historial de ejecuciones.
+  version: "1.0.0"
+  contact:
+    name: Grupo Q - dapps2026
+
+servers:
+  - url: /api
+    description: Backend API base path
+
+tags:
+  - name: scraping
+    description: Gestion del proceso de scraping de WhoScored
+
+paths:
+  /scraping/ejecutar:
+    post:
+      tags: [scraping]
+      summary: Ejecutar scraping manualmente
+      description: |
+        Dispara el proceso de scraping de estadisticas WhoScored para las 5 grandes ligas.
+        La ejecucion es asincrona; retorna inmediatamente con el ID de la ejecucion iniciada.
+        Requiere autenticacion de administrador.
+      operationId: ejecutarScraping
+      security:
+        - bearerAuth: []
+      responses:
+        "202":
+          description: Ejecucion iniciada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionScrapingIniciadaResponse"
+              example:
+                ejecucionId: "550e8400-e29b-41d4-a716-446655440000"
+                mensaje: "Proceso de scraping iniciado correctamente."
+                inicio: "2026-10-20T22:00:00.000Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Ya existe una ejecucion en progreso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                statusCode: 409
+                mensaje: "Ya existe una ejecucion de scraping en progreso."
+
+  /scraping/ejecuciones:
+    get:
+      tags: [scraping]
+      summary: Listar historial de ejecuciones
+      description: |
+        Retorna el historial de ejecuciones de scraping ordenado por fecha de inicio descendente.
+        Requiere autenticacion de administrador.
+      operationId: listarEjecuciones
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limite
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Cantidad maxima de ejecuciones a retornar
+        - name: pagina
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Numero de pagina
+      responses:
+        "200":
+          description: Historial de ejecuciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionesListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /scraping/ejecuciones/{id}:
+    get:
+      tags: [scraping]
+      summary: Obtener detalle de una ejecucion
+      description: |
+        Retorna el detalle completo de una ejecucion de scraping incluyendo errores individuales.
+        Requiere autenticacion de administrador.
+      operationId: obtenerEjecucion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de la ejecucion de scraping
+      responses:
+        "200":
+          description: Detalle de la ejecucion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EjecucionScrapingDetalleResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    EjecucionScrapingIniciadaResponse:
+      type: object
+      required: [ejecucionId, mensaje, inicio]
+      properties:
+        ejecucionId:
+          type: string
+          format: uuid
+          description: ID de la ejecucion iniciada
+        mensaje:
+          type: string
+        inicio:
+          type: string
+          format: date-time
+
+    EjecucionScrapingSummary:
+      type: object
+      required: [id, inicio, estado, jugadoresProcesados, errores]
+      properties:
+        id:
+          type: string
+          format: uuid
+        inicio:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+          nullable: true
+        estado:
+          type: string
+          enum: [en_progreso, exitoso, fallido]
+        jugadoresProcesados:
+          type: integer
+          minimum: 0
+        errores:
+          type: integer
+          minimum: 0
+
+    EjecucionScrapingDetalleResponse:
+      allOf:
+        - $ref: "#/components/schemas/EjecucionScrapingSummary"
+        - type: object
+          properties:
+            detalle:
+              type: array
+              items:
+                $ref: "#/components/schemas/ErrorScrapingDetalle"
+
+    ErrorScrapingDetalle:
+      type: object
+      required: [liga, mensaje, timestamp]
+      properties:
+        liga:
+          type: string
+          example: "PL"
+        jugadorNombre:
+          type: string
+          nullable: true
+          example: "Mohamed Salah"
+        mensaje:
+          type: string
+          example: "No se encontro jugador en la base de datos local para nombre='Mohamed Salah' equipo='Liverpool'"
+        timestamp:
+          type: string
+          format: date-time
+
+    EjecucionesListResponse:
+      type: object
+      required: [datos, total, pagina, limite]
+      properties:
+        datos:
+          type: array
+          items:
+            $ref: "#/components/schemas/EjecucionScrapingSummary"
+        total:
+          type: integer
+        pagina:
+          type: integer
+        limite:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [statusCode, mensaje]
+      properties:
+        statusCode:
+          type: integer
+        mensaje:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Token JWT ausente o invalido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 401
+            mensaje: "No autorizado."
+    Forbidden:
+      description: El usuario no tiene rol de administrador
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 403
+            mensaje: "Acceso denegado. Se requiere rol de administrador."
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 404
+            mensaje: "Ejecucion no encontrada."

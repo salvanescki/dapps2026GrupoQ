@@ -50,6 +50,40 @@ export interface Jugador {
   };
 }
 
+export interface EstadisticasJugador {
+  temporada: string;
+  liga: string;
+  partidosJugados: number;
+  minutosJugados: number;
+  goles: number;
+  asistencias: number;
+  tarjetasAmarillas: number;
+  tarjetasRojas: number;
+  rating?: number | null;
+  tirosPorPartido?: number | null;
+  precisionPase?: number | null;
+  duelosAereosGanadosPorPartido?: number | null;
+  regatesCompletadosPorPartido?: number | null;
+  pasesClavePorPartido?: number | null;
+  xgPorPartido?: number | null;
+  xaPorPartido?: number | null;
+  grandesOcasionesPorPartido?: number | null;
+  entradasPorPartido?: number | null;
+  intercepccionesPorPartido?: number | null;
+  despejesPorPartido?: number | null;
+  pasesPorPartido?: number | null;
+  centrosPorPartido?: number | null;
+  atajadas?: number | null;
+  golesRecibidos?: number | null;
+  porcentajeAtajadas?: number | null;
+  erroresQueGeneraronGol?: number | null;
+  autogoles?: number | null;
+}
+
+export interface JugadorDetalle extends Jugador {
+  estadisticas?: EstadisticasJugador | null;
+}
+
 export interface RespuestaCatalogoJugadores {
   items: Jugador[];
   total: number;

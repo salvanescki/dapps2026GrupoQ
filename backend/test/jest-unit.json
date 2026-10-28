@@ -5,9 +5,15 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "collectCoverageFrom": ["src/domain/**/*.ts"],
+  "collectCoverageFrom": ["src/domain/**/*.ts", "src/scraping/domain/**/*.ts"],
   "coverageDirectory": "./coverage/unit",
   "coverageReporters": ["text", ["lcov", { "projectRoot": ".." }]],
+  "coverageThreshold": {
+    "global": {
+      "lines": 80,
+      "branches": 80
+    }
+  },
   "testEnvironment": "node",
   "moduleNameMapper": {
     "^@src/(.*)$": "<rootDir>/src/$1",

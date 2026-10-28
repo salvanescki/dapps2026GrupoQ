@@ -21,6 +21,15 @@ export class EquipoOrmEntity {
   @Column({ type: 'integer', unique: true, name: 'external_id' })
   externalId: number;
 
+  @Index('idx_equipos_whoscored_id')
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    name: 'who_scored_team_id',
+  })
+  whoScoredTeamId: string | null;
+
   @Column({ type: 'varchar', length: 150 })
   nombre: string;
 

@@ -5,7 +5,11 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "collectCoverageFrom": ["src/services/**/*.ts", "src/data-access/**/*.ts"],
+  "collectCoverageFrom": [
+    "src/services/**/*.ts",
+    "src/data-access/**/*.ts",
+    "src/scraping/data-access/**/*.ts"
+  ],
   "coverageDirectory": "./coverage/integration",
   "coverageReporters": ["text", ["lcov", { "projectRoot": ".." }]],
   "testEnvironment": "node",
