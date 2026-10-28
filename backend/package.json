@@ -23,7 +23,8 @@
     "test:e2e:cov": "jest --config ./test/jest-e2e.json --runInBand --coverage",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "playwright:install": "playwright install chromium --with-deps",
-    "scraper:run": "npm run build && node dist/run-scraper.js"
+    "scraper:run": "npm run build && node dist/run-scraper.js",
+    "sync:run": "npm run build && node dist/run-sync-players.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.5",
