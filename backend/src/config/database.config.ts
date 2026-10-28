@@ -12,5 +12,5 @@ export const getDatabaseConfig = (): TypeOrmModuleOptions => ({
   database: process.env.DB_NAME || 'football_tokens_db',
   autoLoadEntities: true,
   synchronize: process.env.NODE_ENV !== 'production',
-  logging: process.env.NODE_ENV === 'development',
+  logging: process.env.DB_LOGGING === 'true',
 });
