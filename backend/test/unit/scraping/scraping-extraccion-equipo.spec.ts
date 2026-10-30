@@ -37,8 +37,13 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
         teamName: 'Arsenal',
         apps: 10,
         minsPlayed: 900,
-        goals: 5,
-        assists: 4,
+        goal: 5,
+        assistTotal: 4,
+        shotsPerGame: 3.2,
+        passSuccess: 84.5,
+        aerialWonPerGame: 0.7,
+        yellowCard: 2,
+        redCard: 0,
         rating: 7.8,
       },
     ];
@@ -61,7 +66,138 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
       await service.extraerEstadisticasLigaPorEquipos(config, equipos);
 
     expect(resultado.jugadores.size).toBe(1);
-    expect(resultado.jugadores.get('101')?.nombre).toBe('Bukayo Saka');
+    const saka = resultado.jugadores.get('101');
+    expect(saka?.nombre).toBe('Bukayo Saka');
+    expect(saka?.goles).toBe(5);
+    expect(saka?.asistencias).toBe(4);
+    expect(saka?.tirosPorPartido).toBe(3.2);
+    expect(saka?.precisionPase).toBe(84.5);
+    expect(saka?.duelosAereosGanadosPorPartido).toBe(0.7);
+    expect(saka?.tarjetasAmarillas).toBe(2);
+    expect(saka?.tarjetasRojas).toBe(0);
+    expect(resultado.incidencias.length).toBe(0);
+  });
+
+  it('debe enriquecer estadísticas del jugador fusionando feeds complementarios (offensive, defensive, passing, xg, saves)', async () => {
+    jest.spyOn(service as any, 'delayHumano').mockResolvedValue(undefined);
+    jest.spyOn(service, 'obtenerNavegador').mockResolvedValue({
+      newContext: jest.fn().mockResolvedValue({
+        newPage: jest.fn().mockResolvedValue({
+          close: jest.fn().mockResolvedValue(undefined),
+          route: jest.fn().mockResolvedValue(undefined),
+        }),
+        close: jest.fn().mockResolvedValue(undefined),
+      }),
+      isConnected: jest.fn().mockReturnValue(true),
+    } as any);
+
+    jest
+      .spyOn(service, 'consultarFeedEquipo')
+      .mockImplementation(async (_ctx, _stg, _teamId, _ref, _page, opciones) => {
+        const cat = opciones?.category ?? 'summary';
+        const sub = opciones?.subcategory ?? 'all';
+
+        if (cat === 'summary' && sub === 'all') {
+          return [
+            {
+              playerId: 373525,
+              name: 'João Pedro',
+              teamName: 'Chelsea',
+              apps: 6,
+              minsPlayed: 522,
+              goal: 5,
+              assistTotal: 3,
+              shotsPerGame: 2.7,
+              passSuccess: 68.3,
+              aerialWonPerGame: 3.7,
+              yellowCard: 1,
+              redCard: 0,
+              rating: 7.73,
+            },
+            {
+              playerId: 102248,
+              name: 'Emiliano Martínez',
+              teamName: 'Chelsea',
+              apps: 6,
+              minsPlayed: 525,
+              goal: 0,
+              assistTotal: 0,
+              rating: 6.95,
+            },
+          ];
+        }
+        if (cat === 'summary' && sub === 'offensive') {
+          return [
+            {
+              playerId: 373525,
+              name: 'João Pedro',
+              dribbleWonPerGame: 1.2,
+              keyPassPerGame: 1.2,
+            },
+          ];
+        }
+        if (cat === 'summary' && sub === 'defensive') {
+          return [
+            {
+              playerId: 373525,
+              name: 'João Pedro',
+              tacklePerGame: 0.3,
+              interceptionPerGame: 0.1,
+              clearancePerGame: 0.7,
+              goalOwn: 1,
+            },
+          ];
+        }
+        if (cat === 'summary' && sub === 'passing') {
+          return [
+            {
+              playerId: 373525,
+              name: 'João Pedro',
+              totalPassesPerGame: 20.5,
+              accurateCrossesPerGame: 0.2,
+            },
+          ];
+        }
+        if (cat === 'xg-stats' && sub === 'summary') {
+          return [
+            {
+              playerId: 373525,
+              name: 'João Pedro',
+              apps: 6,
+              xG: 3.6,
+            },
+          ];
+        }
+        if (cat === 'saves' && sub === 'shotzone') {
+          return [
+            {
+              playerId: 102248,
+              name: 'Emiliano Martínez',
+              saveTotal: 4,
+            },
+          ];
+        }
+        return [];
+      });
+
+    const resultado = await service.extraerEstadisticasLigaPorEquipos(config, [equipos[0]]);
+
+    const jp = resultado.jugadores.get('373525');
+    expect(jp).toBeDefined();
+    expect(jp?.goles).toBe(5);
+    expect(jp?.asistencias).toBe(3);
+    expect(jp?.regatesCompletadosPorPartido).toBe(1.2);
+    expect(jp?.pasesClavePorPartido).toBe(1.2);
+    expect(jp?.entradasPorPartido).toBe(0.3);
+    expect(jp?.intercepccionesPorPartido).toBe(0.1);
+    expect(jp?.despejesPorPartido).toBe(0.7);
+    expect(jp?.autogoles).toBe(1);
+    expect(jp?.pasesPorPartido).toBe(20.5);
+    expect(jp?.centrosPorPartido).toBe(0.2);
+    expect(jp?.xgPorPartido).toBeCloseTo(0.6, 5);
+
+    const dibu = resultado.jugadores.get('102248');
+    expect(dibu?.atajadas).toBe(4);
     expect(resultado.incidencias.length).toBe(0);
   });
 
@@ -123,8 +259,8 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
           teamId: 167,
           teamName: 'Manchester City',
           minsPlayed: 850,
-          goals: 12,
-          assists: 2,
+          goal: 12,
+          assistTotal: 2,
           rating: 8.1,
         },
       ];
@@ -164,8 +300,8 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
           name: 'Declan Rice',
           teamId: 13,
           minsPlayed: 880,
-          goals: 2,
-          assists: 3,
+          goal: 2,
+          assistTotal: 3,
           rating: 7.4,
         },
       ];
