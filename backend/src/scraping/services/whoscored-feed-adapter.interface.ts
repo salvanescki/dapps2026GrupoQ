@@ -1,23 +1,48 @@
+/**
+ * Registro de jugador devuelto por `/StatisticsFeed/1/GetPlayerStatistics`.
+ *
+ * Los nombres de campo reflejan EXACTAMENTE las claves JSON reales del feed de WhoScored
+ * (verificadas contra la respuesta en vivo). Cada combinación category/subcategory expone
+ * sólo un subconjunto de estas claves:
+ *  - summary/all:       apps, subOn, minsPlayed, goal, assistTotal, yellowCard, redCard,
+ *                       shotsPerGame, passSuccess, aerialWonPerGame, manOfTheMatch, rating
+ *  - summary/offensive: goal, assistTotal, shotsPerGame, keyPassPerGame, dribbleWonPerGame, ...
+ *  - summary/defensive: tacklePerGame, interceptionPerGame, clearancePerGame, goalOwn, ...
+ *  - summary/passing:   totalPassesPerGame, passSuccess, accurateCrossesPerGame, ...
+ *  - xg-stats/summary:  xG (total), xGPerNinety, totalShots, ...
+ *  - saves/shotzone:    saveTotal (por partido con statsAccumulationType=0), ...
+ *
+ * Nota: los totales (goal, assistTotal, goalOwn, yellowCard, redCard, minsPlayed, apps, xG)
+ * se devuelven acumulados; los campos `*PerGame` son promedios por partido.
+ */
 export interface RawWhoScoredFeedItem {
   playerId: number | string;
   name: string;
   teamId?: number | string;
   teamName?: string;
   apps?: number;
+  subOn?: number;
   minsPlayed?: number;
-  goals?: number;
-  assists?: number;
+  goal?: number;
+  assistTotal?: number;
   rating?: number;
   shotsPerGame?: number | null;
   passSuccess?: number | null;
   aerialWonPerGame?: number | null;
   yellowCard?: number;
   redCard?: number;
-  dribbleSuccessPerGame?: number | null;
+  manOfTheMatch?: number;
+  dribbleWonPerGame?: number | null;
   keyPassPerGame?: number | null;
   tacklePerGame?: number | null;
   interceptionPerGame?: number | null;
   clearancePerGame?: number | null;
+  goalOwn?: number | null;
+  totalPassesPerGame?: number | null;
+  accurateCrossesPerGame?: number | null;
+  xG?: number | null;
+  xGPerNinety?: number | null;
+  saveTotal?: number | null;
 }
 
 export interface WhoScoredFeedResponse {

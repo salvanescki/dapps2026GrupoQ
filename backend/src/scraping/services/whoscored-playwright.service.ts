@@ -86,6 +86,123 @@ export interface RawWhoScoredPlayerStats {
   autogoles?: number | null;
 }
 
+export interface OpcionesFeedEquipo {
+  category?: string;
+  subcategory?: string;
+  extraQuery?: string;
+}
+
+interface FeedComplementarioWhoScored extends OpcionesFeedEquipo {
+  clave: string;
+  aplicar: (item: RawWhoScoredFeedItem, stats: RawWhoScoredPlayerStats) => void;
+}
+
+/** Convierte un valor del feed a número finito; null si está ausente o no es numérico. */
+const numeroFeed = (valor: unknown): number | null => {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Igual que numeroFeed pero redondeado a entero (para totales acumulados). */
+const enteroFeed = (valor: unknown): number | null => {
+  const n = numeroFeed(valor);
+  return n === null ? null : Math.round(n);
+};
+
+/**
+ * Feeds complementarios al summary/all. Los parámetros category/subcategory replican
+ * exactamente los que usa la web de WhoScored en las pestañas de la página de equipo
+ * (Defensive / Offensive / Passing / xG / Detailed > Saves).
+ * Sólo se asignan valores presentes en el feed (nunca se pisa un dato con null).
+ */
+export const FEEDS_COMPLEMENTARIOS_WHOSCORED: FeedComplementarioWhoScored[] = [
+  {
+    clave: 'offensive',
+    category: 'summary',
+    subcategory: 'offensive',
+    aplicar: (item, stats) => {
+      const regates = numeroFeed(item.dribbleWonPerGame);
+      if (regates !== null) stats.regatesCompletadosPorPartido = regates;
+      const pasesClave = numeroFeed(item.keyPassPerGame);
+      if (pasesClave !== null) stats.pasesClavePorPartido = pasesClave;
+    },
+  },
+  {
+    clave: 'defensive',
+    category: 'summary',
+    subcategory: 'defensive',
+    aplicar: (item, stats) => {
+      const entradas = numeroFeed(item.tacklePerGame);
+      if (entradas !== null) stats.entradasPorPartido = entradas;
+      const intercepciones = numeroFeed(item.interceptionPerGame);
+      if (intercepciones !== null) stats.intercepccionesPorPartido = intercepciones;
+      const despejes = numeroFeed(item.clearancePerGame);
+      if (despejes !== null) stats.despejesPorPartido = despejes;
+      const autogoles = enteroFeed(item.goalOwn);
+      if (autogoles !== null) stats.autogoles = autogoles;
+    },
+  },
+  {
+    clave: 'passing',
+    category: 'summary',
+    subcategory: 'passing',
+    aplicar: (item, stats) => {
+      const pases = numeroFeed(item.totalPassesPerGame);
+      if (pases !== null) stats.pasesPorPartido = pases;
+      const centros = numeroFeed(item.accurateCrossesPerGame);
+      if (centros !== null) stats.centrosPorPartido = centros;
+    },
+  },
+  {
+    clave: 'xg',
+    category: 'xg-stats',
+    subcategory: 'summary',
+    extraQuery: '&incPens=true',
+    aplicar: (item, stats) => {
+      // El feed entrega xG acumulado de la temporada; se normaliza por partido jugado
+      // (mismo criterio "por partido" que los campos *PerGame de WhoScored).
+      const xg = numeroFeed(item.xG);
+      const apps = numeroFeed(item.apps);
+      if (xg !== null && apps !== null && apps > 0) {
+        stats.xgPorPartido = xg / apps;
+      }
+    },
+  },
+  {
+    clave: 'saves',
+    category: 'saves',
+    subcategory: 'shotzone',
+    aplicar: (item, stats) => {
+      // Con statsAccumulationType=0 saveTotal es el promedio de atajadas por partido.
+      const atajadas = numeroFeed(item.saveTotal);
+      if (atajadas !== null) stats.atajadas = atajadas;
+    },
+  },
+];
+
+/** Mapea un registro del feed summary/all al modelo interno de estadísticas crudas. */
+export function mapearItemResumenWhoScored(
+  item: RawWhoScoredFeedItem,
+  equipoNombreFallback?: string,
+): RawWhoScoredPlayerStats {
+  return {
+    whoScoredId: String(item.playerId),
+    nombre: item.name,
+    equipoNombre: item.teamName || equipoNombreFallback,
+    partidosJugados: enteroFeed(item.apps) ?? 0,
+    minutosJugados: enteroFeed(item.minsPlayed) ?? 0,
+    goles: enteroFeed(item.goal) ?? 0,
+    asistencias: enteroFeed(item.assistTotal) ?? 0,
+    tirosPorPartido: numeroFeed(item.shotsPerGame),
+    precisionPase: numeroFeed(item.passSuccess),
+    duelosAereosGanadosPorPartido: numeroFeed(item.aerialWonPerGame),
+    rating: numeroFeed(item.rating),
+    tarjetasAmarillas: enteroFeed(item.yellowCard) ?? 0,
+    tarjetasRojas: enteroFeed(item.redCard) ?? 0,
+  };
+}
+
 @Injectable()
 export class WhoScoredPlaywrightService
   implements OnModuleInit, OnModuleDestroy
@@ -338,8 +455,12 @@ export class WhoScoredPlaywrightService
     teamId: string,
     refererUrl: string,
     page?: Page,
+    opciones?: OpcionesFeedEquipo,
   ): Promise<RawWhoScoredFeedItem[]> {
-    const feedUrl = `https://www.whoscored.com/StatisticsFeed/1/GetPlayerStatistics?category=summary&subcategory=all&statsAccumulationType=0&isCurrent=true&stageId=${stageId}&teamIds=${teamId}&numberOfPlayersToPick=50`;
+    const category = opciones?.category ?? 'summary';
+    const subcategory = opciones?.subcategory ?? 'all';
+    const extraQuery = opciones?.extraQuery ?? '';
+    const feedUrl = `https://www.whoscored.com/StatisticsFeed/1/GetPlayerStatistics?category=${category}&subcategory=${subcategory}&statsAccumulationType=0&isCurrent=true&stageId=${stageId}&teamIds=${teamId}&numberOfPlayersToPick=50${extraQuery}`;
 
     let json: any = null;
 
@@ -406,7 +527,30 @@ export class WhoScoredPlaywrightService
     await this.delayHumano(1000, 2000);
 
     const acumulador = new Map<string, RawWhoScoredPlayerStats>();
-    await this.extraerFilasTabla(page, 'summary', acumulador);
+    const pestanasEquipo = [
+      { nombre: 'summary', selectorTab: null },
+      { nombre: 'defensive', selectorTab: 'a[href="#team-squad-stats-defensive"]' },
+      { nombre: 'offensive', selectorTab: 'a[href="#team-squad-stats-offensive"]' },
+      { nombre: 'passing', selectorTab: 'a[href="#team-squad-stats-passing"]' },
+    ];
+
+    for (const pestana of pestanasEquipo) {
+      try {
+        if (pestana.selectorTab) {
+          const tabVisible = await page.$(pestana.selectorTab);
+          if (tabVisible) {
+            await tabVisible.click();
+            await this.delayHumano(1000, 2000);
+          }
+        }
+        await this.extraerFilasTabla(page, pestana.nombre, acumulador);
+      } catch (tabErr) {
+        this.logger.warn(
+          `Error en fallback DOM pestaña ${pestana.nombre} para equipo ${equipo.nombre}: ${(tabErr as Error).message}`,
+        );
+      }
+    }
+
     return Array.from(acumulador.values());
   }
 
@@ -472,22 +616,22 @@ export class WhoScoredPlaywrightService
         }
 
         if (items && items.length > 0) {
+          const jugadoresEquipo = new Map<string, RawWhoScoredPlayerStats>();
           for (const item of items) {
-            const whoScoredId = String(item.playerId);
-            const stats: RawWhoScoredPlayerStats = {
-              whoScoredId,
-              nombre: item.name,
-              equipoNombre: item.teamName || equipo.nombre,
-              partidosJugados: item.apps ?? 0,
-              minutosJugados: item.minsPlayed ?? 0,
-              goles: item.goals ?? 0,
-              asistencias: item.assists ?? 0,
-              rating: item.rating !== null && item.rating !== undefined ? Number(item.rating) : null,
-              tarjetasAmarillas: item.yellowCard ?? 0,
-              tarjetasRojas: item.redCard ?? 0,
-            };
-            jugadores.set(whoScoredId, stats);
+            const stats = mapearItemResumenWhoScored(item, equipo.nombre);
+            jugadoresEquipo.set(stats.whoScoredId, stats);
+            jugadores.set(stats.whoScoredId, stats);
           }
+
+          await this.enriquecerConFeedsComplementarios(
+            context,
+            config.stageId,
+            equipo,
+            refererUrl,
+            page,
+            jugadoresEquipo,
+            incidencias,
+          );
         } else {
           this.logger.warn(
             `Activando fallback DOM observable para equipo ${equipo.nombre} (${equipo.whoScoredTeamId})`,
@@ -523,6 +667,67 @@ export class WhoScoredPlaywrightService
     }
 
     return { jugadores, incidencias };
+  }
+
+  /**
+   * Consulta los feeds complementarios (offensive, defensive, passing, xG, saves) de un equipo
+   * y fusiona sus valores sobre los jugadores ya obtenidos del summary. Es best-effort: una
+   * falla en un feed complementario no descarta los datos del summary ni activa el fallback DOM;
+   * sólo se registra como incidencia observable.
+   */
+  private async enriquecerConFeedsComplementarios(
+    context: BrowserContext,
+    stageId: number,
+    equipo: EquipoWhoScoredDescubierto,
+    refererUrl: string,
+    page: Page,
+    jugadoresEquipo: Map<string, RawWhoScoredPlayerStats>,
+    incidencias: IncidenciaScraping[],
+  ): Promise<void> {
+    for (const feed of FEEDS_COMPLEMENTARIOS_WHOSCORED) {
+      await this.delayHumano(300, 700);
+      let items: RawWhoScoredFeedItem[] | null = null;
+      let ultimoError: string | null = null;
+
+      for (let intento = 1; intento <= 2 && items === null; intento++) {
+        try {
+          items = await this.consultarFeedEquipo(
+            context,
+            stageId,
+            equipo.whoScoredTeamId,
+            refererUrl,
+            page,
+            { category: feed.category, subcategory: feed.subcategory, extraQuery: feed.extraQuery },
+          );
+        } catch (err: any) {
+          ultimoError = err?.message ?? String(err);
+          const isRateLimit = err?.status === 429 || String(err?.message).includes('429');
+          if (isRateLimit && intento < 2) {
+            await this.pausaRateLimit(10000);
+          }
+        }
+      }
+
+      if (!items) {
+        this.logger.warn(
+          `Feed complementario '${feed.clave}' no disponible para equipo ${equipo.nombre} (${equipo.whoScoredTeamId}): ${ultimoError}`,
+        );
+        incidencias.push({
+          tipo: 'FEED_COMPLEMENTARIO_FALLIDO',
+          equipoId: equipo.whoScoredTeamId,
+          equipoNombre: equipo.nombre,
+          detalle: `Feed '${feed.clave}' (${feed.category}/${feed.subcategory}) no disponible: ${ultimoError}`,
+        });
+        continue;
+      }
+
+      for (const item of items) {
+        const stats = jugadoresEquipo.get(String(item.playerId));
+        if (stats) {
+          feed.aplicar(item, stats);
+        }
+      }
+    }
   }
 
   private async configurarInterceptores(page: Page): Promise<void> {
@@ -619,7 +824,13 @@ export class WhoScoredPlaywrightService
     let ultimoPrimerId: string | null = null;
 
     while (pagina <= maxPaginas) {
-      const filas = await page.$$eval('#player-table-statistics-body tr', (rows) => {
+      const selectorTabla =
+        '#team-squad-stats #statistics-table-' +
+        pestana +
+        ' #player-table-statistics-body tr, #stage-top-player-stats-' +
+        pestana +
+        ' #player-table-statistics-body tr, #player-table-statistics-body tr';
+      const filas = await page.$$eval(selectorTabla, (rows) => {
         return rows.map((tr) => {
           const playerLink = tr.querySelector('a.player-link');
           const href = playerLink?.getAttribute('href') || '';
@@ -642,11 +853,23 @@ export class WhoScoredPlaywrightService
             return el?.textContent?.trim() || '';
           };
 
+          // En las tablas de equipo, la columna Apps tiene encabezado <th class="ap"> pero el <td>
+          // carece de clase (es la celda inmediatamente anterior a td.minsPlayed).
+          let appsVal = getCol('apps');
+          if (!appsVal) {
+            const minsCell = tr.querySelector('td[class*="minsPlayed"]');
+            const prevText = minsCell?.previousElementSibling?.textContent?.trim() || '';
+            if (prevText) {
+              const mApps = prevText.match(/^(\d+)(?:\((\d+)\))?$/);
+              appsVal = mApps ? String(Number(mApps[1]) + (mApps[2] ? Number(mApps[2]) : 0)) : prevText;
+            }
+          }
+
           return {
             whoScoredId,
             nombre,
             equipoNombre,
-            apps: getCol('apps'),
+            apps: appsVal,
             minsPlayed: getCol('minsPlayed'),
             goal: getCol('goal'),
             assistTotal: getCol('assistTotal'),
@@ -664,13 +887,13 @@ export class WhoScoredPlaywrightService
             tacklePerGame: getCol('tacklePerGame'),
             interceptionPerGame: getCol('interceptionPerGame'),
             clearancePerGame: getCol('clearancePerGame'),
-            passesPerGame: getCol('passesPerGame'),
-            crossesPerGame: getCol('crossesPerGame'),
+            passesPerGame: getCol('totalPassesPerGame'),
+            crossesPerGame: getCol('accurateCrossesPerGame'),
             savePerGame: getCol('savePerGame'),
             goalsConceded: getCol('goalsConceded'),
             savePercentage: getCol('savePercentage'),
             errorLeadToGoal: getCol('errorLeadToGoal'),
-            ownGoal: getCol('ownGoal'),
+            ownGoal: getCol('goalOwn'),
           };
         });
       });
@@ -730,6 +953,8 @@ export class WhoScoredPlaywrightService
           item.atajadas = parseNum(f.savePerGame) ?? item.atajadas ?? null;
           const gc = parseNum(f.goalsConceded);
           if (gc !== null) item.golesRecibidos = Math.round(gc);
+          const og = parseNum(f.ownGoal);
+          if (og !== null) item.autogoles = Math.round(og);
         }
 
         if (pestana === 'passing') {
