@@ -1,0 +1,499 @@
+openapi: 3.0.3
+info:
+  title: Marketplace de Tokens de Jugadores y Order Management System (OMS)
+  version: 1.0.0
+  description: |
+    API para la cotización de tokens de futbolistas mediante estrategias dinámicas,
+    gestión de órdenes de compra/venta (OMS) en mercado primario y secundario,
+    y consulta de portafolios y transacciones.
+paths:
+  /players/{id}/quotes:
+    get:
+      tags:
+        - Cotización
+      summary: Historial de cotizaciones de un jugador
+      description: Retorna la lista cronológica de cotizaciones calculadas para un jugador específico.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del futbolista
+          schema:
+            type: string
+            format: uuid
+        - name: limite
+          in: query
+          required: false
+          description: Cantidad máxima de cotizaciones a retornar
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Historial de cotizaciones obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CotizacionRespuestaDto'
+        '400':
+          description: Formato de identificador UUID inválido.
+        '404':
+          description: Jugador no encontrado.
+
+  /players/ranking:
+    get:
+      tags:
+        - Cotización
+      summary: Ranking de jugadores según estrategia activa
+      description: Retorna la clasificación de futbolistas ordenados descendentemente por su cotización o score de rendimiento bajo la estrategia activa.
+      parameters:
+        - name: limite
+          in: query
+          required: false
+          description: Cantidad de jugadores a incluir en el ranking (top N)
+          schema:
+            type: integer
+            default: 20
+        - name: posicion
+          in: query
+          required: false
+          description: Filtro opcional por posición táctica
+          schema:
+            type: string
+            enum: [Portero, Defensa, Mediocampista, Delantero]
+      responses:
+        '200':
+          description: Ranking obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JugadorRankingDto'
+
+  /quotes/recalculate:
+    post:
+      tags:
+        - Cotización
+      summary: Recalcular cotizaciones (job manual)
+      description: Dispara de forma manual el recálculo masivo de las cotizaciones de todos los jugadores activos utilizando la estrategia configurada. Requiere privilegios de administrador (ADMIN).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estrategiaId:
+                  type: string
+                  description: Identificador opcional de la estrategia a aplicar (ej. GLOBAL, POSICIONAL). Si se omite, se usa la activa.
+                  example: POSICIONAL
+      responses:
+        '200':
+          description: Recálculo finalizado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenRecalculoDto'
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso restringido. Requiere rol ADMIN.
+
+  /orders/buy:
+    post:
+      tags:
+        - Mercado
+      summary: Comprar tokens de un jugador
+      description: Emite una orden de compra en el OMS. Si existen órdenes en mercado secundario que cubran la solicitud o tokens en mercado primario (superusuario), se liquidan debitando los fondos del comprador y transfiriendo los tokens.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearOrdenCompraDto'
+      responses:
+        '201':
+          description: Orden de compra ejecutada o registrada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoCompraDto'
+        '400':
+          description: Datos de compra inválidos, suministro excedido o fondos monetarios insuficientes.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Jugador no encontrado.
+
+  /orders/sell:
+    post:
+      tags:
+        - Mercado
+      summary: Vender tokens de un jugador
+      description: Emite una orden de venta en el mercado secundario del OMS por una cantidad de tokens a un precio unitario especificado. Bloquea los tokens correspondientes del usuario en custodia preventiva.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearOrdenVentaDto'
+      responses:
+        '201':
+          description: Orden de venta creada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenVentaRespuestaDto'
+        '400':
+          description: Datos de venta inválidos o saldo de tokens disponible insuficiente.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Jugador no encontrado.
+
+  /users/{id}/portfolio:
+    get:
+      tags:
+        - Mercado
+      summary: Portfolio del usuario
+      description: Retorna el estado consolidado de inversiones del usuario, incluyendo tenencias de tokens por jugador, cotización de mercado actual, valor total y saldo en billetera.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del usuario
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Portfolio del usuario obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioUsuarioDto'
+        '400':
+          description: Identificador UUID inválido.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Usuario no encontrado.
+
+  /users/{id}/transactions:
+    get:
+      tags:
+        - Mercado
+      summary: Historial de operaciones del usuario
+      description: Retorna la lista cronológica de transacciones concluidas (compras y ventas) en las que el usuario ha participado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del usuario
+          schema:
+            type: string
+            format: uuid
+        - name: tipo
+          in: query
+          required: false
+          description: Filtrar por sentido de operación (COMPRA o VENTA)
+          schema:
+            type: string
+            enum: [COMPRA, VENTA]
+      responses:
+        '200':
+          description: Historial de transacciones obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransaccionUsuarioDto'
+        '400':
+          description: Identificador UUID inválido.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Usuario no encontrado.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CotizacionRespuestaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: float
+          example: 0.652
+        valor:
+          type: number
+          format: float
+          example: 1.65
+        estrategiaId:
+          type: string
+          example: GLOBAL
+        estrategiaVersion:
+          type: string
+          example: v1.0
+        fechaCotizacion:
+          type: string
+          format: date-time
+
+    JugadorRankingDto:
+      type: object
+      properties:
+        posicionRanking:
+          type: integer
+          example: 1
+        jugadorId:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          example: Kylian Mbappé
+        posicion:
+          type: string
+          example: Delantero
+        equipoNombre:
+          type: string
+          example: Real Madrid CF
+        score:
+          type: number
+          format: float
+          example: 0.885
+        cotizacionActual:
+          type: number
+          format: float
+          example: 1.89
+        tokensDisponibles:
+          type: integer
+          example: 45
+
+    ResumenRecalculoDto:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          example: Recálculo de cotizaciones finalizado exitosamente.
+        totalJugadoresProcesados:
+          type: integer
+          example: 2450
+        estrategiaAplicada:
+          type: string
+          example: POSICIONAL
+        versionEstrategia:
+          type: string
+          example: v1.0
+        duracionMs:
+          type: integer
+          example: 1250
+
+    CrearOrdenCompraDto:
+      type: object
+      required:
+        - jugadorId
+        - cantidad
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 5
+        precioMaximoUnitario:
+          type: number
+          format: float
+          description: Límite máximo opcional a pagar por token (para protección contra fluctuaciones)
+          example: 2.00
+
+    ResultadoCompraDto:
+      type: object
+      properties:
+        transaccionId:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        cantidadTokensComprados:
+          type: integer
+          example: 5
+        precioUnitarioPagado:
+          type: number
+          format: float
+          example: 1.25
+        montoTotalDebitado:
+          type: number
+          format: float
+          example: 6.25
+        saldoRestanteUsuario:
+          type: number
+          format: float
+          example: 993.75
+        tipoMercado:
+          type: string
+          enum: [PRIMARIO, SECUNDARIO]
+          example: PRIMARIO
+        fecha:
+          type: string
+          format: date-time
+
+    CrearOrdenVentaDto:
+      type: object
+      required:
+        - jugadorId
+        - cantidad
+        - precioUnitario
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 3
+        precioUnitario:
+          type: number
+          format: float
+          minimum: 0.01
+          example: 1.75
+
+    OrdenVentaRespuestaDto:
+      type: object
+      properties:
+        ordenId:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        vendedorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          example: 3
+        precioUnitario:
+          type: number
+          format: float
+          example: 1.75
+        estado:
+          type: string
+          example: PENDIENTE
+        creadoEn:
+          type: string
+          format: date-time
+
+    PosicionPortafolioDto:
+      type: object
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        nombreJugador:
+          type: string
+          example: Erling Haaland
+        posicion:
+          type: string
+          example: Delantero
+        equipoNombre:
+          type: string
+          example: Manchester City
+        cantidadTokensDisponibles:
+          type: integer
+          example: 10
+        cantidadTokensEnVenta:
+          type: integer
+          example: 2
+        cotizacionActual:
+          type: number
+          format: float
+          example: 1.95
+        valoracionTotalPosicion:
+          type: number
+          format: float
+          example: 23.40
+
+    PortfolioUsuarioDto:
+      type: object
+      properties:
+        usuarioId:
+          type: string
+          format: uuid
+        saldoBilletera:
+          type: number
+          format: float
+          example: 850.50
+        valoracionTotalTokens:
+          type: number
+          format: float
+          example: 245.80
+        patrimonioNetoTotal:
+          type: number
+          format: float
+          example: 1096.30
+        posiciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PosicionPortafolioDto'
+
+    TransaccionUsuarioDto:
+      type: object
+      properties:
+        transaccionId:
+          type: string
+          format: uuid
+        tipoOperacion:
+          type: string
+          enum: [COMPRA, VENTA]
+          example: COMPRA
+        jugadorId:
+          type: string
+          format: uuid
+        nombreJugador:
+          type: string
+          example: Jude Bellingham
+        cantidadTokens:
+          type: integer
+          example: 4
+        precioUnitario:
+          type: number
+          format: float
+          example: 1.50
+        montoTotal:
+          type: number
+          format: float
+          example: 6.00
+        contraparte:
+          type: string
+          example: MERCADO_PRIMARIO
+        fecha:
+          type: string
+          format: date-time
+
