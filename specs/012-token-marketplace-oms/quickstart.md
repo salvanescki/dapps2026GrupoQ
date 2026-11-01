@@ -1,121 +1,96 @@
 # Quickstart & Validation Guide: Marketplace de Tokens y OMS
 
 **Feature**: `012-token-marketplace-oms`  
-**Date**: 2026-10-31  
+**Date**: 2026-11-01  
 **Status**: Ready for Implementation
 
-Esta guía describe los escenarios de validación ejecutables de extremo a extremo (E2E) y los comandos para comprobar el correcto funcionamiento de los 7 endpoints del marketplace, las estrategias de cotización y el Order Management System (OMS).
+Esta guía describe los escenarios de validación ejecutables de extremo a extremo (E2E) y los comandos para comprobar el correcto funcionamiento de los 12 endpoints del marketplace, las estrategias de cotización, el bootstrap del `ADMIN` y el Order Management System (OMS).
 
 ---
 
-## 1. Prerrequisitos
+## 1. Prerrequisitos y Variables de Entorno
 
 1. **Servicios en ejecución**:
-   - PostgreSQL en puerto 5432 (o instancia dinámica provista por Testcontainers durante la suite de pruebas).
-   - Redis para caché L1.
-2. **Migraciones aplicadas**:
+   - PostgreSQL 16 (instancia local o dinámica provista por Testcontainers durante la suite de pruebas).
+   - Redis como caché L1 (con degradación controlada automática si no está disponible en entorno de pruebas).
+2. **Migraciones aplicadas desde cero**:
    - Tablas base (`usuarios`, `jugadores`, `ligas`, `equipos`, `estadisticas_jugadores`).
-   - Nuevas tablas (`balances_tokens`, `cotizaciones`, `ordenes`, `transacciones`, `configuraciones_mercado`).
-3. **Semilla / Usuarios de prueba**:
-   - Superusuario con rol `ADMIN`: `admin@marketplace.com` / `Admin1234!`
-   - Usuario inversor con rol `USUARIO`: `trader1@marketplace.com` / `Trader1234!`
-   - Usuario inversor secundario: `trader2@marketplace.com` / `Trader1234!`
+   - Migración `1730000000000-create-marketplace-and-oms-tables.ts` (`configuraciones_mercado`, `balances_tokens`, `cotizaciones`, `ordenes`, `transacciones`, columnas `rol` y `saldo` en `usuarios`).
+3. **Bootstrap del Superusuario y Usuarios de Prueba**:
+   - Variables de arranque para `AdminBootstrapService`:
+     - `ADMIN_CORREO=admin@marketplace.com`
+     - `ADMIN_CONTRASENA=Admin1234!`
+     - `ADMIN_NOMBRE="Administrador Marketplace"`
+   - Usuarios inversores registrados por `POST /auth/register` (reciben rol `USUARIO` y saldo inicial de `1000.00`):
+     - `trader1@marketplace.com` / `Trader1234!`
+     - `trader2@marketplace.com` / `Trader1234!`
 
 ---
 
 ## 2. Escenarios de Validación de Extremo a Extremo (E2E)
 
-### Escenario 1: Recálculo de Cotizaciones por Estrategia Activa (`POST /quotes/recalculate`)
-- **Objetivo**: Validar que el superusuario puede forzar el cálculo masivo y registrar cotizaciones con score, precio y versión.
+### Escenario 1: Gobernanza de Estrategia y Recálculo Manual (`GET/PUT /quotes/strategy` y `POST /quotes/recalculate`)
 - **Flujo**:
-  1. Autenticarse como `admin@marketplace.com` (`POST /auth/login`) y obtener `ADMIN_TOKEN`.
-  2. Ejecutar `POST /quotes/recalculate` con el header `Authorization: Bearer $ADMIN_TOKEN`.
-- **Resultado Esperado**:
-  - Código HTTP `200 OK`.
-  - Retorna `totalJugadoresProcesados > 0`, `estrategiaAplicada` (`GLOBAL` o `POSICIONAL`) y `versionEstrategia`.
-  - Si un usuario no admin ejecuta la petición, responde `403 Forbidden`.
+  1. Consultar `GET /quotes/strategy` y verificar que la estrategia inicial es `GLOBAL` (`GLOBAL_v1`) y se listan `GLOBAL_v1` y `POSICIONAL_v1`.
+  2. Intentar `PUT /quotes/strategy` con `{ "estrategiaId": "POSICIONAL" }` usando el token de `trader1` → debe responder `403 Forbidden`.
+  3. Autenticarse como `admin@marketplace.com`, ejecutar `PUT /quotes/strategy` con `{ "estrategiaId": "POSICIONAL" }` → `200 OK` con `estrategiaActivaVersion: "POSICIONAL_v1"`.
+  4. Ejecutar `POST /quotes/recalculate` con el token de `admin` → `200 OK` con `totalJugadoresProcesados > 0`, `estrategiaAplicada: "POSICIONAL"`, `versionEstrategia: "POSICIONAL_v1"`.
 
-### Escenario 2: Consulta de Historial de Cotizaciones de Jugador (`GET /players/:id/quotes`)
-- **Objetivo**: Verificar la inmutabilidad y registro temporal de cotizaciones.
+### Escenario 2: Historial de Cotizaciones y Ranking (`GET /players/:id/quotes` y `GET /players/ranking`)
 - **Flujo**:
-  1. Tomar el `id` (UUID) de un futbolista activo con estadísticas.
-  2. Ejecutar `GET /players/:id/quotes`.
+  1. Consultar `GET /players/:id/quotes` para un jugador con estadísticas y otro sin estadísticas.
+  2. Consultar `GET /players/ranking?limite=10` y `GET /players/ranking?posicion=Delantero&limite=5`.
 - **Resultado Esperado**:
-  - Código HTTP `200 OK`.
-  - Lista de cotizaciones ordenada por fecha descendente. Cada elemento incluye: `score`, `valor >= 1.00`, `estrategiaId`, `estrategiaVersion`, `fechaCotizacion`.
+  - El historial expone `score`, `valor >= 1.00`, `estrategiaId`, `estrategiaVersion`, `sinEstadisticas` y el snapshot `metricas` (o `valor = 1.00` y `sinEstadisticas = true` si no tiene métricas).
+  - El ranking ordena descendentemente por `cotizacionActual` y `score`, exponiendo `variacionPorcentual` y `tokensDisponibles`.
 
-### Escenario 3: Ranking de Jugadores (`GET /players/ranking`)
-- **Objetivo**: Comprobar que los jugadores se ordenan según su valor/score calculado.
+### Escenario 3: Compra en Mercado Primario y Trazabilidad de Estrategia (`POST /orders/buy`)
 - **Flujo**:
-  1. Ejecutar `GET /players/ranking?limite=10`.
-  2. Ejecutar `GET /players/ranking?posicion=Delantero&limite=5`.
+  1. Con `trader1`, enviar `POST /orders/buy` con `{ "jugadorId": "<UUID_JUGADOR>", "cantidad": 5 }` (sin `ordenVentaId`).
 - **Resultado Esperado**:
-  - Código HTTP `200 OK`.
-  - Los jugadores se presentan ordenados de mayor a menor `cotizacionActual` y `score`.
-  - Con filtro de posición, solo se devuelven delanteros con su club y cotización.
+  - `201 Created` con `tipoMercado: "PRIMARIO"` y `estrategiaCotizacion: "POSICIONAL_v1"` (la estrategia vigente en la cotización del token).
+  - Débito exacto de $5 \times \text{cotizacionActual}$ en la billetera de `trader1`, 5 tokens disponibles en `trader1`, 95 tokens en `admin` ($95 + 5 = 100$).
 
-### Escenario 4: Compra de Tokens en Mercado Primario (`POST /orders/buy`)
-- **Objetivo**: Probar adquisición de tokens contra la emisión original en poder del admin.
+### Escenario 4: Orden de Venta, Libro Secundario, Compra de Oferta Puntual, Concurrencia y Cancelación (`POST /orders/sell`, `GET /orders`, `POST /orders/buy`, `DELETE /orders/:id`)
 - **Flujo**:
-  1. Autenticarse como `trader1` y obtener `USER_TOKEN`.
-  2. Emitir orden de compra:
-     ```json
-     {
-       "jugadorId": "<UUID_JUGADOR>",
-       "cantidad": 5
-     }
-     ```
-- **Resultado Esperado**:
-  - Código HTTP `201 Created`.
-  - Se debita del saldo monetario de `trader1`: $5 \times \text{cotizacionActual}$.
-  - Se incrementa el balance de `trader1` en 5 tokens.
-  - El balance del superusuario para ese jugador se reduce de 100 a 95 tokens.
-  - La invariante del suministro total se mantiene estricta ($95 + 5 = 100$).
+  1. `trader1` publica `POST /orders/sell` por 3 tokens a `2.50` → `201 Created` (`cantidadDisponible = 2`, `cantidadBloqueada = 3`, orden `PENDIENTE`).
+  2. `trader2` consulta `GET /orders?jugadorId=<UUID_JUGADOR>` y obtiene el `ordenId` de la oferta de `trader1`.
+  3. `trader1` intenta comprarse su propia oferta (`ordenVentaId`) → `400 Bad Request` (prohibición de autocontratación).
+  4. `trader2` compra parcialmente 2 tokens enviando `POST /orders/buy` con `{ "jugadorId": "<UUID_JUGADOR>", "cantidad": 2, "ordenVentaId": "<ORDEN_ID>" }` → `201 Created` (`tipoMercado: "SECUNDARIO"`, `estrategiaCotizacion: "POSICIONAL_v1"`, orden pasa a `PARCIAL` con `cantidadRestante = 1`).
+  5. Dos peticiones concurrentes intentan comprar el último token restante de `<ORDEN_ID>`: exactamente una responde `201 Created` y la otra falla con `409 Conflict` / `400 Bad Request`, conservando la suma exacta de 100 tokens.
+  6. `trader1` publica una segunda orden de venta por 1 token y luego invoca `DELETE /orders/<SEGUNDA_ORDEN_ID>` → `200 OK`, estado `CANCELADA` y el token regresa a `cantidadDisponible`.
 
-### Escenario 5: Creación de Orden de Venta en Mercado Secundario (`POST /orders/sell`)
-- **Objetivo**: Poner tokens propios a la venta bloqueándolos en custodia.
+### Escenario 5: Portfolio Valorizado, Filtros Históricos y Auditoría ADMIN (`GET /users/:id/portfolio`, `GET /users/:id/transactions`, `GET /admin/transactions`)
 - **Flujo**:
-  1. `trader1` posee 5 tokens y pone 2 tokens a la venta a precio unitario $2.50:
-     ```json
-     {
-       "jugadorId": "<UUID_JUGADOR>",
-       "cantidad": 2,
-       "precioUnitario": 2.50
-     }
-     ```
-- **Resultado Esperado**:
-  - Código HTTP `201 Created`.
-  - `BalanceToken` de `trader1`: `cantidadDisponible = 3`, `cantidadBloqueada = 2`.
-  - La orden de venta queda en estado `PENDIENTE`.
-
-### Escenario 6: Consulta de Portfolio del Usuario (`GET /users/:id/portfolio`)
-- **Objetivo**: Inspeccionar la posición patrimonial consolidada.
-- **Flujo**:
-  1. Ejecutar `GET /users/<TRADER1_ID>/portfolio` con `Authorization: Bearer $USER_TOKEN`.
-- **Resultado Esperado**:
-  - Código HTTP `200 OK`.
-  - Retorna `saldoBilletera`, `posiciones`: jugador, club, `cantidadTokensDisponibles: 3`, `cantidadTokensEnVenta: 2`, `cotizacionActual`, `valoracionTotalPosicion`.
-
-### Escenario 7: Historial de Operaciones del Usuario (`GET /users/:id/transactions`)
-- **Objetivo**: Auditar todas las transacciones concluidas del usuario.
-- **Flujo**:
-  1. Ejecutar `GET /users/<TRADER1_ID>/transactions`.
-- **Resultado Esperado**:
-  - Código HTTP `200 OK`.
-  - Lista cronológica que incluye la compra realizada en el Escenario 4 con cantidad, precio unitario, monto total liquidado y marca temporal.
+  1. `trader1` consulta `GET /users/<TRADER1_ID>/portfolio` → retorna `saldoBilletera`, `precioPromedioAdquisicion`, `cotizacionActual`, `valoracionTotalPosicion` y `patrimonioNetoTotal`.
+  2. `trader1` intenta consultar `GET /users/<TRADER2_ID>/portfolio` o `/transactions` → `403 Forbidden`.
+  3. `trader1` consulta `GET /users/<TRADER1_ID>/transactions?tipo=COMPRA&jugadorId=<UUID_JUGADOR>` → retorna sus compras con el campo `estrategiaCotizacion`.
+  4. `admin` consulta `GET /admin/transactions?jugadorId=<UUID_JUGADOR>` → `200 OK` con todas las transacciones primarias y secundarias y su `estrategiaCotizacion` (`trader1` recibe `403 Forbidden` en `/admin/transactions`).
 
 ---
 
 ## 3. Comandos de Verificación Automatizada
 
 ```bash
-# 1. Ejecución de tests unitarios de dominio (aislamiento total, sin BD)
-npm run test:unit -- test/unit/domain/cotizacion.spec.ts test/unit/domain/oms-orden.spec.ts test/unit/domain/estrategia.spec.ts
+cd backend
 
-# 2. Ejecución de tests de integración (servicios y repositorios contra PostgreSQL con Testcontainers)
-npm run test:integration -- test/integration/quotes.service.spec.ts test/integration/oms.service.spec.ts
+# 1. Compilación limpia
+npm run build
 
-# 3. Verificación de umbral de cobertura (mínimo 80% líneas y branches)
-npm run test:cov
+# 2. Suite unitaria de dominio con umbral de cobertura >= 80%
+npm run test:unit:cov
+
+# 3. Suite de integración con PostgreSQL real (Testcontainers) y cobertura
+npm run test:integration:cov
+
+# 4. Suite E2E de controladores HTTP y flujos críticos con cobertura
+npm run test:e2e:cov
+
+# 5. Cobertura global consolidada con enforcement >= 80% líneas y branches
+npm run test:cov -- --runInBand --testTimeout=60000
+
+# 6. Smoke test de despliegue local con Docker Compose (DoD Constitución)
+docker compose up -d postgres
+DB_PORT=5433 ADMIN_CORREO=admin@marketplace.com ADMIN_CONTRASENA='Admin1234!' npm run start:prod
+# En otra terminal: verificar HTTP 200 en http://localhost:3000/api/docs y http://localhost:3000/quotes/strategy
 ```
-
