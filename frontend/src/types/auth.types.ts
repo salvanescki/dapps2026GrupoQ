@@ -1,3 +1,5 @@
+export type RolUsuario = 'USUARIO' | 'ADMIN';
+
 export interface CredencialesLogin {
   correo: string;
   contrasena: string;
@@ -9,6 +11,8 @@ export interface PerfilUsuario {
   correo: string;
   activo: boolean;
   creadoEn: string;
+  rol?: RolUsuario;
+  saldo?: number;
 }
 
 export interface RespuestaAutenticacion {
@@ -49,6 +53,7 @@ export interface AccionesAutenticacion {
   login: (credenciales: CredencialesLogin) => Promise<void>;
   logout: () => void;
   limpiarError: () => void;
+  refrescarPerfil?: () => Promise<void>;
 }
 
 export type ContextoAutenticacion = EstadoAutenticacion & AccionesAutenticacion;

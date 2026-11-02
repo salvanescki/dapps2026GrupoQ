@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { usePlayerDetail } from '../../hooks/usePlayerDetail';
 import { StatsGrid } from './StatsGrid';
+import { PlayerMarketSection } from './PlayerMarketSection';
 import { Spinner } from '../ui/Spinner';
 import { Alert } from '../ui/Alert';
 import './PlayerDetailModal.css';
@@ -8,11 +9,13 @@ import './PlayerDetailModal.css';
 export interface PlayerDetailModalProps {
   playerId: string | null;
   onClose: () => void;
+  onMarketMutation?: () => void;
 }
 
 export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   playerId,
   onClose,
+  onMarketMutation,
 }) => {
   const { jugador, loading, error, retry } = usePlayerDetail(playerId);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -194,6 +197,13 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                   Las estadísticas de WhoScored no están disponibles aún para este jugador.
                 </div>
               )}
+
+              {/* Evolución de cotizaciones y operaciones de mercado */}
+              <PlayerMarketSection
+                jugadorId={jugador.id}
+                nombreJugador={jugador.nombre}
+                onMarketMutation={onMarketMutation}
+              />
             </>
           )}
         </div>
