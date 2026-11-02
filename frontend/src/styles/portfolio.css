@@ -1,0 +1,272 @@
+@import './tokens.css';
+
+/* ============================================================
+   Portfolio Personal, Gráfica Patrimonial, Custodia e Historial
+   Escritorio (>= 1024px) y Móvil (360px - 768px)
+   ============================================================ */
+
+.portfolio-page {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.portfolio-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  box-sizing: border-box;
+}
+
+.portfolio-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.portfolio-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.portfolio-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+}
+
+/* 4 KPIs consolidados */
+.portfolio-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.portfolio-kpi-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.portfolio-kpi-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.portfolio-kpi-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-kpi-sub {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Secciones del Portfolio */
+.portfolio-section-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.portfolio-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.portfolio-section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.portfolio-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.portfolio-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.portfolio-legend-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.portfolio-legend-dot.emerald {
+  background: var(--color-emerald-500);
+}
+
+.portfolio-legend-dot.amber {
+  background: var(--color-amber-500);
+}
+
+/* Tablas responsivas */
+.portfolio-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+.portfolio-table th {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-default);
+  background: rgba(15, 18, 25, 0.65);
+  white-space: nowrap;
+}
+
+.portfolio-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.custody-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--color-amber-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Filtros de historial */
+.history-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.history-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.history-filter-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.history-filter-select,
+.history-filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.625rem var(--space-3);
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+}
+
+.history-filter-select:focus,
+.history-filter-input:focus {
+  outline: none;
+  border-color: var(--color-emerald-500);
+}
+
+.portfolio-sell-drawer {
+  background: rgba(15, 20, 32, 0.9);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (max-width: 1023px) {
+  .portfolio-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-container {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .portfolio-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-section-card {
+    padding: var(--space-4);
+  }
+
+  .portfolio-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .history-filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -1,0 +1,122 @@
+@import './tokens.css';
+
+/* ============================================================
+   Primitivas shadcn/ui ChartContainer y ChartTooltipContent
+   Acopladas a tokens.css sin reset global ni Tailwind preflight
+   ============================================================ */
+
+.shadcn-chart-container {
+  width: 100%;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.shadcn-chart-container .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.shadcn-chart-container .recharts-cartesian-grid line[stroke='#ccc'] {
+  stroke: var(--border-subtle);
+}
+
+.shadcn-chart-container .recharts-surface {
+  overflow: visible;
+}
+
+.shadcn-chart-tooltip {
+  min-width: 12rem;
+  max-width: 20rem;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  z-index: 50;
+}
+
+.shadcn-chart-tooltip-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.shadcn-chart-tooltip-label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+}
+
+.shadcn-chart-tooltip-sublabel {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.shadcn-chart-tooltip-items {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.shadcn-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.shadcn-chart-tooltip-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.shadcn-chart-tooltip-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  background-color: var(--tooltip-indicator-color, var(--color-emerald-500));
+}
+
+.shadcn-chart-tooltip-value {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.shadcn-chart-tooltip-meta {
+  display: grid;
+  gap: 2px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.shadcn-chart-tooltip-badge-warn {
+  margin-top: var(--space-1);
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--color-amber-300);
+  font-weight: var(--font-weight-medium);
+}
+

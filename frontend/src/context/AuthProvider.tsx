@@ -121,14 +121,33 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     setEstado((prev) => ({ ...prev, error: null }));
   }, []);
 
+  const refrescarPerfil = useCallback(async () => {
+    const token = estado.tokenDeAcceso ?? StorageService.obtenerSesion()?.tokenDeAcceso;
+    if (!token) return;
+
+    try {
+      const usuarioActualizado = await obtenerPerfilAutenticado(token);
+      StorageService.guardarSesion(token, usuarioActualizado);
+      setEstado((prev) => ({
+        ...prev,
+        estaAutenticado: true,
+        usuario: usuarioActualizado,
+        tokenDeAcceso: token,
+      }));
+    } catch {
+      // Mantiene estado actual ante fallo transitorio de refresco silencioso
+    }
+  }, [estado.tokenDeAcceso]);
+
   const contextValue = useMemo(
     () => ({
       ...estado,
       login,
       logout,
       limpiarError,
+      refrescarPerfil,
     }),
-    [estado, login, logout, limpiarError]
+    [estado, login, logout, limpiarError, refrescarPerfil]
   );
 
   return (
