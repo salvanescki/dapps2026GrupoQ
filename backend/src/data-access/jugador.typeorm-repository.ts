@@ -104,4 +104,13 @@ export class JugadorTypeOrmRepository implements IJugadorRepository {
   contarTotal(): Promise<number> {
     return this.ormRepository.count();
   }
+
+  async listarActivos(): Promise<Jugador[]> {
+    const ormEntities = await this.ormRepository.find({
+      where: { activo: true },
+      relations: ['equipo', 'liga'],
+      order: { nombre: 'ASC' },
+    });
+    return ormEntities.map((entity) => JugadorMapper.toDomain(entity));
+  }
 }

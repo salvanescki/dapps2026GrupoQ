@@ -17,4 +17,5 @@ export interface IEstadisticaJugadorRepository {
     temporada: string,
   ): Promise<EstadisticaJugador | null>;
   buscarPorJugador(jugadorId: string): Promise<EstadisticaJugador[]>;
+  buscarPorJugadores?(jugadorIds: string[]): Promise<EstadisticaJugador[]>;
 }

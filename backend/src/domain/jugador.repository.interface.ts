@@ -21,6 +21,7 @@ export interface IJugadorRepository {
   buscarPorExternalId(externalId: number): Promise<Jugador | null>;
   buscarConFiltros(criterio: CriterioFiltroJugador): Promise<ResultadoBusquedaJugadores>;
   contarTotal(): Promise<number>;
+  listarActivos(): Promise<Jugador[]>;
 }
 
 export interface IEquipoRepository {

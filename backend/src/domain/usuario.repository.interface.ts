@@ -7,4 +7,5 @@ export interface UsuarioRepository {
   buscarPorId(id: string): Promise<Usuario | null>;
   buscarPorCorreo(correo: string): Promise<Usuario | null>;
   existePorCorreo(correo: string): Promise<boolean>;
+  buscarAdmin(): Promise<Usuario | null>;
 }

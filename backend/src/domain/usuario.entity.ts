@@ -1,11 +1,16 @@
 import { ReglaDeNegocioException } from './exceptions/regla-de-negocio.exception';
 import { generarId } from '../common/utils/generar-id';
+import { Dinero } from './dinero.value-object';
+
+export type RolUsuario = 'ADMIN' | 'USUARIO';
 
 export interface UsuarioProps {
   id?: string;
   nombre: string;
   correo: string;
   contrasenaHash: string;
+  rol?: RolUsuario;
+  saldo?: number | string | Dinero;
   activo?: boolean;
   creadoEn?: Date;
   actualizadoEn?: Date;
@@ -16,6 +21,8 @@ export class Usuario {
   private readonly _nombre: string;
   private readonly _correo: string;
   private readonly _contrasenaHash: string;
+  private _rol: RolUsuario;
+  private _saldo: Dinero;
   private _activo: boolean;
   private readonly _creadoEn: Date;
   private _actualizadoEn: Date;
@@ -25,6 +32,19 @@ export class Usuario {
     this._nombre = props.nombre?.trim();
     this._correo = Usuario.normalizarCorreo(props.correo);
     this._contrasenaHash = props.contrasenaHash;
+    this._rol = props.rol ?? 'USUARIO';
+
+    if (props.saldo instanceof Dinero) {
+      this._saldo = props.saldo;
+    } else if (
+      typeof props.saldo === 'number' ||
+      typeof props.saldo === 'string'
+    ) {
+      this._saldo = Dinero.desdeMonto(props.saldo);
+    } else {
+      this._saldo = Dinero.desdeMonto(1000.0);
+    }
+
     this._activo = props.activo ?? true;
     this._creadoEn = props.creadoEn || new Date();
     this._actualizadoEn = props.actualizadoEn || new Date();
@@ -84,6 +104,62 @@ export class Usuario {
         'El hash de la contraseña no puede estar vacío.',
       );
     }
+
+    if (this._rol !== 'ADMIN' && this._rol !== 'USUARIO') {
+      throw new ReglaDeNegocioException(
+        'El rol de usuario debe ser ADMIN o USUARIO.',
+      );
+    }
+
+    if (!this._saldo) {
+      throw new ReglaDeNegocioException('El saldo de usuario es obligatorio.');
+    }
+  }
+
+  public debitarSaldo(monto: number | string | Dinero): void {
+    if (!this._activo) {
+      throw new ReglaDeNegocioException(
+        'La cuenta de usuario se encuentra inactiva.',
+      );
+    }
+    const montoDinero = monto instanceof Dinero ? monto : Dinero.desdeMonto(monto);
+    if (montoDinero.centavos <= 0) {
+      throw new ReglaDeNegocioException(
+        'El monto a debitar debe ser mayor a cero.',
+      );
+    }
+    if (!this._saldo.esMayorOIgualQue(montoDinero)) {
+      throw new ReglaDeNegocioException(
+        'Saldo monetario insuficiente para realizar la operación.',
+      );
+    }
+    this._saldo = this._saldo.restar(montoDinero);
+    this._actualizadoEn = new Date();
+  }
+
+  public acreditarSaldo(monto: number | string | Dinero): void {
+    if (!this._activo) {
+      throw new ReglaDeNegocioException(
+        'La cuenta de usuario se encuentra inactiva.',
+      );
+    }
+    const montoDinero = monto instanceof Dinero ? monto : Dinero.desdeMonto(monto);
+    if (montoDinero.centavos <= 0) {
+      throw new ReglaDeNegocioException(
+        'El monto a acreditar debe ser mayor a cero.',
+      );
+    }
+    this._saldo = this._saldo.sumar(montoDinero);
+    this._actualizadoEn = new Date();
+  }
+
+  public promoverAAdmin(): void {
+    this._rol = 'ADMIN';
+    this._actualizadoEn = new Date();
+  }
+
+  public esAdmin(): boolean {
+    return this._rol === 'ADMIN';
   }
 
   public async verificarContrasena(
@@ -118,6 +194,12 @@ export class Usuario {
   }
   public get contrasenaHash(): string {
     return this._contrasenaHash;
+  }
+  public get rol(): RolUsuario {
+    return this._rol;
+  }
+  public get saldo(): Dinero {
+    return this._saldo;
   }
   public get activo(): boolean {
     return this._activo;
