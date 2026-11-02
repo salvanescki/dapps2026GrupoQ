@@ -40,4 +40,12 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
     });
     return count > 0;
   }
+
+  async buscarAdmin(): Promise<Usuario | null> {
+    const ormEntity = await this.ormRepository.findOne({
+      where: { rol: 'ADMIN' },
+    });
+    if (!ormEntity) return null;
+    return UsuarioMapper.toDomain(ormEntity);
+  }
 }

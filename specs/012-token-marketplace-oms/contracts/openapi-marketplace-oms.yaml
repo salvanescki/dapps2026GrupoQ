@@ -1,0 +1,906 @@
+openapi: 3.0.3
+info:
+  title: Marketplace de Tokens de Jugadores y Order Management System (OMS)
+  version: 1.1.0
+  description: |
+    API REST para la emisión inicial de 100 tokens por futbolista, cotización dinámica
+    mediante estrategias aprobadas (GLOBAL_v1 y POSICIONAL_v1), gobernanza por superusuario ADMIN,
+    gestión transaccional A.C.I.D. de órdenes (OMS) en mercado primario y secundario por oferta puntual,
+    trazabilidad de estrategia en el histórico de compras, portafolios y auditoría global.
+paths:
+  /players/{id}/quotes:
+    get:
+      tags:
+        - Cotización
+      summary: Historial de cotizaciones de un jugador
+      description: Retorna la lista cronológica descendente de cotizaciones inmutables calculadas para un jugador, incluyendo la versión de estrategia y el snapshot de métricas normalizadas.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del futbolista
+          schema:
+            type: string
+            format: uuid
+        - name: limite
+          in: query
+          required: false
+          description: Cantidad máxima de cotizaciones a retornar
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: Historial de cotizaciones obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CotizacionRespuestaDto'
+        '400':
+          description: Formato de identificador UUID o parámetro inválido.
+        '404':
+          description: Jugador no encontrado.
+
+  /players/ranking:
+    get:
+      tags:
+        - Cotización
+      summary: Ranking y cartelera de cotizaciones del marketplace
+      description: Retorna la clasificación de futbolistas activos ordenados descendentemente por su cotización oficial actual y score, incluyendo variación frente a la cotización previa y suministro disponible para compra.
+      parameters:
+        - name: limite
+          in: query
+          required: false
+          description: Cantidad de jugadores a incluir en el ranking (top N)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: posicion
+          in: query
+          required: false
+          description: Filtro opcional por posición táctica
+          schema:
+            type: string
+            enum: [Portero, Defensa, Mediocampista, Delantero]
+      responses:
+        '200':
+          description: Ranking obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JugadorRankingDto'
+        '400':
+          description: Parámetros de consulta inválidos.
+
+  /quotes/strategy:
+    get:
+      tags:
+        - Cotización
+      summary: Consultar estrategia de cotización activa y versiones aprobadas
+      description: Retorna la estrategia actualmente configurada en el marketplace junto con el catálogo de estrategias y versiones vigentes aprobadas.
+      responses:
+        '200':
+          description: Configuración de estrategia obtenida exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionEstrategiaRespuestaDto'
+    put:
+      tags:
+        - Cotización
+      summary: Conmutar la estrategia activa del marketplace (Solo ADMIN)
+      description: Actualiza en ConfiguracionMercado la estrategia activa que regirá las siguientes cotizaciones. Exclusivo para usuarios autenticados con rol ADMIN.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstrategiaDto'
+      responses:
+        '200':
+          description: Estrategia activa actualizada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionEstrategiaRespuestaDto'
+        '400':
+          description: Identificador de estrategia no válido o no aprobado.
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso denegado. Requiere rol ADMIN.
+
+  /quotes/recalculate:
+    post:
+      tags:
+        - Cotización
+      summary: Recalcular cotizaciones manualmente bajo demanda (Solo ADMIN)
+      description: Dispara de forma inmediata el recálculo masivo de cotizaciones de todos los jugadores activos aplicando la estrategia activa vigente en ConfiguracionMercado. Requiere rol ADMIN.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Recálculo finalizado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenRecalculoDto'
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso denegado. Requiere rol ADMIN.
+        '409':
+          description: Ya existe una corrida de recálculo en progreso.
+
+  /orders:
+    get:
+      tags:
+        - Mercado
+      summary: Consultar libro de órdenes de venta en mercado secundario
+      description: Lista las ofertas de venta del mercado secundario (por defecto las activas en estado PENDIENTE o PARCIAL) ordenadas por mejor precio unitario ascendente y antigüedad, permitiendo al comprador elegir una oferta puntual.
+      parameters:
+        - name: jugadorId
+          in: query
+          required: false
+          description: Filtrar ofertas por UUID del jugador
+          schema:
+            type: string
+            format: uuid
+        - name: vendedorId
+          in: query
+          required: false
+          description: Filtrar ofertas por UUID del usuario vendedor
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          description: Filtrar por estado de orden (por defecto retorna las activas PENDIENTE y PARCIAL)
+          schema:
+            type: string
+            enum: [ACTIVA, PENDIENTE, PARCIAL, COMPLETADA, CANCELADA]
+            default: ACTIVA
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Libro de órdenes obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrdenVentaRespuestaDto'
+        '400':
+          description: Parámetros de filtro inválidos.
+
+  /orders/buy:
+    post:
+      tags:
+        - Mercado
+      summary: Comprar tokens de un jugador (primario o secundario por oferta puntual)
+      description: |
+        Ejecuta atómicamente una compra inmediata de tokens en el OMS:
+        - Si NO se informa `ordenVentaId`, compra en el **Mercado Primario** contra el inventario disponible del superusuario ADMIN a la cotización oficial vigente del jugador.
+        - Si se informa `ordenVentaId`, compra total o parcialmente contra **esa oferta de venta puntual** del **Mercado Secundario**.
+        Registra en la transacción la estrategia utilizada en la cotización vigente del token al momento de la compra (`estrategiaCotizacion`).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearOrdenCompraDto'
+      responses:
+        '201':
+          description: Compra liquidada exitosamente de forma atómica.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoCompraDto'
+        '400':
+          description: Datos inválidos, jugador inactivo, autocontratación, precio máximo superado, suministro insuficiente o saldo monetario insuficiente.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Jugador u orden de venta puntual no encontrada.
+        '409':
+          description: La orden de venta seleccionada ya fue completada o cancelada por otra operación concurrente.
+
+  /orders/sell:
+    post:
+      tags:
+        - Mercado
+      summary: Publicar orden de venta de tokens en mercado secundario
+      description: Publica una oferta de venta en el libro del mercado secundario fijando cantidad entera y precio unitario, bloqueando los tokens en custodia preventiva (`cantidadBloqueada`).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearOrdenVentaDto'
+      responses:
+        '201':
+          description: Orden de venta publicada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenVentaRespuestaDto'
+        '400':
+          description: Datos inválidos, jugador inactivo o saldo de tokens disponible insuficiente.
+        '401':
+          description: No autenticado.
+        '404':
+          description: Jugador no encontrado.
+
+  /orders/{id}:
+    delete:
+      tags:
+        - Mercado
+      summary: Cancelar una orden de venta propia activa
+      description: Cancela el remanente no ejecutado de una orden de venta en estado PENDIENTE o PARCIAL perteneciente al usuario autenticado, devolviendo atómicamente los tokens en custodia a su saldo disponible.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) de la orden de venta
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Orden de venta cancelada y custodia liberada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenVentaRespuestaDto'
+        '400':
+          description: Formato de UUID inválido.
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso denegado. Solo el creador de la orden puede cancelarla.
+        '404':
+          description: Orden no encontrada.
+        '409':
+          description: La orden ya se encuentra COMPLETADA o CANCELADA y no admite cancelación.
+
+  /users/{id}/portfolio:
+    get:
+      tags:
+        - Mercado
+      summary: Portfolio valorizado del usuario
+      description: Retorna el estado consolidado del portafolio del usuario (accesible por el propio titular o por un ADMIN), incluyendo saldo en billetera, tenencias disponibles y en custodia, precio promedio de adquisición, cotización vigente y patrimonio neto total.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del usuario
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Portfolio del usuario obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioUsuarioDto'
+        '400':
+          description: Identificador UUID inválido.
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso denegado al portafolio de otro usuario sin rol ADMIN.
+        '404':
+          description: Usuario no encontrado.
+
+  /users/{id}/transactions:
+    get:
+      tags:
+        - Mercado
+      summary: Historial personal de transacciones del usuario
+      description: Retorna la lista cronológica de transacciones concluidas (compras y ventas) del usuario (accesible por el propio titular o por un ADMIN), incluyendo la estrategia de cotización vigente en cada compra y filtros por jugador, sentido y rango de fechas.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único (UUID) del usuario
+          schema:
+            type: string
+            format: uuid
+        - name: jugadorId
+          in: query
+          required: false
+          description: Filtrar por UUID del futbolista involucrado
+          schema:
+            type: string
+            format: uuid
+        - name: tipo
+          in: query
+          required: false
+          description: Filtrar por sentido de operación para el usuario consultado (COMPRA o VENTA)
+          schema:
+            type: string
+            enum: [COMPRA, VENTA]
+        - name: desde
+          in: query
+          required: false
+          description: Fecha/hora inicial ISO-8601 (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          required: false
+          description: Fecha/hora final ISO-8601 (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: Historial de transacciones obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransaccionUsuarioDto'
+        '400':
+          description: Parámetros de consulta inválidos.
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso denegado al historial de otro usuario sin rol ADMIN.
+        '404':
+          description: Usuario no encontrado.
+
+  /admin/transactions:
+    get:
+      tags:
+        - Auditoría
+      summary: Reporte global de auditoría de transacciones del OMS (Solo ADMIN)
+      description: Expone el consolidado histórico de todas las transacciones liquidadas en la plataforma con filtros por jugador, usuario participante, mercado y rango de fechas. Exclusivo para rol ADMIN.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jugadorId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: usuarioId
+          in: query
+          required: false
+          description: Filtrar transacciones donde el usuario participó como comprador o vendedor
+          schema:
+            type: string
+            format: uuid
+        - name: tipoMercado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PRIMARIO, SECUNDARIO]
+        - name: desde
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: Consolidado global de transacciones obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransaccionAuditoriaDto'
+        '400':
+          description: Parámetros de filtro inválidos.
+        '401':
+          description: No autenticado.
+        '403':
+          description: Acceso restringido. Requiere rol ADMIN.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SnapshotMetricasNormalizadasDto:
+      type: object
+      nullable: true
+      description: Valores normalizados en [0, 1] utilizados en el cálculo del score (null cuando sinEstadisticas es true).
+      properties:
+        goals:
+          type: number
+          example: 0.4667
+        assists:
+          type: number
+          example: 0.5
+        shots:
+          type: number
+          example: 0.46
+        keyPasses:
+          type: number
+          example: 0.3
+        dribbles:
+          type: number
+          example: 0.45
+        tackles:
+          type: number
+          example: 0.22
+        interceptions:
+          type: number
+          example: 0.2
+        saves:
+          type: number
+          example: 0
+        savePercentage:
+          type: number
+          example: 0
+        rating:
+          type: number
+          example: 0.745
+
+    CotizacionRespuestaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: float
+          example: 0.4521
+        valor:
+          type: number
+          format: float
+          example: 1.45
+        estrategiaId:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: GLOBAL
+        estrategiaVersion:
+          type: string
+          example: GLOBAL_v1
+        sinEstadisticas:
+          type: boolean
+          example: false
+        metricas:
+          $ref: '#/components/schemas/SnapshotMetricasNormalizadasDto'
+        fechaCotizacion:
+          type: string
+          format: date-time
+
+    JugadorRankingDto:
+      type: object
+      properties:
+        posicionRanking:
+          type: integer
+          example: 1
+        jugadorId:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          example: Kylian Mbappé
+        posicion:
+          type: string
+          example: Delantero
+        equipoNombre:
+          type: string
+          example: Real Madrid CF
+        score:
+          type: number
+          format: float
+          example: 0.885
+        cotizacionActual:
+          type: number
+          format: float
+          example: 1.89
+        variacionPorcentual:
+          type: number
+          format: float
+          description: Variación porcentual respecto a la cotización inmediata anterior (0 si solo tiene una cotización)
+          example: 5.59
+        estrategiaId:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: GLOBAL
+        estrategiaVersion:
+          type: string
+          example: GLOBAL_v1
+        tokensDisponibles:
+          type: integer
+          description: Cantidad total de tokens disponibles para comprar (primario + ofertas secundarias activas)
+          example: 45
+
+    CambiarEstrategiaDto:
+      type: object
+      required:
+        - estrategiaId
+      properties:
+        estrategiaId:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: POSICIONAL
+
+    EstrategiaDisponibleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: GLOBAL
+        version:
+          type: string
+          example: GLOBAL_v1
+        descripcion:
+          type: string
+          example: Ponderación global estándar uniforme para todas las posiciones.
+
+    ConfiguracionEstrategiaRespuestaDto:
+      type: object
+      properties:
+        estrategiaActivaId:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: POSICIONAL
+        estrategiaActivaVersion:
+          type: string
+          example: POSICIONAL_v1
+        actualizadoEn:
+          type: string
+          format: date-time
+        estrategiasDisponibles:
+          type: array
+          items:
+            $ref: '#/components/schemas/EstrategiaDisponibleDto'
+
+    ResumenRecalculoDto:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          example: Recálculo de cotizaciones finalizado exitosamente.
+        totalJugadoresProcesados:
+          type: integer
+          example: 2450
+        exitosos:
+          type: integer
+          example: 2450
+        fallidos:
+          type: integer
+          example: 0
+        sinEstadisticas:
+          type: integer
+          example: 120
+        estrategiaAplicada:
+          type: string
+          enum: [GLOBAL, POSICIONAL]
+          example: POSICIONAL
+        versionEstrategia:
+          type: string
+          example: POSICIONAL_v1
+        duracionMs:
+          type: integer
+          example: 1250
+
+    CrearOrdenCompraDto:
+      type: object
+      required:
+        - jugadorId
+        - cantidad
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 5
+        ordenVentaId:
+          type: string
+          format: uuid
+          description: UUID opcional de una oferta activa del mercado secundario. Si se omite, la compra se ejecuta en el mercado primario al precio oficial vigente.
+        precioMaximoUnitario:
+          type: number
+          format: float
+          minimum: 0.01
+          description: Límite máximo opcional a pagar por token (protección contra cambios de cotización)
+          example: 2.00
+
+    ResultadoCompraDto:
+      type: object
+      properties:
+        transaccionId:
+          type: string
+          format: uuid
+        ordenId:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        cantidadTokensComprados:
+          type: integer
+          example: 5
+        precioUnitarioPagado:
+          type: number
+          format: float
+          example: 1.25
+        montoTotalDebitado:
+          type: number
+          format: float
+          example: 6.25
+        saldoRestanteUsuario:
+          type: number
+          format: float
+          example: 993.75
+        tipoMercado:
+          type: string
+          enum: [PRIMARIO, SECUNDARIO]
+          example: PRIMARIO
+        estrategiaCotizacion:
+          type: string
+          description: Estrategia y versión utilizada en la cotización vigente del token al momento de dicha compra
+          example: GLOBAL_v1
+        fecha:
+          type: string
+          format: date-time
+
+    CrearOrdenVentaDto:
+      type: object
+      required:
+        - jugadorId
+        - cantidad
+        - precioUnitario
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 3
+        precioUnitario:
+          type: number
+          format: float
+          minimum: 0.01
+          example: 1.75
+
+    OrdenVentaRespuestaDto:
+      type: object
+      properties:
+        ordenId:
+          type: string
+          format: uuid
+        jugadorId:
+          type: string
+          format: uuid
+        vendedorId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          example: 3
+        cantidadRestante:
+          type: integer
+          example: 3
+        precioUnitario:
+          type: number
+          format: float
+          example: 1.75
+        estado:
+          type: string
+          enum: [PENDIENTE, PARCIAL, COMPLETADA, CANCELADA]
+          example: PENDIENTE
+        creadoEn:
+          type: string
+          format: date-time
+        actualizadoEn:
+          type: string
+          format: date-time
+
+    PosicionPortafolioDto:
+      type: object
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+        nombreJugador:
+          type: string
+          example: Erling Haaland
+        posicion:
+          type: string
+          example: Delantero
+        equipoNombre:
+          type: string
+          example: Manchester City
+        cantidadTokensDisponibles:
+          type: integer
+          example: 10
+        cantidadTokensEnVenta:
+          type: integer
+          example: 2
+        precioPromedioAdquisicion:
+          type: number
+          format: float
+          example: 1.40
+        cotizacionActual:
+          type: number
+          format: float
+          example: 1.95
+        valoracionTotalPosicion:
+          type: number
+          format: float
+          example: 23.40
+
+    PortfolioUsuarioDto:
+      type: object
+      properties:
+        usuarioId:
+          type: string
+          format: uuid
+        saldoBilletera:
+          type: number
+          format: float
+          example: 850.50
+        valoracionTotalTokens:
+          type: number
+          format: float
+          example: 245.80
+        patrimonioNetoTotal:
+          type: number
+          format: float
+          example: 1096.30
+        posiciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PosicionPortafolioDto'
+
+    TransaccionUsuarioDto:
+      type: object
+      properties:
+        transaccionId:
+          type: string
+          format: uuid
+        ordenId:
+          type: string
+          format: uuid
+        tipoOperacion:
+          type: string
+          enum: [COMPRA, VENTA]
+          example: COMPRA
+        tipoMercado:
+          type: string
+          enum: [PRIMARIO, SECUNDARIO]
+          example: PRIMARIO
+        jugadorId:
+          type: string
+          format: uuid
+        nombreJugador:
+          type: string
+          example: Jude Bellingham
+        cantidadTokens:
+          type: integer
+          example: 4
+        precioUnitario:
+          type: number
+          format: float
+          example: 1.50
+        montoTotal:
+          type: number
+          format: float
+          example: 6.00
+        estrategiaCotizacion:
+          type: string
+          description: Estrategia y versión utilizada en la cotización del token al momento de la compra
+          example: POSICIONAL_v1
+        contraparte:
+          type: string
+          example: MERCADO_PRIMARIO
+        fecha:
+          type: string
+          format: date-time
+
+    TransaccionAuditoriaDto:
+      type: object
+      properties:
+        transaccionId:
+          type: string
+          format: uuid
+        ordenId:
+          type: string
+          format: uuid
+        tipoMercado:
+          type: string
+          enum: [PRIMARIO, SECUNDARIO]
+          example: SECUNDARIO
+        jugadorId:
+          type: string
+          format: uuid
+        nombreJugador:
+          type: string
+          example: Jude Bellingham
+        compradorId:
+          type: string
+          format: uuid
+        vendedorId:
+          type: string
+          format: uuid
+        cantidadTokens:
+          type: integer
+          example: 2
+        precioUnitario:
+          type: number
+          format: float
+          example: 2.50
+        montoTotal:
+          type: number
+          format: float
+          example: 5.00
+        estrategiaCotizacion:
+          type: string
+          example: POSICIONAL_v1
+        fecha:
+          type: string
+          format: date-time

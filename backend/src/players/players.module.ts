@@ -16,6 +16,7 @@ import { SincronizacionJugadoresService } from '../services/sincronizacion-jugad
 import { JugadorService } from '../services/jugador.service';
 import { PlayersController } from '../controllers/players.controller';
 import { ScrapingModule } from '../scraping/scraping.module';
+import { MarketplaceModule } from '../marketplace/marketplace.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ScrapingModule } from '../scraping/scraping.module';
       JugadorOrmEntity,
     ]),
     forwardRef(() => ScrapingModule),
+    forwardRef(() => MarketplaceModule),
   ],
   controllers: [PlayersController],
   providers: [

@@ -20,6 +20,12 @@ export class UsuarioOrmEntity {
   @Column({ type: 'varchar', length: 255, name: 'contrasena_hash' })
   contrasenaHash: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'USUARIO' })
+  rol: string;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 1000.0 })
+  saldo: number | string;
+
   @Column({ type: 'boolean', default: true })
   activo: boolean;
 
