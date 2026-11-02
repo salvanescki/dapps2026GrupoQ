@@ -16,29 +16,47 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
-                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "pm.test('Status 201 Created o 409 Conflict', () => {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('tokenDeAcceso');",
-                  "  pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
-                  "});"
+                  "  if (json.tokenDeAcceso) {",
+                  "    pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
+                  "    pm.environment.set('trader1_token', json.tokenDeAcceso);",
+                  "  }",
+                  "  if (json.usuario && json.usuario.id) {",
+                  "    pm.collectionVariables.set('trader1_id', json.usuario.id);",
+                  "    pm.environment.set('trader1_id', json.usuario.id);",
+                  "  }",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Trader Uno\",\n  \"correo\": \"trader1@marketplace.com\",\n  \"contrasena\": \"Trader1234!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
-            "description": "Registra trader1. Guarda el token en la variable trader1_token."
+            "description": "Registra trader1. Guarda el token en trader1_token y el UUID en trader1_id."
           }
         },
         {
@@ -48,27 +66,47 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
-                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "pm.test('Status 201 Created o 409 Conflict', () => {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
-                  "});"
+                  "  if (json.tokenDeAcceso) {",
+                  "    pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
+                  "    pm.environment.set('trader2_token', json.tokenDeAcceso);",
+                  "  }",
+                  "  if (json.usuario && json.usuario.id) {",
+                  "    pm.collectionVariables.set('trader2_id', json.usuario.id);",
+                  "    pm.environment.set('trader2_id', json.usuario.id);",
+                  "  }",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Trader Dos\",\n  \"correo\": \"trader2@marketplace.com\",\n  \"contrasena\": \"Trader1234!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
-            }
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Registra trader2. Guarda el token en trader2_token y el UUID en trader2_id."
           }
         },
         {
@@ -83,6 +121,11 @@
                   "  const json = pm.response.json();",
                   "  pm.expect(json).to.have.property('tokenDeAcceso');",
                   "  pm.collectionVariables.set('admin_token', json.tokenDeAcceso);",
+                  "  pm.environment.set('admin_token', json.tokenDeAcceso);",
+                  "  if (json.usuario && json.usuario.id) {",
+                  "    pm.collectionVariables.set('admin_id', json.usuario.id);",
+                  "    pm.environment.set('admin_id', json.usuario.id);",
+                  "  }",
                   "});"
                 ]
               }
@@ -90,15 +133,25 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"correo\": \"admin@marketplace.com\",\n  \"contrasena\": \"Admin1234!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Obtiene token ADMIN. Requiere que ADMIN_CORREO y ADMIN_CONTRASENA estén configurados en el servidor."
           }
@@ -113,7 +166,13 @@
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Tiene tokenDeAcceso', () => {",
                   "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('tokenDeAcceso');",
                   "  pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
+                  "  pm.environment.set('trader1_token', json.tokenDeAcceso);",
+                  "  if (json.usuario && json.usuario.id) {",
+                  "    pm.collectionVariables.set('trader1_id', json.usuario.id);",
+                  "    pm.environment.set('trader1_id', json.usuario.id);",
+                  "  }",
                   "});"
                 ]
               }
@@ -121,15 +180,71 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"correo\": \"trader1@marketplace.com\",\n  \"contrasena\": \"Trader1234!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Login trader2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "  pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
+                  "  pm.environment.set('trader2_token', json.tokenDeAcceso);",
+                  "  if (json.usuario && json.usuario.id) {",
+                  "    pm.collectionVariables.set('trader2_id', json.usuario.id);",
+                  "    pm.environment.set('trader2_id', json.usuario.id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"trader2@marketplace.com\",\n  \"contrasena\": \"Trader1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         }
@@ -152,6 +267,7 @@
                   "  pm.expect(json.items).to.be.an('array');",
                   "  if (json.items.length > 0) {",
                   "    pm.collectionVariables.set('jugador_id', json.items[0].id);",
+                  "    pm.environment.set('jugador_id', json.items[0].id);",
                   "  }",
                   "});"
                 ]
@@ -162,11 +278,21 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/players?pagina=1&limite=10",
-              "host": ["{{base_url}}"],
-              "path": ["players"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "players"
+              ],
               "query": [
-                { "key": "pagina", "value": "1" },
-                { "key": "limite", "value": "10" }
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
               ]
             },
             "description": "Lista paginada de jugadores. Guarda el primer jugador_id."
@@ -194,8 +320,13 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/players/filters",
-              "host": ["{{base_url}}"],
-              "path": ["players", "filters"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "players",
+                "filters"
+              ]
             }
           }
         },
@@ -215,6 +346,7 @@
                   "    pm.expect(json[0]).to.have.property('cotizacionActual');",
                   "    pm.expect(json[0]).to.have.property('tokensDisponibles');",
                   "    pm.collectionVariables.set('jugador_id', json[0].jugadorId);",
+                  "    pm.environment.set('jugador_id', json[0].jugadorId);",
                   "  }",
                   "});"
                 ]
@@ -225,11 +357,23 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/players/ranking?limite=20",
-              "host": ["{{base_url}}"],
-              "path": ["players", "ranking"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "players",
+                "ranking"
+              ],
               "query": [
-                { "key": "limite", "value": "20" },
-                { "key": "posicion", "value": "Delantero", "disabled": true }
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "posicion",
+                  "value": "Delantero",
+                  "disabled": true
+                }
               ]
             },
             "description": "Ranking de jugadores por cotización vigente. Guarda el primer jugadorId."
@@ -257,8 +401,13 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/players/{{jugador_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["players", "{{jugador_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "players",
+                "{{jugador_id}}"
+              ]
             }
           }
         },
@@ -287,9 +436,20 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/players/{{jugador_id}}/quotes?limite=10",
-              "host": ["{{base_url}}"],
-              "path": ["players", "{{jugador_id}}", "quotes"],
-              "query": [{ "key": "limite", "value": "10" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "players",
+                "{{jugador_id}}",
+                "quotes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
             },
             "description": "Historial de cotizaciones inmutables de un jugador con snapshot de métricas."
           }
@@ -322,8 +482,13 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/quotes/strategy",
-              "host": ["{{base_url}}"],
-              "path": ["quotes", "strategy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "quotes",
+                "strategy"
+              ]
             },
             "description": "Consulta la estrategia activa y el catálogo de estrategias aprobadas. Endpoint público."
           }
@@ -348,18 +513,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estrategiaId\": \"POSICIONAL\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/quotes/strategy",
-              "host": ["{{base_url}}"],
-              "path": ["quotes", "strategy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "quotes",
+                "strategy"
+              ]
             },
             "description": "Requiere rol ADMIN. Conmuta la estrategia activa del marketplace."
           }
@@ -383,18 +564,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estrategiaId\": \"GLOBAL\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/quotes/strategy",
-              "host": ["{{base_url}}"],
-              "path": ["quotes", "strategy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "quotes",
+                "strategy"
+              ]
             }
           }
         },
@@ -413,18 +610,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estrategiaId\": \"POSICIONAL\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/quotes/strategy",
-              "host": ["{{base_url}}"],
-              "path": ["quotes", "strategy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "quotes",
+                "strategy"
+              ]
             },
             "description": "Debe retornar 403 para usuarios sin rol ADMIN."
           }
@@ -451,13 +664,24 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
             "url": {
               "raw": "{{base_url}}/quotes/recalculate",
-              "host": ["{{base_url}}"],
-              "path": ["quotes", "recalculate"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "quotes",
+                "recalculate"
+              ]
             },
             "description": "Dispara el recálculo masivo de cotizaciones aplicando la estrategia activa. Solo ADMIN."
           }
@@ -483,6 +707,7 @@
                   "  pm.expect(json).to.have.property('precioUnitarioPagado');",
                   "  pm.expect(json).to.have.property('montoTotalDebitado');",
                   "  pm.collectionVariables.set('transaccion_primaria_id', json.transaccionId);",
+                  "    pm.environment.set('transaccion_primaria_id', json.transaccionId);",
                   "});"
                 ]
               }
@@ -491,18 +716,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"jugadorId\": \"{{jugador_id}}\",\n  \"cantidad\": 5\n}"
             },
             "url": {
               "raw": "{{base_url}}/orders/buy",
-              "host": ["{{base_url}}"],
-              "path": ["orders", "buy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "buy"
+              ]
             },
             "description": "Compra en mercado primario al precio oficial vigente. Sin ordenVentaId = primario."
           }
@@ -526,6 +767,7 @@
                   "  pm.expect(json).to.have.property('cantidadRestante');",
                   "  pm.expect(json).to.have.property('precioUnitario');",
                   "  pm.collectionVariables.set('orden_venta_id', json.ordenId);",
+                  "    pm.environment.set('orden_venta_id', json.ordenId);",
                   "});"
                 ]
               }
@@ -534,18 +776,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"jugadorId\": \"{{jugador_id}}\",\n  \"cantidad\": 2,\n  \"precioUnitario\": 2.50\n}"
             },
             "url": {
               "raw": "{{base_url}}/orders/sell",
-              "host": ["{{base_url}}"],
-              "path": ["orders", "sell"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "sell"
+              ]
             },
             "description": "Publica oferta de venta reteniendo los tokens en custodia (cantidadBloqueada)."
           }
@@ -566,6 +824,7 @@
                   "    pm.expect(json[0]).to.have.property('precioUnitario');",
                   "    pm.expect(json[0]).to.have.property('cantidadRestante');",
                   "    pm.collectionVariables.set('orden_venta_id', json[0].ordenId);",
+                  "    pm.environment.set('orden_venta_id', json[0].ordenId);",
                   "  }",
                   "});"
                 ]
@@ -576,11 +835,21 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/orders?jugadorId={{jugador_id}}&estado=ACTIVA",
-              "host": ["{{base_url}}"],
-              "path": ["orders"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ],
               "query": [
-                { "key": "jugadorId", "value": "{{jugador_id}}" },
-                { "key": "estado", "value": "ACTIVA" }
+                {
+                  "key": "jugadorId",
+                  "value": "{{jugador_id}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "ACTIVA"
+                }
               ]
             },
             "description": "Libro de órdenes secundarias activas (PENDIENTE o PARCIAL) por jugador."
@@ -608,18 +877,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader2_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader2_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"jugadorId\": \"{{jugador_id}}\",\n  \"cantidad\": 1,\n  \"ordenVentaId\": \"{{orden_venta_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/orders/buy",
-              "host": ["{{base_url}}"],
-              "path": ["orders", "buy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "buy"
+              ]
             },
             "description": "Compra oferta puntual del libro secundario. Con ordenVentaId = secundario."
           }
@@ -639,18 +924,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"jugadorId\": \"{{jugador_id}}\",\n  \"cantidad\": 1,\n  \"ordenVentaId\": \"{{orden_venta_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/orders/buy",
-              "host": ["{{base_url}}"],
-              "path": ["orders", "buy"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "buy"
+              ]
             },
             "description": "El vendedor no puede comprar su propia oferta (wash trading prohibido)."
           }
@@ -674,13 +975,24 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "DELETE",
             "url": {
               "raw": "{{base_url}}/orders/{{orden_venta_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["orders", "{{orden_venta_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{orden_venta_id}}"
+              ]
             },
             "description": "Cancela la oferta y libera los tokens en custodia de vuelta a disponibles."
           }
@@ -706,6 +1018,7 @@
                   "  pm.expect(json).to.have.property('patrimonioNetoTotal');",
                   "  pm.expect(json).to.have.property('posiciones');",
                   "  pm.collectionVariables.set('trader1_id', json.usuarioId);",
+                  "    pm.environment.set('trader1_id', json.usuarioId);",
                   "});"
                 ]
               }
@@ -714,13 +1027,25 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/users/{{trader1_id}}/portfolio",
-              "host": ["{{base_url}}"],
-              "path": ["users", "{{trader1_id}}", "portfolio"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{trader1_id}}",
+                "portfolio"
+              ]
             },
             "description": "Portfolio valorizado. Accesible por el propio titular o un ADMIN."
           }
@@ -740,13 +1065,25 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/users/{{trader2_id}}/portfolio",
-              "host": ["{{base_url}}"],
-              "path": ["users", "{{trader2_id}}", "portfolio"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{trader2_id}}",
+                "portfolio"
+              ]
             },
             "description": "trader1 no puede consultar el portfolio de trader2."
           }
@@ -774,16 +1111,34 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/users/{{trader1_id}}/transactions?jugadorId={{jugador_id}}&tipo=COMPRA",
-              "host": ["{{base_url}}"],
-              "path": ["users", "{{trader1_id}}", "transactions"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{trader1_id}}",
+                "transactions"
+              ],
               "query": [
-                { "key": "jugadorId", "value": "{{jugador_id}}" },
-                { "key": "tipo", "value": "COMPRA" }
+                {
+                  "key": "jugadorId",
+                  "value": "{{jugador_id}}"
+                },
+                {
+                  "key": "tipo",
+                  "value": "COMPRA"
+                }
               ]
             }
           }
@@ -812,14 +1167,30 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/admin/transactions?jugadorId={{jugador_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions"],
-              "query": [{ "key": "jugadorId", "value": "{{jugador_id}}" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "jugadorId",
+                  "value": "{{jugador_id}}"
+                }
+              ]
             },
             "description": "Auditoría global de todas las transacciones. Solo ADMIN."
           }
@@ -839,13 +1210,24 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{trader1_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/admin/transactions",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "transactions"
+              ]
             }
           }
         }
@@ -860,9 +1242,21 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/scraping/jugadores/{{jugador_id}}/estadisticas?temporada=2025/2026",
-              "host": ["{{base_url}}"],
-              "path": ["scraping", "jugadores", "{{jugador_id}}", "estadisticas"],
-              "query": [{ "key": "temporada", "value": "2025/2026" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "scraping",
+                "jugadores",
+                "{{jugador_id}}",
+                "estadisticas"
+              ],
+              "query": [
+                {
+                  "key": "temporada",
+                  "value": "2025/2026"
+                }
+              ]
             },
             "description": "Estadísticas WhoScored del jugador para la temporada activa."
           }
@@ -872,13 +1266,24 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
             "url": {
               "raw": "{{base_url}}/scraping/ejecutar",
-              "host": ["{{base_url}}"],
-              "path": ["scraping", "ejecutar"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "scraping",
+                "ejecutar"
+              ]
             }
           }
         },
@@ -887,16 +1292,33 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/scraping/ejecuciones?pagina=1&limite=10",
-              "host": ["{{base_url}}"],
-              "path": ["scraping", "ejecuciones"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "scraping",
+                "ejecuciones"
+              ],
               "query": [
-                { "key": "pagina", "value": "1" },
-                { "key": "limite", "value": "10" }
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
               ]
             }
           }
@@ -905,14 +1327,45 @@
     }
   ],
   "variable": [
-    { "key": "base_url", "value": "http://localhost:3000" },
-    { "key": "admin_token", "value": "" },
-    { "key": "trader1_token", "value": "" },
-    { "key": "trader2_token", "value": "" },
-    { "key": "trader1_id", "value": "" },
-    { "key": "trader2_id", "value": "" },
-    { "key": "jugador_id", "value": "" },
-    { "key": "orden_venta_id", "value": "" },
-    { "key": "transaccion_primaria_id", "value": "" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "trader1_token",
+      "value": ""
+    },
+    {
+      "key": "trader2_token",
+      "value": ""
+    },
+    {
+      "key": "trader1_id",
+      "value": ""
+    },
+    {
+      "key": "trader2_id",
+      "value": ""
+    },
+    {
+      "key": "jugador_id",
+      "value": ""
+    },
+    {
+      "key": "orden_venta_id",
+      "value": ""
+    },
+    {
+      "key": "transaccion_primaria_id",
+      "value": ""
+    },
+    {
+      "key": "admin_id",
+      "value": ""
+    }
   ]
 }
