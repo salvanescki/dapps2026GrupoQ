@@ -34,6 +34,6 @@ import { JwtStrategy } from './jwt.strategy';
       useClass: UsuarioTypeOrmRepository,
     },
   ],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  exports: [AuthService, JwtStrategy, PassportModule, USUARIO_REPOSITORY],
 })
 export class AuthModule {}

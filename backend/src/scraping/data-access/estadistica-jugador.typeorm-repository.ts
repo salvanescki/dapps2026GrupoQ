@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, EntityManager } from 'typeorm';
+import { Repository, EntityManager, In } from 'typeorm';
 import { EstadisticaJugador } from '../domain/estadistica-jugador.entity';
 import { IEstadisticaJugadorRepository } from '../domain/estadistica-jugador.repository.interface';
 import { EstadisticaJugadorOrmEntity } from './estadistica-jugador.orm-entity';
@@ -131,6 +131,23 @@ export class EstadisticaJugadorTypeOrmRepository
       order: { fechaActualizacion: 'DESC' },
     });
     return orms
+      .map((o) => EstadisticaJugadorMapper.toDomain(o))
+      .filter((e): e is EstadisticaJugador => e !== null);
+  }
+
+  async buscarPorJugadores(jugadorIds: string[]): Promise<EstadisticaJugador[]> {
+    if (!jugadorIds || jugadorIds.length === 0) return [];
+    const batchSize = 1000;
+    const resultados: EstadisticaJugadorOrmEntity[] = [];
+    for (let i = 0; i < jugadorIds.length; i += batchSize) {
+      const slice = jugadorIds.slice(i, i + batchSize);
+      const orms = await this.ormRepository.find({
+        where: { jugadorId: In(slice) },
+        order: { fechaActualizacion: 'DESC' },
+      });
+      resultados.push(...orms);
+    }
+    return resultados
       .map((o) => EstadisticaJugadorMapper.toDomain(o))
       .filter((e): e is EstadisticaJugador => e !== null);
   }

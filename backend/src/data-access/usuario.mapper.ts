@@ -1,4 +1,4 @@
-import { Usuario } from '../domain/usuario.entity';
+import { Usuario, RolUsuario } from '../domain/usuario.entity';
 import { UsuarioOrmEntity } from './usuario.orm-entity';
 
 export class UsuarioMapper {
@@ -9,6 +9,8 @@ export class UsuarioMapper {
       nombre: orm.nombre,
       correo: orm.correo,
       contrasenaHash: orm.contrasenaHash,
+      rol: (orm.rol as RolUsuario) ?? 'USUARIO',
+      saldo: orm.saldo !== undefined && orm.saldo !== null ? Number(orm.saldo) : 1000.0,
       activo: orm.activo,
       creadoEn: orm.creadoEn,
       actualizadoEn: orm.actualizadoEn,
@@ -22,6 +24,8 @@ export class UsuarioMapper {
     orm.nombre = domain.nombre;
     orm.correo = domain.correo;
     orm.contrasenaHash = domain.contrasenaHash;
+    orm.rol = domain.rol;
+    orm.saldo = domain.saldo.aNumero();
     orm.activo = domain.activo;
     orm.creadoEn = domain.creadoEn;
     orm.actualizadoEn = domain.actualizadoEn;

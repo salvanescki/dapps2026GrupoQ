@@ -38,6 +38,9 @@ jobs:
       - name: Run e2e tests with coverage
         run: npm run test:e2e:cov
 
+      - name: Enforce global coverage threshold (lines/branches/functions/statements >= 80%)
+        run: npm run test:cov -- --runInBand --testTimeout=60000
+
       - name: Build
         run: npm run build
 

@@ -8,7 +8,8 @@
   "collectCoverageFrom": [
     "src/services/**/*.ts",
     "src/data-access/**/*.ts",
-    "src/scraping/data-access/**/*.ts"
+    "src/scraping/data-access/**/*.ts",
+    "src/common/**/*.ts"
   ],
   "coverageDirectory": "./coverage/integration",
   "coverageReporters": ["text", ["lcov", { "projectRoot": ".." }]],
