@@ -227,4 +227,52 @@ describe('Users Portfolio & Transaction Audit (Integration with Testcontainers)'
     expect(reporte[0].compradorId).toBe(usuario1.id);
     expect(reporte[0].vendedorId).toBe(adminUser.id);
   });
+
+  it('debe cubrir edge cases de filtros y autorizaciones en portfolio e historiales', async () => {
+    // Solicitante inexistente
+    await expect(
+      omsService.obtenerPortfolioUsuario('00000000-0000-0000-0000-000000000000', usuario1.id),
+    ).rejects.toThrow();
+
+    await expect(
+      omsService.obtenerHistorialTransaccionesUsuario('00000000-0000-0000-0000-000000000000', usuario1.id, {}),
+    ).rejects.toThrow();
+
+    // Tercero intentando consultar historial
+    await expect(
+      omsService.obtenerHistorialTransaccionesUsuario(usuario2.id, usuario1.id, {}),
+    ).rejects.toThrow(ForbiddenException);
+
+    // Admin consultando historial de otro usuario
+    const txsAdmin = await omsService.obtenerHistorialTransaccionesUsuario(adminUser.id, usuario1.id, {
+      tipo: 'VENTA',
+      jugadorId: jugador1Id,
+      desde: new Date(Date.now() - 3600000).toISOString(),
+      hasta: new Date(Date.now() + 3600000).toISOString(),
+      limite: 5,
+    });
+    expect(Array.isArray(txsAdmin)).toBe(true);
+
+    // Auditoria global con filtros exhaustivos
+    const auditoriaFiltros = await omsService.obtenerAuditoriaGlobalTransacciones({
+      usuarioId: usuario1.id,
+      jugadorId: jugador1Id,
+      tipoMercado: 'PRIMARIO',
+      desde: new Date(Date.now() - 7 * 86400000).toISOString(),
+      hasta: new Date(Date.now() + 3600000).toISOString(),
+      limite: 10,
+    });
+    expect(auditoriaFiltros.length).toBeGreaterThanOrEqual(1);
+
+    // Usuario titular inexistente en portfolio
+    await expect(
+      omsService.obtenerPortfolioUsuario(adminUser.id, '00000000-0000-0000-0000-000000000000'),
+    ).rejects.toThrow();
+
+    // Usuario 2 no tiene tokens comprados: debe retornar posiciones vacias (balances.length === 0)
+    const portfolioVacio = await omsService.obtenerPortfolioUsuario(usuario2.id, usuario2.id);
+    expect(portfolioVacio.posiciones).toEqual([]);
+    expect(portfolioVacio.valoracionTotalTokens).toBe(0.0);
+    expect(portfolioVacio.patrimonioNetoTotal).toBe(500.0);
+  });
 });

@@ -187,5 +187,84 @@ describe('Orden (Domain Entity)', () => {
       expect(() => orden.ejecutarParcial(-1)).toThrow(ReglaDeNegocioException);
       expect(() => orden.ejecutarParcial(6)).toThrow(ReglaDeNegocioException);
     });
+
+    it('debe rechazar ejecutar o cancelar órdenes de tipo COMPRA', () => {
+      const ordenCompra = Orden.crearCompra({
+        usuarioId,
+        jugadorId,
+        tipoMercado: 'PRIMARIO',
+        cantidad: 1,
+        precioUnitario: 1.0,
+      });
+
+      expect(() => ordenCompra.ejecutarParcial(1)).toThrow(ReglaDeNegocioException);
+      expect(() => ordenCompra.cancelar()).toThrow(ReglaDeNegocioException);
+    });
+
+    it('debe validar invariantes al recrear una orden', () => {
+      expect(() =>
+        Orden.recrear({
+          id: '1',
+          usuarioId: '',
+          jugadorId,
+          tipo: 'VENTA',
+          tipoMercado: 'SECUNDARIO',
+          cantidad: 10,
+          cantidadRestante: 10,
+          precioUnitario: Dinero.desdeMonto(1),
+          estado: 'PENDIENTE',
+          creadoEn: new Date(),
+          actualizadoEn: new Date(),
+        }),
+      ).toThrow(ReglaDeNegocioException);
+
+      expect(() =>
+        Orden.recrear({
+          id: '1',
+          usuarioId,
+          jugadorId: '  ',
+          tipo: 'VENTA',
+          tipoMercado: 'SECUNDARIO',
+          cantidad: 10,
+          cantidadRestante: 10,
+          precioUnitario: Dinero.desdeMonto(1),
+          estado: 'PENDIENTE',
+          creadoEn: new Date(),
+          actualizadoEn: new Date(),
+        }),
+      ).toThrow(ReglaDeNegocioException);
+
+      expect(() =>
+        Orden.recrear({
+          id: '1',
+          usuarioId,
+          jugadorId,
+          tipo: 'VENTA',
+          tipoMercado: 'SECUNDARIO',
+          cantidad: 10,
+          cantidadRestante: 15,
+          precioUnitario: Dinero.desdeMonto(1),
+          estado: 'PENDIENTE',
+          creadoEn: new Date(),
+          actualizadoEn: new Date(),
+        }),
+      ).toThrow(ReglaDeNegocioException);
+
+      expect(() =>
+        Orden.recrear({
+          id: '1',
+          usuarioId,
+          jugadorId,
+          tipo: 'COMPRA',
+          tipoMercado: 'PRIMARIO',
+          cantidad: 10,
+          cantidadRestante: 5,
+          precioUnitario: Dinero.desdeMonto(1),
+          estado: 'PENDIENTE',
+          creadoEn: new Date(),
+          actualizadoEn: new Date(),
+        }),
+      ).toThrow(ReglaDeNegocioException);
+    });
   });
 });

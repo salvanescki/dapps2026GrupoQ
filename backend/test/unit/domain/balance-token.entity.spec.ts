@@ -109,6 +109,13 @@ describe('BalanceToken Entity (Domain Unit Tests)', () => {
     expect(() => balance.debitarBloqueados(16)).toThrow(
       ReglaDeNegocioException,
     );
+
+    expect(() => balance.bloquearTokens(0)).toThrow(ReglaDeNegocioException);
+    expect(() => balance.bloquearTokens(1.5)).toThrow(ReglaDeNegocioException);
+    expect(() => balance.liberarTokens(0)).toThrow(ReglaDeNegocioException);
+    expect(() => balance.liberarTokens(1.5)).toThrow(ReglaDeNegocioException);
+    expect(() => balance.debitarBloqueados(0)).toThrow(ReglaDeNegocioException);
+    expect(() => balance.debitarBloqueados(1.5)).toThrow(ReglaDeNegocioException);
   });
 
   it('debe acreditar tokens al comprador correctamente', () => {

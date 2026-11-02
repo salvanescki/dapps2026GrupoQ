@@ -95,5 +95,15 @@ describe('Cotizacion Entity (Domain Unit Tests)', () => {
         estrategiaVersion: 'GLOBAL_v1',
       }),
     ).toThrow(ReglaDeNegocioException);
+
+    expect(() =>
+      Cotizacion.crearDesdeCalculo({
+        jugadorId,
+        score: 0.5,
+        valor: 1.5,
+        estrategiaId: 'OTRA' as any,
+        estrategiaVersion: 'OTRA_v1' as any,
+      }),
+    ).toThrow(ReglaDeNegocioException);
   });
 });

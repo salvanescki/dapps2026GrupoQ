@@ -25,11 +25,19 @@ export class MarketplaceTestDatabaseHelper {
     dataSource: DataSource;
   }> {
     if (!this.container) {
-      this.container = await new PostgreSqlContainer('postgres:16-alpine')
-        .withDatabase('test_marketplace_db')
-        .withUsername('test_user')
-        .withPassword('test_password')
-        .start();
+      for (let intento = 1; intento <= 3; intento++) {
+        try {
+          this.container = await new PostgreSqlContainer('postgres:16-alpine')
+            .withDatabase('test_marketplace_db')
+            .withUsername('test_user')
+            .withPassword('test_password')
+            .start();
+          break;
+        } catch (err) {
+          if (intento === 3) throw err;
+          await new Promise((res) => setTimeout(res, 1500));
+        }
+      }
 
       this.dataSource = new DataSource({
         type: 'postgres',

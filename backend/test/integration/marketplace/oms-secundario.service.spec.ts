@@ -327,4 +327,84 @@ describe('OMS Mercado Secundario (Integration with Testcontainers)', () => {
     expect(ordenDb[0].estado).toBe('COMPLETADA');
     expect(Number(ordenDb[0].cantidad_restante)).toBe(0);
   });
+
+  it('debe validar edge cases en creación, listado y cancelación de órdenes secundarias', async () => {
+    // 1. Jugador inexistente
+    await expect(
+      omsService.crearOrdenVenta(usuarioA.id, {
+        jugadorId: '00000000-0000-0000-0000-000000000000',
+        cantidad: 1,
+        precioUnitario: 2.0,
+      }),
+    ).rejects.toThrow();
+
+    // 2. Jugador inactivo
+    await dataSource.query(`UPDATE jugadores SET activo = false WHERE id = '${jugadorId}'`);
+    await expect(
+      omsService.crearOrdenVenta(usuarioA.id, {
+        jugadorId,
+        cantidad: 1,
+        precioUnitario: 2.0,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await dataSource.query(`UPDATE jugadores SET activo = true WHERE id = '${jugadorId}'`);
+
+    // 3. Balance inexistente
+    await expect(
+      omsService.crearOrdenVenta(usuarioC.id, {
+        jugadorId,
+        cantidad: 1,
+        precioUnitario: 2.0,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 4. Balance disponible insuficiente
+    await expect(
+      omsService.crearOrdenVenta(usuarioA.id, {
+        jugadorId,
+        cantidad: 9999,
+        precioUnitario: 2.0,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 5. Cancelar orden inexistente
+    await expect(
+      omsService.cancelarOrdenVenta(usuarioA.id, '00000000-0000-0000-0000-000000000000'),
+    ).rejects.toThrow();
+
+    // 6. Listar con filtros de jugadorId y limite
+    const lista = await omsService.listarOrdenesVenta({
+      jugadorId,
+      limite: 2,
+    });
+    expect(Array.isArray(lista)).toBe(true);
+
+    // 7. Cancelar orden de tipo COMPRA (debe arrojar BadRequestException)
+    const ordenCompraId = 'e4000000-0000-0000-0000-000000000099';
+    await dataSource.query(`
+      INSERT INTO ordenes (id, usuario_id, jugador_id, tipo, tipo_mercado, cantidad, cantidad_restante, precio_unitario, estado, creado_en)
+      VALUES ('${ordenCompraId}', '${usuarioA.id}', '${jugadorId}', 'COMPRA', 'PRIMARIO', 1, 0, 1.0, 'COMPLETADA', now())
+    `);
+    await expect(
+      omsService.cancelarOrdenVenta(usuarioA.id, ordenCompraId),
+    ).rejects.toThrow(BadRequestException);
+
+    // 8. Comprar con ordenVentaId inexistente (NotFoundException)
+    await expect(
+      omsService.comprarTokens(usuarioB.id, {
+        jugadorId,
+        cantidad: 1,
+        ordenVentaId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toThrow();
+
+    // 9. Comprar con ordenVentaId que apunta a orden de tipo COMPRA (ConflictException)
+    await expect(
+      omsService.comprarTokens(usuarioB.id, {
+        jugadorId,
+        cantidad: 1,
+        ordenVentaId: ordenCompraId,
+      }),
+    ).rejects.toThrow(ConflictException);
+  });
 });

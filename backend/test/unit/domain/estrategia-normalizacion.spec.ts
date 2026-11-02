@@ -116,5 +116,21 @@ describe('MetricasJugadorParaCotizacion Normalización y Agregación Contextual 
     expect(m.metricas!.rating).toBe(0.0);
     expect(m.metricas!.tackles).toBe(0.0);
     expect(m.metricas!.interceptions).toBe(0.0);
+
+    const filaTotalmenteVacia = EstadisticaJugador.crear({
+      jugadorId,
+      temporada: '2025/2026',
+      liga: 'PL',
+      partidosJugados: 5,
+    });
+    const mVacia = MetricasJugadorParaCotizacion.desdeEstadisticas([filaTotalmenteVacia]);
+    expect(mVacia.metricas!.goals).toBe(0);
+    expect(mVacia.metricas!.assists).toBe(0);
+    expect(mVacia.metricas!.saves).toBe(0);
+    expect(mVacia.metricas!.keyPasses).toBe(0);
+    expect(mVacia.metricas!.dribbles).toBe(0);
+    expect(mVacia.metricas!.savePercentage).toBe(0);
+
+    expect(MetricasJugadorParaCotizacion.vacio().toSnapshot()).toBeNull();
   });
 });

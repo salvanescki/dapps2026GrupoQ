@@ -119,4 +119,85 @@ describe('Transaccion (Domain Entity - Inmutable)', () => {
       }),
     ).toThrow(ReglaDeNegocioException);
   });
+
+  it('debe validar montoTotal explícito y campos de identidad no vacíos', () => {
+    const tx = Transaccion.crear({
+      ordenId,
+      jugadorId,
+      compradorId,
+      vendedorId,
+      cantidad: 2,
+      precioUnitario: 1.5,
+      montoTotal: 3.0,
+      tipoMercado: 'PRIMARIO',
+      estrategiaCotizacion: 'GLOBAL_v1',
+    });
+    expect(tx.montoTotal.aNumero()).toBe(3.0);
+
+    expect(() =>
+      Transaccion.crear({
+        ordenId,
+        jugadorId,
+        compradorId,
+        vendedorId,
+        cantidad: 2,
+        precioUnitario: 1.5,
+        montoTotal: 5.0, // Incoherente con 2 * 1.5 = 3.0
+        tipoMercado: 'PRIMARIO',
+        estrategiaCotizacion: 'GLOBAL_v1',
+      }),
+    ).toThrow(ReglaDeNegocioException);
+
+    expect(() =>
+      Transaccion.crear({
+        ordenId: '',
+        jugadorId,
+        compradorId,
+        vendedorId,
+        cantidad: 1,
+        precioUnitario: 1.0,
+        tipoMercado: 'PRIMARIO',
+        estrategiaCotizacion: 'GLOBAL_v1',
+      }),
+    ).toThrow(ReglaDeNegocioException);
+
+    expect(() =>
+      Transaccion.crear({
+        ordenId,
+        jugadorId: '',
+        compradorId,
+        vendedorId,
+        cantidad: 1,
+        precioUnitario: 1.0,
+        tipoMercado: 'PRIMARIO',
+        estrategiaCotizacion: 'GLOBAL_v1',
+      }),
+    ).toThrow(ReglaDeNegocioException);
+
+    expect(() =>
+      Transaccion.crear({
+        ordenId,
+        jugadorId,
+        compradorId: '',
+        vendedorId,
+        cantidad: 1,
+        precioUnitario: 1.0,
+        tipoMercado: 'PRIMARIO',
+        estrategiaCotizacion: 'GLOBAL_v1',
+      }),
+    ).toThrow(ReglaDeNegocioException);
+
+    expect(() =>
+      Transaccion.crear({
+        ordenId,
+        jugadorId,
+        compradorId,
+        vendedorId: '',
+        cantidad: 1,
+        precioUnitario: 1.0,
+        tipoMercado: 'PRIMARIO',
+        estrategiaCotizacion: 'GLOBAL_v1',
+      }),
+    ).toThrow(ReglaDeNegocioException);
+  });
 });

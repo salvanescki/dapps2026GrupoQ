@@ -302,4 +302,84 @@ describe('OMS Mercado Primario (Integration with Testcontainers)', () => {
     // La suma de los existentes en BD es: 1 admin + 3*3 compradores = 10.
     expect(Number(sumaTotal[0].total)).toBe(10);
   });
+
+  it('debe validar edge cases de compra en mercado primario (validaciones de negocio)', async () => {
+    // 1. Jugador inexistente
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId: '00000000-0000-0000-0000-000000000000',
+        cantidad: 1,
+      }),
+    ).rejects.toThrow();
+
+    // 2. Jugador inactivo
+    await dataSource.query(`UPDATE jugadores SET activo = false WHERE id = '${jugadorId}'`);
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId,
+        cantidad: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await dataSource.query(`UPDATE jugadores SET activo = true WHERE id = '${jugadorId}'`);
+
+    // 3. Admin intentando comprarse a sí mismo
+    await expect(
+      omsService.comprarTokens(adminUser.id, {
+        jugadorId,
+        cantidad: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 4. Precio máximo menor a la cotización actual
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId,
+        cantidad: 1,
+        precioMaximoUnitario: 0.5, // Cotización es >= 1.00
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 5. Sin stock del admin (admin sin balance)
+    const idSinBalance = 'd3000000-0000-0000-0000-000000000099';
+    await dataSource.query(
+      `INSERT INTO jugadores (id, external_id, nombre, posicion, equipo_id, liga_id, activo)
+       VALUES ($1, 9999, 'Jugador Sin Balance', 'Delantero', $2, $3, true)`,
+      [idSinBalance, equipoId, ligaId],
+    );
+    await dataSource.query(
+      `INSERT INTO cotizaciones (id, jugador_id, score, valor, estrategia_id, estrategia_version, sin_estadisticas, fecha_cotizacion)
+       VALUES ($1, $2, 0.0, 1.0, 'GLOBAL', 'GLOBAL_v1', true, now())`,
+      ['e3000000-0000-0000-0000-000000000099', idSinBalance],
+    );
+
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId: idSinBalance,
+        cantidad: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 6. Jugador sin cotización oficial
+    const idSinCot = 'd3000000-0000-0000-0000-000000000098';
+    await dataSource.query(
+      `INSERT INTO jugadores (id, external_id, nombre, posicion, equipo_id, liga_id, activo)
+       VALUES ($1, 9998, 'Jugador Sin Cot', 'Delantero', $2, $3, true)`,
+      [idSinCot, equipoId, ligaId],
+    );
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId: idSinCot,
+        cantidad: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // 7. Sin superusuario ADMIN configurado
+    await dataSource.query(`DELETE FROM usuarios WHERE rol = 'ADMIN'`);
+    await expect(
+      omsService.comprarTokens(compradorUser.id, {
+        jugadorId,
+        cantidad: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
 });

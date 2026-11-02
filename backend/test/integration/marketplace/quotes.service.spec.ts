@@ -222,5 +222,65 @@ describe('QuotesService (Integration with Testcontainers)', () => {
 
     expect(duracionConCache).toBeLessThan(50);
     expect(rankingConCache).toEqual(rankingSinCache);
+
+    // Filtrar por posición Delantero
+    const rankingDelanteros = await quotesService.obtenerRanking(10, 'Delantero');
+    expect(rankingDelanteros.length).toBe(1);
+    expect(rankingDelanteros[0].nombre).toBe('Lautaro Martinez');
+  });
+
+  it('debe retornar array vacio si no hay jugadores activos en ranking', async () => {
+    const ranking = await quotesService.obtenerRanking(10);
+    expect(ranking).toEqual([]);
+  });
+
+  it('debe ordenar ranking por score y nombre ante empate de valor, ignorar jugadores sin cotizacion y soportar jugadores sin admin', async () => {
+    const ligaId = 'b4000000-0000-0000-0000-000000000001';
+    const equipoId = 'c4000000-0000-0000-0000-000000000001';
+    await dataSource.query(
+      `INSERT INTO ligas (id, nombre, codigo, pais) VALUES ($1, 'Serie A', 'SA', 'Italia')`,
+      [ligaId],
+    );
+    await dataSource.query(
+      `INSERT INTO equipos (id, external_id, nombre, liga_id) VALUES ($1, 701, 'Equipo Serie A', $2)`,
+      [equipoId, ligaId],
+    );
+
+    // 3 jugadores activos: jA (score 0.50, valor 1.50), jB (score 0.60, valor 1.50), jC (score 0.50, valor 1.50), jSinCotizacion
+    const jAId = 'd4000000-0000-0000-0000-000000000001';
+    const jBId = 'd4000000-0000-0000-0000-000000000002';
+    const jCId = 'd4000000-0000-0000-0000-000000000003';
+    const jSinCotId = 'd4000000-0000-0000-0000-000000000004';
+
+    await dataSource.query(
+      `INSERT INTO jugadores (id, external_id, nombre, posicion, equipo_id, liga_id, activo) VALUES
+       ($1, 801, 'Zeta Player', 'Delantero', $5, $6, true),
+       ($2, 802, 'Alpha Player', 'Delantero', $5, $6, true),
+       ($3, 803, 'Beta Player', 'Delantero', $5, $6, true),
+       ($4, 804, 'Sin Cotizacion', 'Delantero', $5, $6, true)`,
+      [jAId, jBId, jCId, jSinCotId, equipoId, ligaId],
+    );
+
+    await dataSource.query(
+      `INSERT INTO cotizaciones (id, jugador_id, score, valor, estrategia_id, estrategia_version, sin_estadisticas, fecha_cotizacion) VALUES
+       ('e4000000-0000-0000-0000-000000000001', $1, 0.50, 1.50, 'GLOBAL', 'GLOBAL_v1', false, now()),
+       ('e4000000-0000-0000-0000-000000000002', $2, 0.60, 1.50, 'GLOBAL', 'GLOBAL_v1', false, now()),
+       ('e4000000-0000-0000-0000-000000000003', $3, 0.50, 1.50, 'GLOBAL', 'GLOBAL_v1', false, now())`,
+      [jAId, jBId, jCId],
+    );
+
+    // Sin admin en BD para ejercitar la rama admin = null
+    const ranking = await quotesService.obtenerRanking(10);
+
+    // Alpha Player (score 0.60 > 0.50)
+    expect(ranking[0].nombre).toBe('Alpha Player');
+    expect(ranking[0].equipoNombre).toBe('Equipo Serie A');
+
+    // Empate de valor (1.50) y score (0.50): Beta Player alfabéticamente antes que Zeta Player
+    expect(ranking[1].nombre).toBe('Beta Player');
+    expect(ranking[2].nombre).toBe('Zeta Player');
+
+    // jSinCotId debe haber sido ignorado
+    expect(ranking.some((r) => r.jugadorId === jSinCotId)).toBe(false);
   });
 });

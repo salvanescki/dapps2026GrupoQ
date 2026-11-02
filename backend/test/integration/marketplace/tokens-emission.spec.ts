@@ -13,6 +13,7 @@ import { BalanceTokenTypeOrmRepository } from '../../../src/data-access/balance-
 import { BalanceTokenOrmEntity } from '../../../src/data-access/balance-token.orm-entity';
 import { CotizacionTypeOrmRepository } from '../../../src/data-access/cotizacion.typeorm-repository';
 import { CotizacionOrmEntity } from '../../../src/data-access/cotizacion.orm-entity';
+import { Usuario } from '../../../src/domain/usuario.entity';
 
 describe('Tokens Emission & Admin Bootstrap (Integration with Testcontainers)', () => {
   let dataSource: DataSource;
@@ -79,6 +80,26 @@ describe('Tokens Emission & Admin Bootstrap (Integration with Testcontainers)', 
 
     const admin = await usuarioRepo.buscarAdmin();
     expect(admin).toBeNull();
+  });
+
+  it('debe promover a un usuario existente a rol ADMIN si coincide el correo', async () => {
+    process.env.ADMIN_CORREO = 'admin.existente@marketplace.com';
+    process.env.ADMIN_CONTRASENA = 'SuperAdmin1234';
+    process.env.ADMIN_NOMBRE = 'Admin Existente';
+
+    const usuarioExistente = Usuario.crear({
+      nombre: 'Usuario Común',
+      correo: 'admin.existente@marketplace.com',
+      contrasenaHash: 'hash',
+      rol: 'USUARIO',
+    });
+    await usuarioRepo.guardar(usuarioExistente);
+
+    await adminBootstrapService.onApplicationBootstrap();
+
+    const adminPromovido = await usuarioRepo.buscarPorCorreo('admin.existente@marketplace.com');
+    expect(adminPromovido).not.toBeNull();
+    expect(adminPromovido?.esAdmin()).toBe(true);
   });
 
   it('debe aprovisionar al superusuario ADMIN, emitir 100 tokens y cotización 1.00 solo para jugadores activos', async () => {
@@ -185,5 +206,35 @@ describe('Tokens Emission & Admin Bootstrap (Integration with Testcontainers)', 
       jugadorActivo1Id,
     );
     expect(sum1Recheck).toBe(100);
+
+    // 9. Probar asegurarEmisionJugador para cubrir branches
+    const aseguradoExistente = await tokensService.asegurarEmisionJugador(jugadorActivo1Id);
+    expect(aseguradoExistente).toBe(false);
+
+    const aseguradoInexistente = await tokensService.asegurarEmisionJugador('00000000-0000-0000-0000-000000000000');
+    expect(aseguradoInexistente).toBe(false);
+
+    const aseguradoInactivo = await tokensService.asegurarEmisionJugador(jugadorInactivoId);
+    expect(aseguradoInactivo).toBe(false);
+  });
+
+  it('debe manejar emitirFaltantes y asegurarEmisionJugador cuando no hay jugadores activos o no hay admin', async () => {
+    await MarketplaceTestDatabaseHelper.cleanDatabase();
+
+    // Sin admin
+    const aseguradoSinAdmin = await tokensService.asegurarEmisionJugador('00000000-0000-0000-0000-000000000000');
+    expect(aseguradoSinAdmin).toBe(false);
+
+    // Crear admin pero sin jugadores activos
+    const admin = await usuarioRepo.guardar(
+      Usuario.crear({
+        nombre: 'Admin Solo',
+        correo: 'admin.solo@test.com',
+        contrasenaHash: 'hash',
+        rol: 'ADMIN',
+      }),
+    );
+    const resSinJugadores = await tokensService.emitirFaltantes();
+    expect(resSinJugadores).toEqual({ emitidos: 0, omitidos: 0 });
   });
 });

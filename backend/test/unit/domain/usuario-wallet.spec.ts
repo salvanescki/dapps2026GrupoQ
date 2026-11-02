@@ -118,6 +118,18 @@ describe('Dinero Value Object & Usuario Wallet Domain Unit Tests', () => {
       expect(admin.rol).toBe('ADMIN');
       expect(admin.esAdmin()).toBe(true);
       expect(admin.saldo.aNumero()).toBe(5000.5);
+
+      const usuarioDinero = Usuario.crear({
+        ...baseProps,
+        saldo: Dinero.desdeMonto(200),
+      });
+      expect(usuarioDinero.saldo.aNumero()).toBe(200);
+
+      const usuarioString = Usuario.crear({
+        ...baseProps,
+        saldo: '350.50',
+      });
+      expect(usuarioString.saldo.aNumero()).toBe(350.50);
     });
 
     it('debe debitar saldo exitosamente y actualizar timestamp', () => {
