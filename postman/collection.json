@@ -277,7 +277,7 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/players?pagina=1&limite=10",
+              "raw": "{{base_url}}/players?page=1&limit=10",
               "host": [
                 "{{base_url}}"
               ],
@@ -286,11 +286,11 @@
               ],
               "query": [
                 {
-                  "key": "pagina",
+                  "key": "page",
                   "value": "1"
                 },
                 {
-                  "key": "limite",
+                  "key": "limit",
                   "value": "10"
                 }
               ]
