@@ -1,11 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.2.0 → 1.3.0
 - Ratification Date: 2026-09-13
-- Last Amended Date: 2026-10-15
-- Modified principles: None (principles I to V preserved intact)
+- Last Amended Date: 2026-11-02
+- Modified principles:
+  - III. Estrategia de Testing Rigurosa y Testcontainers (ampliada para reconocer
+    tests unitarios y de integración propios del frontend)
+  - Definition of Done (ampliada para exigir la estrategia de pruebas correspondiente
+    a cada stack y la sincronización verificable de Postman)
 - Added sections:
-  - VI. Calidad de Testing: Test Coverage Mínimo (nuevo principio de cobertura mínima del 80% de líneas y branches por stack, regla de no regresión en PRs y enforcement con ratchet en CI)
+  - Ninguna
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -30,9 +34,21 @@ La capa de dominio (Model) **MUST** modelar las entidades, agregados y value obj
 - Toda invariante de negocio, validación de estado, cálculo de desempeño de jugadores (Premier League, La Liga, Ligue 1, Serie A, Bundesliga), fluctuación de cotizaciones y reglas de compra/venta de tokens o balances de portfolio **MUST** residir exclusivamente en la capa de Model.
 
 ### III. Estrategia de Testing Rigurosa y Testcontainers
-La calidad y confiabilidad del software se valida mediante una estrategia de pruebas en dos niveles complementarios:
-- **Tests Unitarios:** Enfocados exclusivamente en la capa de dominio (Model). **MUST** ejecutarse en aislamiento total, sin interacción con bases de datos ni servicios externos.
-- **Tests de Integración:** Enfocados en las capas de Services y Repositories. **MUST** ejecutarse contra instancias reales de PostgreSQL provisionadas dinámicamente mediante Testcontainers.
+La calidad y confiabilidad del software se valida mediante una estrategia de pruebas por
+stack, respetando las responsabilidades de cada capa:
+- **Backend — Tests Unitarios:** Enfocados principalmente en la capa de dominio (Model).
+  **MUST** ejecutarse en aislamiento total, sin interacción con bases de datos ni servicios
+  externos.
+- **Backend — Tests de Integración:** Enfocados en las capas de Services, Controllers y
+  Repositories cuando corresponda. **MUST** ejecutarse contra instancias reales de
+  PostgreSQL provisionadas dinámicamente mediante Testcontainers.
+- **Frontend — Tests Unitarios:** **MUST** cubrir funciones puras, validadores, formateadores,
+  adaptadores, clientes HTTP aislados y otros módulos deterministas sin renderizado de
+  interfaz ni servicios externos reales. Estos tests no sustituyen los tests unitarios
+  exigidos para el dominio backend.
+- **Frontend — Tests de Integración y E2E:** **MUST** cubrir componentes, hooks, rutas,
+  interacción entre módulos y Critical User Journeys mediante dobles de red controlados,
+  sin exigir PostgreSQL real para pruebas de presentación o consumo HTTP.
 - **Cobertura de Casos:** Toda suite de pruebas **MUST** cubrir de manera explícita tanto los caminos felices (*happy paths*) como los casos límite y de error (*edge cases*).
 
 ### IV. Política Estricta de Inmutabilidad de Tests (NON-NEGOTIABLE)
@@ -60,14 +76,27 @@ El ecosistema tecnológico aprobado comprende:
 - **Entorno & Contenerización:** Docker para estandarización de despliegue y desarrollo local.
 - **Testing:** Jest como runner de pruebas y Testcontainers para integración con PostgreSQL real.
 - **Documentación de API:** Todos los endpoints públicos y privados de la API REST **MUST** estar exhaustivamente documentados bajo el estándar OpenAPI (Swagger).
-- **Herramientas de Consumo:** La colección de Postman del repositorio **MUST** mantenerse sincronizada con los nuevos contratos y endpoints expuestos.
+- **Herramientas de Consumo:** La colección de Postman del repositorio **MUST** mantenerse
+  sincronizada con los contratos y endpoints expuestos. Cada cambio de API **MUST** actualizar
+  los endpoints afectados, payloads obligatorios y opcionales, respuestas exitosas, códigos
+  de error relevantes (`400`, `401`, `403`, `404` y `409` cuando correspondan) y scripts de
+  validación. La sincronización **MUST** verificarse contra la especificación OpenAPI
+  (Swagger) y los contratos REST versionados del repositorio.
 
 ## Definición de Terminado (Definition of Done - DoD)
 
 Un requerimiento, funcionalidad, issue o tarea se considera terminado (**DONE**) si y solo si satisface los tres criterios siguientes:
-1. **Tests Completos y Exitosos:** Posee tests unitarios de dominio y tests de integración (Services/Repositories con Testcontainers), cubriendo casos felices y casos borde, y todos los tests pasan exitosamente.
+1. **Tests Completos y Exitosos:** Cada cambio posee la estrategia de pruebas
+   correspondiente a su stack: tests unitarios de dominio y tests de integración de
+   backend (Services/Repositories con Testcontainers) cuando afecte backend, además de
+   tests unitarios, de integración o E2E de frontend cuando afecte frontend. Todas las
+   pruebas cubren casos felices y casos borde, y pasan exitosamente.
 2. **Compilación y Despliegue Local:** La aplicación compila sin errores de tipado o empaquetado y levanta correctamente con la configuración actual (Docker y entorno local).
-3. **Colección Postman Actualizada:** La colección de Postman del proyecto se encuentra al día, reflejando fielmente los nuevos endpoints, esquemas de payload y respuestas.
+3. **Colección Postman Actualizada:** La colección de Postman del proyecto se encuentra al
+   día y refleja fielmente los endpoints afectados, esquemas de payload, respuestas, errores
+   y scripts de validación. La tarea correspondiente **MUST** dejar evidencia de verificación
+   contra Swagger y los contratos REST versionados; si no existen cambios de API, **MUST**
+   registrar explícitamente esa validación y su resultado.
 
 ## Governance
 
@@ -79,4 +108,4 @@ Esta Constitución rige de manera soberana sobre cualquier otra práctica, conve
   - **MINOR:** Incorporación de nuevos principios, secciones o directrices sustanciales.
   - **PATCH:** Correcciones de redacción, aclaraciones o ajustes menores sin alteración de reglas.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-10-15
+**Version**: 1.3.0 | **Ratified**: 2026-09-13 | **Last Amended**: 2026-11-02

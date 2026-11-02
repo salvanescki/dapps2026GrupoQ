@@ -1,0 +1,262 @@
+openapi: 3.0.3
+info:
+  title: API de Autenticación de Usuarios - Extensión Aditiva de Rol y Saldo
+  version: 1.1.0
+  description: |
+    Contrato REST OpenAPI versionado para el módulo de Autenticación en `013-marketplace-frontend`.
+    Extiende de forma estrictamente aditiva y retrocompatible `PerfilUsuarioDto` (respecto a
+    `specs/001-user-auth/contracts/auth-api.yaml` v1.0.0) incorporando `rol` (`USUARIO | ADMIN`)
+    y `saldo` numérico en créditos, sin modificar `AuthController`, rutas, verbos HTTP,
+    códigos de estado ni payloads de entrada.
+servers:
+  - url: http://localhost:3000
+    description: Servidor Backend NestJS directo (Swagger y Postman base_url)
+  - url: http://localhost:5173/api
+    description: Proxy de desarrollo Frontend Vite (/api/* -> http://localhost:3000/*)
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Autenticación
+      summary: Registrar un nuevo usuario
+      operationId: AuthController_registrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroUsuarioDto'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '400':
+          description: Datos de entrada inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+        '409':
+          description: El correo electrónico ya existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /auth/login:
+    post:
+      tags:
+        - Autenticación
+      summary: Iniciar sesión de usuario
+      operationId: AuthController_login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUsuarioDto'
+      responses:
+        '200':
+          description: Autenticación exitosa. Retorna JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAutenticacionDto'
+        '400':
+          description: Formato de credenciales inválido (ValidationPipe).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+        '401':
+          description: Credenciales inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /auth/me:
+    get:
+      tags:
+        - Autenticación
+      summary: Obtener perfil del usuario autenticado
+      operationId: AuthController_me
+      security:
+        - bearer: []
+      responses:
+        '200':
+          description: Perfil del usuario obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilUsuarioDto'
+        '401':
+          description: No autorizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+  /auth/logout:
+    post:
+      tags:
+        - Autenticación
+      summary: Cerrar sesión
+      operationId: AuthController_logout
+      security:
+        - bearer: []
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutRespuestaDto'
+        '401':
+          description: No autorizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuestaDto'
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegistroUsuarioDto:
+      type: object
+      additionalProperties: false
+      required:
+        - nombre
+        - correo
+        - contrasena
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Trader Uno
+        correo:
+          type: string
+          format: email
+          example: trader1@marketplace.com
+        contrasena:
+          type: string
+          format: password
+          minLength: 8
+          example: Trader1234!
+
+    LoginUsuarioDto:
+      type: object
+      additionalProperties: false
+      required:
+        - correo
+        - contrasena
+      properties:
+        correo:
+          type: string
+          format: email
+          example: trader1@marketplace.com
+        contrasena:
+          type: string
+          format: password
+          example: Trader1234!
+
+    PerfilUsuarioDto:
+      type: object
+      required:
+        - id
+        - nombre
+        - correo
+        - activo
+        - creadoEn
+        - rol
+        - saldo
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        nombre:
+          type: string
+          example: Trader Uno
+        correo:
+          type: string
+          format: email
+          example: trader1@marketplace.com
+        activo:
+          type: boolean
+          example: true
+        creadoEn:
+          type: string
+          format: date-time
+          example: '2026-11-02T03:00:00.000Z'
+        rol:
+          type: string
+          enum:
+            - USUARIO
+            - ADMIN
+          description: Rol de autorización del usuario en la plataforma (extensión aditiva v1.1.0).
+          example: USUARIO
+        saldo:
+          type: number
+          format: float
+          minimum: 0
+          description: Saldo líquido disponible en créditos en la billetera del usuario (extensión aditiva v1.1.0).
+          example: 1000
+
+    RespuestaAutenticacionDto:
+      type: object
+      required:
+        - tokenDeAcceso
+        - tipo
+        - usuario
+      properties:
+        tokenDeAcceso:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tipo:
+          type: string
+          example: Bearer
+        usuario:
+          $ref: '#/components/schemas/PerfilUsuarioDto'
+
+    LogoutRespuestaDto:
+      type: object
+      required:
+        - mensaje
+      properties:
+        mensaje:
+          type: string
+          example: Sesión cerrada exitosamente.
+
+    ErrorRespuestaDto:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          example: 401
+        mensaje:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          example: Credenciales inválidas.
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: '2026-11-02T03:00:00.000Z'
+
