@@ -3,7 +3,11 @@ import { LoginView } from '../views/LoginView';
 import { RegisterView } from '../views/RegisterView';
 import { HomeView } from '../views/HomeView';
 import { PlayersCatalogView } from '../views/PlayersCatalogView';
+import { MarketplaceView } from '../views/MarketplaceView';
+import { PortfolioView } from '../views/PortfolioView';
+import { AdminGovernanceView } from '../views/AdminGovernanceView';
 import { ProtectedRoute } from './ProtectedRoute';
+import { AdminRoute } from './AdminRoute';
 import { PublicRoute } from './PublicRoute';
 
 export function AppRoutes() {
@@ -34,10 +38,36 @@ export function AppRoutes() {
         }
       />
       <Route
+        path="/marketplace"
+        element={
+          <ProtectedRoute>
+            <MarketplaceView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/players"
         element={
           <ProtectedRoute>
             <PlayersCatalogView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/portfolio"
+        element={
+          <ProtectedRoute>
+            <PortfolioView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminGovernanceView />
+            </AdminRoute>
           </ProtectedRoute>
         }
       />

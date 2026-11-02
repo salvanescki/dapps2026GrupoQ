@@ -106,6 +106,8 @@ export class AuthService {
       correo: usuario.correo,
       activo: usuario.activo,
       creadoEn: usuario.creadoEn,
+      rol: usuario.rol,
+      saldo: usuario.saldo.aNumero(),
     };
   }
 }

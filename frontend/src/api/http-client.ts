@@ -16,17 +16,23 @@ export async function httpRequest<T>(
 ): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
 
+  const { headers: extraHeaders, ...restOptions } = options;
   let response: Response;
   try {
     response = await fetch(url, {
+      ...restOptions,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...extraHeaders,
       },
-      ...options,
     });
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as { name?: unknown }).name === 'AbortError'
+    ) {
       throw error;
     }
     throw new HttpError(

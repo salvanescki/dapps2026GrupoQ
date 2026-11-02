@@ -10,11 +10,13 @@ import { EmptyState } from '../components/catalog/EmptyState';
 import { PlayerDetailModal } from '../components/player-detail/PlayerDetailModal';
 import { Navbar } from '../components/layout/Navbar';
 import { Alert } from '../components/ui/Alert';
+import { construirItemsNavegacion } from '../utils/navegacion';
 import '../styles/catalog.css';
 import '../styles/components.css';
+import '../styles/marketplace.css';
 
 export const PlayersCatalogView: React.FC = () => {
-  const { logout } = useAuth();
+  const { usuario, logout } = useAuth();
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
@@ -50,13 +52,7 @@ export const PlayersCatalogView: React.FC = () => {
     void reload();
   };
 
-  const navItems = [
-    {
-      label: 'Dashboard',
-      to: '/',
-      id: 'nav-dashboard',
-    },
-  ];
+  const navItems = construirItemsNavegacion(usuario?.rol);
 
   return (
     <div className="catalog-page">

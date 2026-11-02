@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { esRutaActiva } from '../../utils/navegacion';
 import type { NavbarProps } from '../../types/ui.types';
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -9,6 +10,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   brandLink = '/',
 }) => {
+  const location = useLocation();
+
   return (
     <nav className="app-navbar home-navbar" aria-label="Navegación principal">
       <div className="app-navbar-brand home-navbar-brand">
@@ -21,17 +24,21 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div className="app-navbar-actions">
-        {items.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            id={item.id}
-            className="app-navbar-link"
-          >
-            {item.icon && <span aria-hidden="true">{item.icon}</span>}
-            {item.label}
-          </Link>
-        ))}
+        {items.map((item) => {
+          const activa = esRutaActiva(location.pathname, item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              id={item.id}
+              aria-current={activa ? 'page' : undefined}
+              className={`app-navbar-link ${activa ? 'app-navbar-link-active' : ''}`.trim()}
+            >
+              {item.icon && <span aria-hidden="true">{item.icon}</span>}
+              {item.label}
+            </Link>
+          );
+        })}
 
         {onLogout && (
           <button

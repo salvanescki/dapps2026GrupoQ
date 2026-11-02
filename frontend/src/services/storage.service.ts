@@ -11,6 +11,8 @@ const PerfilUsuarioSchema = z
     correo: z.email().max(254),
     activo: z.boolean(),
     creadoEn: z.iso.datetime({ offset: true }),
+    rol: z.enum(['USUARIO', 'ADMIN']).optional(),
+    saldo: z.number().nonnegative().optional(),
   })
   .strict();
 

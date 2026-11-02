@@ -21,10 +21,19 @@
                   "});",
                   "if (pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  if (json.tokenDeAcceso) {",
-                  "    pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
-                  "    pm.environment.set('trader1_token', json.tokenDeAcceso);",
-                  "  }",
+                  "  pm.test('Respuesta de registro contiene token y PerfilUsuarioDto enriquecido', () => {",
+                  "    pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "    pm.expect(json.tipo).to.eql('Bearer');",
+                  "    pm.expect(json.usuario).to.have.property('id');",
+                  "    pm.expect(json.usuario).to.have.property('nombre', 'Trader Uno');",
+                  "    pm.expect(json.usuario).to.have.property('correo', 'trader1@marketplace.com');",
+                  "    pm.expect(json.usuario).to.have.property('activo', true);",
+                  "    pm.expect(json.usuario).to.have.property('creadoEn');",
+                  "    pm.expect(json.usuario.rol).to.eql('USUARIO');",
+                  "    pm.expect(json.usuario.saldo).to.be.a('number').and.gte(0);",
+                  "  });",
+                  "  pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
+                  "  pm.environment.set('trader1_token', json.tokenDeAcceso);",
                   "  if (json.usuario && json.usuario.id) {",
                   "    pm.collectionVariables.set('trader1_id', json.usuario.id);",
                   "    pm.environment.set('trader1_id', json.usuario.id);",
@@ -56,7 +65,7 @@
                 "register"
               ]
             },
-            "description": "Registra trader1. Guarda el token en trader1_token y el UUID en trader1_id."
+            "description": "Registra trader1. Valida rol USUARIO y saldo inicial. Guarda trader1_token y trader1_id."
           }
         },
         {
@@ -71,10 +80,19 @@
                   "});",
                   "if (pm.response.code === 201) {",
                   "  const json = pm.response.json();",
-                  "  if (json.tokenDeAcceso) {",
-                  "    pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
-                  "    pm.environment.set('trader2_token', json.tokenDeAcceso);",
-                  "  }",
+                  "  pm.test('Respuesta de registro contiene token y PerfilUsuarioDto enriquecido', () => {",
+                  "    pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "    pm.expect(json.tipo).to.eql('Bearer');",
+                  "    pm.expect(json.usuario).to.have.property('id');",
+                  "    pm.expect(json.usuario).to.have.property('nombre', 'Trader Dos');",
+                  "    pm.expect(json.usuario).to.have.property('correo', 'trader2@marketplace.com');",
+                  "    pm.expect(json.usuario).to.have.property('activo', true);",
+                  "    pm.expect(json.usuario).to.have.property('creadoEn');",
+                  "    pm.expect(json.usuario.rol).to.eql('USUARIO');",
+                  "    pm.expect(json.usuario.saldo).to.be.a('number').and.gte(0);",
+                  "  });",
+                  "  pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
+                  "  pm.environment.set('trader2_token', json.tokenDeAcceso);",
                   "  if (json.usuario && json.usuario.id) {",
                   "    pm.collectionVariables.set('trader2_id', json.usuario.id);",
                   "    pm.environment.set('trader2_id', json.usuario.id);",
@@ -106,7 +124,93 @@
                 "register"
               ]
             },
-            "description": "Registra trader2. Guarda el token en trader2_token y el UUID en trader2_id."
+            "description": "Registra trader2. Valida rol USUARIO y saldo inicial. Guarda trader2_token y trader2_id."
+          }
+        },
+        {
+          "name": "POST Register inválido (-> 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(400);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"correo\": \"correo-invalido\",\n  \"contrasena\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Valida rechazo 400 ante payload de registro inválido."
+          }
+        },
+        {
+          "name": "POST Register correo duplicado (-> 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(409);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Trader Duplicado\",\n  \"correo\": \"trader1@marketplace.com\",\n  \"contrasena\": \"Trader1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Valida rechazo 409 ante intento de registrar un correo ya existente."
           }
         },
         {
@@ -117,9 +221,12 @@
               "script": {
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "pm.test('Login ADMIN con rol ADMIN y saldo', () => {",
                   "  const json = pm.response.json();",
                   "  pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "  pm.expect(json.tipo).to.eql('Bearer');",
+                  "  pm.expect(json.usuario.rol).to.eql('ADMIN');",
+                  "  pm.expect(json.usuario.saldo).to.be.a('number').and.gte(0);",
                   "  pm.collectionVariables.set('admin_token', json.tokenDeAcceso);",
                   "  pm.environment.set('admin_token', json.tokenDeAcceso);",
                   "  if (json.usuario && json.usuario.id) {",
@@ -153,7 +260,7 @@
                 "login"
               ]
             },
-            "description": "Obtiene token ADMIN. Requiere que ADMIN_CORREO y ADMIN_CONTRASENA estén configurados en el servidor."
+            "description": "Obtiene token ADMIN. Valida rol ADMIN y saldo. Guarda admin_token y admin_id."
           }
         },
         {
@@ -164,9 +271,12 @@
               "script": {
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "pm.test('Login trader1 con rol USUARIO y saldo', () => {",
                   "  const json = pm.response.json();",
                   "  pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "  pm.expect(json.tipo).to.eql('Bearer');",
+                  "  pm.expect(json.usuario.rol).to.eql('USUARIO');",
+                  "  pm.expect(json.usuario.saldo).to.be.a('number').and.gte(0);",
                   "  pm.collectionVariables.set('trader1_token', json.tokenDeAcceso);",
                   "  pm.environment.set('trader1_token', json.tokenDeAcceso);",
                   "  if (json.usuario && json.usuario.id) {",
@@ -210,9 +320,12 @@
               "script": {
                 "exec": [
                   "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Tiene tokenDeAcceso', () => {",
+                  "pm.test('Login trader2 con rol USUARIO y saldo', () => {",
                   "  const json = pm.response.json();",
                   "  pm.expect(json).to.have.property('tokenDeAcceso');",
+                  "  pm.expect(json.tipo).to.eql('Bearer');",
+                  "  pm.expect(json.usuario.rol).to.eql('USUARIO');",
+                  "  pm.expect(json.usuario.saldo).to.be.a('number').and.gte(0);",
                   "  pm.collectionVariables.set('trader2_token', json.tokenDeAcceso);",
                   "  pm.environment.set('trader2_token', json.tokenDeAcceso);",
                   "  if (json.usuario && json.usuario.id) {",
@@ -246,6 +359,247 @@
                 "login"
               ]
             }
+          }
+        },
+        {
+          "name": "POST Login credenciales inválidas (-> 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(401);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"trader1@marketplace.com\",\n  \"contrasena\": \"ContrasenaErronea999!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Valida rechazo 401 ante credenciales incorrectas."
+          }
+        },
+        {
+          "name": "GET Perfil Autenticado (trader1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Perfil trader1 contiene rol USUARIO y saldo', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('id');",
+                  "  pm.expect(json).to.have.property('nombre');",
+                  "  pm.expect(json).to.have.property('correo', 'trader1@marketplace.com');",
+                  "  pm.expect(json).to.have.property('activo', true);",
+                  "  pm.expect(json).to.have.property('creadoEn');",
+                  "  pm.expect(json.rol).to.eql('USUARIO');",
+                  "  pm.expect(json.saldo).to.be.a('number').and.gte(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Consulta perfil autenticado para trader1 (rol USUARIO, saldo >= 0)."
+          }
+        },
+        {
+          "name": "GET Perfil Autenticado (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Perfil ADMIN contiene rol ADMIN y saldo', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('id');",
+                  "  pm.expect(json).to.have.property('correo', 'admin@marketplace.com');",
+                  "  pm.expect(json.rol).to.eql('ADMIN');",
+                  "  pm.expect(json.saldo).to.be.a('number').and.gte(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Consulta perfil autenticado para ADMIN (rol ADMIN, saldo >= 0)."
+          }
+        },
+        {
+          "name": "GET Perfil sin token (-> 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(401);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Valida rechazo 401 al consultar perfil sin header Authorization."
+          }
+        },
+        {
+          "name": "POST Logout (trader1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Mensaje de confirmación de logout', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trader1_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Cierra sesión en el servidor con token válido."
+          }
+        },
+        {
+          "name": "POST Logout sin token (-> 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(401);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Valida rechazo 401 al ejecutar logout sin token."
           }
         }
       ]
@@ -602,7 +956,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(403);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
                 ]
               }
             }
@@ -916,7 +1276,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 400 Bad Request (autocontratación prohibida)', () => pm.response.to.have.status(400));"
+                  "pm.test('Status 400 Bad Request (autocontratación prohibida)', () => pm.response.to.have.status(400));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(400);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
                 ]
               }
             }
@@ -1057,7 +1423,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(403);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
                 ]
               }
             }
@@ -1202,7 +1574,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));"
+                  "pm.test('Status 403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('Envoltorio de error estándar', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.codigoEstado).to.eql(403);",
+                  "  pm.expect(json).to.have.property('mensaje');",
+                  "  pm.expect(json).to.have.property('marcaDeTiempo');",
+                  "});"
                 ]
               }
             }
@@ -1238,6 +1616,25 @@
       "item": [
         {
           "name": "GET Estadísticas Jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Estructura de estadísticas WhoScored', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('temporada');",
+                  "    pm.expect(json).to.have.property('partidosJugados');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": {
@@ -1263,6 +1660,18 @@
         },
         {
           "name": "POST Ejecutar Scraping Manual",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status exitoso (200, 201 o 202)', () => {",
+                  "  pm.expect([200, 201, 202]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
@@ -1289,6 +1698,20 @@
         },
         {
           "name": "GET Historial Ejecuciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Estructura paginada de ejecuciones', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.be.an('object');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
