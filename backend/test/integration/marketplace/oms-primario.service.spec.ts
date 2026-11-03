@@ -169,7 +169,7 @@ describe('OMS Mercado Primario (Integration with Testcontainers)', () => {
 
     // Comprobar BD: Transacción inmutable
     const txs = await dataSource.query(`SELECT * FROM transacciones WHERE id = '${res.transaccionId}'`);
-    expect(txs.length).toBe(1);
+    expect(txs).toHaveLength(1);
     expect(txs[0].estrategia_cotizacion).toBe('GLOBAL_v1');
     expect(Number(txs[0].monto_total)).toBe(12.5);
   });
@@ -285,8 +285,8 @@ describe('OMS Mercado Primario (Integration with Testcontainers)', () => {
     const fallidos = resultados.filter((r) => r instanceof Error);
 
     // Con 10 tokens y compras de 3: exactamente 3 compras deben tener éxito (3 * 3 = 9 tokens vendidos) y 2 deben fallar por falta de stock
-    expect(exitosos.length).toBe(3);
-    expect(fallidos.length).toBe(2);
+    expect(exitosos).toHaveLength(3);
+    expect(fallidos).toHaveLength(2);
 
     // Verificar en BD que no hubo sobreventa (SC-005)
     const adminBal = await dataSource.query(`SELECT cantidad_disponible FROM balances_tokens WHERE usuario_id = '${adminUser.id}'`);

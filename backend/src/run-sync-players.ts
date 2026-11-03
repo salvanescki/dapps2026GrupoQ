@@ -40,5 +40,5 @@ export async function bootstrapSyncPlayers(exitProcess = true): Promise<number> 
 }
 
 if (require.main === module) {
-  bootstrapSyncPlayers(true);
+  void bootstrapSyncPlayers(true);
 }

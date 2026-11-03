@@ -74,7 +74,7 @@ export class Cotizacion {
 
     if (
       typeof this._score !== 'number' ||
-      isNaN(this._score) ||
+      Number.isNaN(this._score) ||
       this._score < 0 ||
       this._score > 1
     ) {
@@ -85,7 +85,7 @@ export class Cotizacion {
 
     if (
       typeof this._valor !== 'number' ||
-      isNaN(this._valor) ||
+      Number.isNaN(this._valor) ||
       this._valor < 1.0
     ) {
       throw new ReglaDeNegocioException(

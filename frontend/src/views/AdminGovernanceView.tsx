@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useAdminGovernance } from '../hooks/useAdminGovernance';
 import { AppLayout } from '../components/layout/AppLayout';
-import { Navbar } from '../components/layout/Navbar';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { StrategyGovernanceCard } from '../components/admin/StrategyGovernanceCard';

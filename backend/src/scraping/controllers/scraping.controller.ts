@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +21,6 @@ import {
 } from '@nestjs/swagger';
 import { ScrapingService, EstadisticasJugadorResponse } from '../services/scraping.service';
 import { IEjecucionScrapingRepository, I_EJECUCION_SCRAPING_REPOSITORY } from '../domain/ejecucion-scraping.repository.interface';
-import { Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @ApiTags('scraping')

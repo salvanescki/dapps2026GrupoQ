@@ -35,12 +35,12 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    if (!user || !user.id) {
+    if (!user?.id) {
       throw new UnauthorizedException('Usuario no autenticado.');
     }
 
     const usuarioDb = await this.usuarioRepository.buscarPorId(user.id);
-    if (!usuarioDb || !usuarioDb.activo) {
+    if (!usuarioDb?.activo) {
       throw new UnauthorizedException('Cuenta inexistente o inactiva.');
     }
 

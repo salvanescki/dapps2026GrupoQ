@@ -160,7 +160,7 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
 
       // obtenerHistorial
       const historial = await cotizacionRepo.obtenerHistorial(jugador1Id, 10);
-      expect(historial.length).toBe(2);
+      expect(historial).toHaveLength(2);
 
       // obtenerVariacion
       const variacion = await cotizacionRepo.obtenerVariacion(jugador1Id);
@@ -186,7 +186,7 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
       expect(inexistente).toBeNull();
 
       const lista = await balanceRepo.listarPorUsuario(usuario1Id);
-      expect(lista.length).toBe(1);
+      expect(lista).toHaveLength(1);
 
       const totalStock = await balanceRepo.obtenerSuministroTotalPorJugador(jugador1Id);
       expect(totalStock).toBe(100);
@@ -211,7 +211,7 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
       expect(noEncontrada).toBeNull();
 
       const activas = await ordenRepo.listarActivasPorJugador(jugador1Id);
-      expect(activas.length).toBe(1);
+      expect(activas).toHaveLength(1);
 
       // listarOfertasSecundarias con varios filtros
       const filtradas1 = await ordenRepo.listarOfertasSecundarias({
@@ -220,12 +220,12 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
         estado: 'ACTIVA',
         limite: 10,
       });
-      expect(filtradas1.length).toBe(1);
+      expect(filtradas1).toHaveLength(1);
 
       const filtradas2 = await ordenRepo.listarOfertasSecundarias({
         estado: 'PENDIENTE',
       });
-      expect(filtradas2.length).toBe(1);
+      expect(filtradas2).toHaveLength(1);
 
       const stockSecundario = await ordenRepo.obtenerCantidadRestanteSecundarioPorJugador(jugador1Id);
       expect(stockSecundario).toBe(10);
@@ -263,10 +263,10 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
 
       // listarPorUsuario con tipo COMPRA, VENTA y sin tipo
       const comprasU1 = await transaccionRepo.listarPorUsuario(usuario1Id, { tipo: 'COMPRA' });
-      expect(comprasU1.length).toBe(1);
+      expect(comprasU1).toHaveLength(1);
 
       const ventasU1 = await transaccionRepo.listarPorUsuario(usuario1Id, { tipo: 'VENTA' });
-      expect(ventasU1.length).toBe(0);
+      expect(ventasU1).toHaveLength(0);
 
       const todasU1 = await transaccionRepo.listarPorUsuario(usuario1Id, {
         jugadorId: jugador1Id,
@@ -274,7 +274,7 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
         hasta: new Date(Date.now() + 60000),
         limite: 10,
       });
-      expect(todasU1.length).toBe(1);
+      expect(todasU1).toHaveLength(1);
 
       // listarAuditoriaGlobal con filtros
       const auditoria = await transaccionRepo.listarAuditoriaGlobal({
@@ -285,7 +285,7 @@ describe('Marketplace Repositories (Integration with Testcontainers)', () => {
         hasta: new Date(Date.now() + 60000),
         limite: 10,
       });
-      expect(auditoria.length).toBe(1);
+      expect(auditoria).toHaveLength(1);
     });
   });
 });

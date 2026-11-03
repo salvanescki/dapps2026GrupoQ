@@ -53,7 +53,7 @@ describe('TypeORM Repositories and Mappers - Edge Cases (Integration)', () => {
       await ligaRepo.guardarMuchos(ligas);
 
       const todas = await ligaRepo.listarTodas();
-      expect(todas.length).toBe(2);
+      expect(todas).toHaveLength(2);
       expect(todas[0].nombre).toBe('Bundesliga');
       expect(todas[1].nombre).toBe('Ligue 1');
     });
@@ -81,11 +81,11 @@ describe('TypeORM Repositories and Mappers - Edge Cases (Integration)', () => {
       await equipoRepo.guardarMuchos(equipos);
 
       const equiposLiga = await equipoRepo.listarPorLiga(liga.id);
-      expect(equiposLiga.length).toBe(2);
+      expect(equiposLiga).toHaveLength(2);
       expect(equiposLiga[0].nombre).toBe('Chelsea FC');
 
       const todos = await equipoRepo.listarTodos();
-      expect(todos.length).toBe(2);
+      expect(todos).toHaveLength(2);
     });
   });
 

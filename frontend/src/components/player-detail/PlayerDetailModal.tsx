@@ -63,6 +63,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
     <div
       className="player-detail-overlay"
       data-testid="player-detail-overlay"
+      role="presentation"
       onClick={handleOverlayClick}
     >
       <div

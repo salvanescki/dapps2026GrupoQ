@@ -176,7 +176,7 @@ describe('Users Portfolio & Transaction Audit (Integration with Testcontainers)'
     // Kane: 10 tokens * 1.80 = 18.00; Musiala: 5 tokens * 1.60 = 8.00 => Total tokens = 26.00
     expect(portfolio.valoracionTotalTokens).toBe(26.0);
     expect(portfolio.patrimonioNetoTotal).toBe(826.0);
-    expect(portfolio.posiciones.length).toBe(2);
+    expect(portfolio.posiciones).toHaveLength(2);
 
     const posKane = portfolio.posiciones.find((p) => p.jugadorId === jugador1Id);
     expect(posKane).toBeDefined();
@@ -210,7 +210,7 @@ describe('Users Portfolio & Transaction Audit (Integration with Testcontainers)'
       { user: { id: usuario1.id } },
     );
 
-    expect(txs.length).toBe(2);
+    expect(txs).toHaveLength(2);
     expect(txs[0].tipoOperacion).toBe('COMPRA');
     expect(txs[0].contraparte).toBe('MERCADO_PRIMARIO');
     expect(txs[0].estrategiaCotizacion).toBe('POSICIONAL_v1');
@@ -222,7 +222,7 @@ describe('Users Portfolio & Transaction Audit (Integration with Testcontainers)'
       tipoMercado: 'PRIMARIO',
     });
 
-    expect(reporte.length).toBe(2);
+    expect(reporte).toHaveLength(2);
     expect(reporte[0].nombreJugador).toBeDefined();
     expect(reporte[0].compradorId).toBe(usuario1.id);
     expect(reporte[0].vendedorId).toBe(adminUser.id);

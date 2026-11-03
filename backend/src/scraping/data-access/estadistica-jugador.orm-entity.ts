@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
-  Unique,
 } from 'typeorm';
 import { JugadorOrmEntity } from '../../data-access/jugador.orm-entity';
 
