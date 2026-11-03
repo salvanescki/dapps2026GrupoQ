@@ -30,7 +30,11 @@ import {
 import { Jugador, CriterioFiltroJugador } from '../../domain/jugador.entity';
 import { EstadisticaJugador } from '../domain/estadistica-jugador.entity';
 import { EjecucionScraping } from '../domain/ejecucion-scraping.entity';
-import { getScrapingConfig, ScrapingConfig } from '../../config/scraping.config';
+import {
+  getScrapingConfig,
+  ScrapingConfig,
+  LigaScrapingConfig,
+} from '../../config/scraping.config';
 
 export interface ResultadoAsociacionLocal {
   asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }>;
@@ -313,28 +317,237 @@ export class ScrapingService implements OnModuleInit {
     return jugadores;
   }
 
-  public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {
+  private async resolverEjecucionEnProgreso(): Promise<void> {
     const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
-    if (enProgreso) {
-      const STALE_TIMEOUT_MS =
-        Number(process.env.WHOSCORED_STALE_EXECUTION_TIMEOUT_MS) || 15 * 60 * 1000;
-      const duracionMs = Date.now() - enProgreso.inicio.getTime();
-      if (duracionMs > STALE_TIMEOUT_MS) {
-        this.logger.warn(
-          `Ejecución previa ${enProgreso.id} atascada en progreso por ${Math.round(duracionMs / 60000)} min. Finalizándola como fallida para recuperar el servicio...`,
-        );
-        enProgreso.finalizarFallido({
-          liga: 'GLOBAL',
-          mensaje: 'Ejecución interrumpida o expirada por timeout (stale execution recovery)',
+    if (!enProgreso) return;
+
+    const STALE_TIMEOUT_MS =
+      Number(process.env.WHOSCORED_STALE_EXECUTION_TIMEOUT_MS) || 15 * 60 * 1000;
+    const duracionMs = Date.now() - enProgreso.inicio.getTime();
+    if (duracionMs <= STALE_TIMEOUT_MS) {
+      throw new ConflictException(
+        'Ya existe una ejecución de scraping en progreso.',
+      );
+    }
+
+    this.logger.warn(
+      `Ejecución previa ${enProgreso.id} atascada en progreso por ${Math.round(duracionMs / 60000)} min. Finalizándola como fallida para recuperar el servicio...`,
+    );
+    enProgreso.finalizarFallido({
+      liga: 'GLOBAL',
+      mensaje: 'Ejecución interrumpida o expirada por timeout (stale execution recovery)',
+      timestamp: new Date(),
+    });
+    await this.ejecucionRepo.guardar(enProgreso);
+  }
+
+  private async extraerEstadisticasDeLiga(
+    leagueConfig: LigaScrapingConfig,
+  ): Promise<Map<string, RawWhoScoredPlayerStats>> {
+    if (typeof this.playwrightService.extraerEstadisticasLigaPorEquipos !== 'function') {
+      return this.playwrightService.extraerEstadisticasLiga(leagueConfig);
+    }
+
+    try {
+      const resExtraccion =
+        await this.playwrightService.extraerEstadisticasLigaPorEquipos(leagueConfig);
+      return resExtraccion.jugadores;
+    } catch {
+      return this.playwrightService.extraerEstadisticasLiga(leagueConfig);
+    }
+  }
+
+  private ligaRechazadaPorCobertura(
+    leagueConfig: LigaScrapingConfig,
+    deduplicados: RawWhoScoredPlayerStats[],
+    ejecucion: EjecucionScraping,
+  ): boolean {
+    const minimo = this.config.minJugadoresPorLiga;
+    if (!minimo || minimo <= 0) return false;
+
+    const valCob = this.validarCoberturaLiga(deduplicados, minimo);
+    if (valCob.valida) return false;
+
+    this.logger.warn(
+      `Liga ${leagueConfig.liga} rechazada por cobertura insuficiente (${valCob.totalConMinutos} < ${minimo})`,
+    );
+    ejecucion.registrarError({
+      liga: leagueConfig.liga,
+      mensaje: `Liga rechazada por cobertura insuficiente (${valCob.totalConMinutos} jugadores con minutos)`,
+      timestamp: new Date(),
+    });
+    return true;
+  }
+
+  private resolverDescartados(
+    descartados: ResultadoAsociacionLocal['descartados'],
+    leagueConfig: LigaScrapingConfig,
+    jugadoresLocales: Jugador[],
+    asociados: ResultadoAsociacionLocal['asociados'],
+    jugadoresEnriquecidos: Jugador[],
+    ejecucion: EjecucionScraping,
+  ): void {
+    for (const { raw, motivo } of descartados) {
+      const respaldo =
+        motivo === 'No encontrado en catálogo local'
+          ? this.normalizador.buscarCoincidencia(
+              raw.nombre,
+              raw.equipoNombre,
+              leagueConfig.liga,
+              jugadoresLocales,
+            )
+          : null;
+
+      if (respaldo) {
+        if (!respaldo.whoScoredPlayerId && raw.whoScoredId) {
+          respaldo.asociarWhoScored(raw.whoScoredId);
+          jugadoresEnriquecidos.push(respaldo);
+        }
+        asociados.push({ jugador: respaldo, stats: raw });
+        continue;
+      }
+
+      ejecucion.registrarError({
+        liga: leagueConfig.liga,
+        jugadorNombre: raw.nombre,
+        mensaje: `No se encontró jugador en la base de datos local para nombre='${raw.nombre}' equipo='${raw.equipoNombre || 'N/A'}' (${motivo})`,
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  private crearEstadisticaDesdeRaw(
+    jugadorId: string,
+    raw: RawWhoScoredPlayerStats,
+    leagueConfig: LigaScrapingConfig,
+  ): EstadisticaJugador {
+    return EstadisticaJugador.crear({
+      jugadorId,
+      temporada: this.config.seasonLabel,
+      liga: leagueConfig.liga,
+      competencia: leagueConfig.nombreTorneo || leagueConfig.liga,
+      etapa: 'Regular Season',
+      fuente: 'whoscored',
+      fechaActualizacion: new Date(),
+      partidosJugados: raw.partidosJugados ?? 0,
+      minutosJugados: raw.minutosJugados ?? 0,
+      goles: raw.goles ?? 0,
+      asistencias: raw.asistencias ?? 0,
+      tirosPorPartido: raw.tirosPorPartido ?? null,
+      precisionPase: raw.precisionPase ?? null,
+      duelosAereosGanadosPorPartido: raw.duelosAereosGanadosPorPartido ?? null,
+      rating: raw.rating ?? null,
+      tarjetasAmarillas: raw.tarjetasAmarillas ?? 0,
+      tarjetasRojas: raw.tarjetasRojas ?? 0,
+      regatesCompletadosPorPartido: raw.regatesCompletadosPorPartido ?? null,
+      pasesClavePorPartido: raw.pasesClavePorPartido ?? null,
+      xgPorPartido: raw.xgPorPartido ?? null,
+      xaPorPartido: raw.xaPorPartido ?? null,
+      grandesOcasionesPorPartido: raw.grandesOcasionesPorPartido ?? null,
+      entradasPorPartido: raw.entradasPorPartido ?? null,
+      intercepccionesPorPartido: raw.intercepccionesPorPartido ?? null,
+      despejesPorPartido: raw.despejesPorPartido ?? null,
+      pasesPorPartido: raw.pasesPorPartido ?? null,
+      centrosPorPartido: raw.centrosPorPartido ?? null,
+      atajadas: raw.atajadas ?? null,
+      golesRecibidos: raw.golesRecibidos ?? null,
+      porcentajeAtajadas: raw.porcentajeAtajadas ?? null,
+      erroresQueGeneraronGol: raw.erroresQueGeneraronGol ?? null,
+      autogoles: raw.autogoles ?? null,
+    });
+  }
+
+  private construirEstadisticas(
+    asociados: ResultadoAsociacionLocal['asociados'],
+    leagueConfig: LigaScrapingConfig,
+    ejecucion: EjecucionScraping,
+  ): Map<string, EstadisticaJugador> {
+    const estadisticasMap = new Map<string, EstadisticaJugador>();
+
+    for (const { jugador: matchLocal, stats: raw } of asociados) {
+      try {
+        const entidad = this.crearEstadisticaDesdeRaw(matchLocal.id, raw, leagueConfig);
+
+        const existente = estadisticasMap.get(matchLocal.id);
+        if (!existente || (entidad.minutosJugados ?? 0) >= (existente.minutosJugados ?? 0)) {
+          if (!existente) {
+            ejecucion.incrementarJugadoresProcesados(1);
+          }
+          estadisticasMap.set(matchLocal.id, entidad);
+        }
+      } catch (valErr) {
+        ejecucion.registrarError({
+          liga: leagueConfig.liga,
+          jugadorNombre: raw.nombre,
+          mensaje: `Error validando invariantes: ${(valErr as Error).message}`,
           timestamp: new Date(),
         });
-        await this.ejecucionRepo.guardar(enProgreso);
-      } else {
-        throw new ConflictException(
-          'Ya existe una ejecución de scraping en progreso.',
-        );
       }
     }
+
+    return estadisticasMap;
+  }
+
+  private async procesarLiga(
+    leagueConfig: LigaScrapingConfig,
+    ejecucion: EjecucionScraping,
+  ): Promise<void> {
+    this.logger.log(`Procesando liga ${leagueConfig.liga}...`);
+
+    const jugadoresLocales = await this.cargarJugadoresLocales(leagueConfig.liga);
+    const rawStatsMap = await this.extraerEstadisticasDeLiga(leagueConfig);
+
+    const { deduplicados } = this.deduplicarYConsolidarJugadores(
+      Array.from(rawStatsMap.values()),
+    );
+
+    if (this.ligaRechazadaPorCobertura(leagueConfig, deduplicados, ejecucion)) {
+      return;
+    }
+
+    const asociacion = this.asociarJugadoresLocales(deduplicados, jugadoresLocales);
+    const asociados = [...asociacion.asociados];
+    const jugadoresEnriquecidos = [...asociacion.enriquecidos];
+
+    this.resolverDescartados(
+      asociacion.descartados,
+      leagueConfig,
+      jugadoresLocales,
+      asociados,
+      jugadoresEnriquecidos,
+      ejecucion,
+    );
+
+    if (!asociacion.valida) {
+      this.logger.warn(
+        `Liga ${leagueConfig.liga}: tasa de asociación exacta baja (${asociacion.tasaAsociacion.toFixed(1)}%)`,
+      );
+    }
+
+    const estadisticasMap = this.construirEstadisticas(asociados, leagueConfig, ejecucion);
+    const estadisticasAGuardar = Array.from(estadisticasMap.values());
+    const enriquecidosUnicos = Array.from(
+      new Map(jugadoresEnriquecidos.map((j) => [j.id, j])).values(),
+    );
+
+    if (estadisticasAGuardar.length > 0 || enriquecidosUnicos.length > 0) {
+      await this.publicarLigaTransaccional(estadisticasAGuardar, enriquecidosUnicos);
+    }
+
+    if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 10) {
+      ejecucion.registrarDetalle({
+        liga: leagueConfig.liga,
+        descubiertos: rawStatsMap.size,
+        deduplicados: deduplicados.length,
+        asociados: estadisticasAGuardar.length,
+        descartados: deduplicados.length - estadisticasAGuardar.length,
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {
+    await this.resolverEjecucionEnProgreso();
 
     const ejecucion = EjecucionScraping.iniciar();
     await this.ejecucionRepo.guardar(ejecucion);
@@ -342,158 +555,7 @@ export class ScrapingService implements OnModuleInit {
 
     try {
       for (const leagueConfig of this.config.leagueConfigs) {
-        this.logger.log(`Procesando liga ${leagueConfig.liga}...`);
-
-        // Obtener jugadores locales para cotejar
-        const jugadoresLocales = await this.cargarJugadoresLocales(leagueConfig.liga);
-
-        // Extraer datos WhoScored
-        let rawStatsMap: Map<string, RawWhoScoredPlayerStats>;
-        if (typeof this.playwrightService.extraerEstadisticasLigaPorEquipos === 'function') {
-          try {
-            const resExtraccion = await this.playwrightService.extraerEstadisticasLigaPorEquipos(leagueConfig);
-            rawStatsMap = resExtraccion.jugadores;
-          } catch {
-            rawStatsMap = await this.playwrightService.extraerEstadisticasLiga(leagueConfig);
-          }
-        } else {
-          rawStatsMap = await this.playwrightService.extraerEstadisticasLiga(leagueConfig);
-        }
-
-        // Deduplicación por whoScoredPlayerId
-        const { deduplicados } = this.deduplicarYConsolidarJugadores(
-          Array.from(rawStatsMap.values()),
-        );
-
-        // Validación de salvaguarda de cobertura si está configurada (minJugadoresPorLiga > 0)
-        if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 0) {
-          const valCob = this.validarCoberturaLiga(deduplicados, this.config.minJugadoresPorLiga);
-          if (!valCob.valida) {
-            this.logger.warn(
-              `Liga ${leagueConfig.liga} rechazada por cobertura insuficiente (${valCob.totalConMinutos} < ${this.config.minJugadoresPorLiga})`,
-            );
-            ejecucion.registrarError({
-              liga: leagueConfig.liga,
-              mensaje: `Liga rechazada por cobertura insuficiente (${valCob.totalConMinutos} jugadores con minutos)`,
-              timestamp: new Date(),
-            });
-            continue;
-          }
-        }
-
-        const asociacion = this.asociarJugadoresLocales(deduplicados, jugadoresLocales);
-        const asociados = [...asociacion.asociados];
-        const jugadoresEnriquecidos = [...asociacion.enriquecidos];
-
-        for (const { raw, motivo } of asociacion.descartados) {
-          const respaldo =
-            motivo === 'No encontrado en catálogo local'
-              ? this.normalizador.buscarCoincidencia(
-                  raw.nombre,
-                  raw.equipoNombre,
-                  leagueConfig.liga,
-                  jugadoresLocales,
-                )
-              : null;
-
-          if (respaldo) {
-            if (!respaldo.whoScoredPlayerId && raw.whoScoredId) {
-              respaldo.asociarWhoScored(raw.whoScoredId);
-              jugadoresEnriquecidos.push(respaldo);
-            }
-            asociados.push({ jugador: respaldo, stats: raw });
-            continue;
-          }
-
-          ejecucion.registrarError({
-            liga: leagueConfig.liga,
-            jugadorNombre: raw.nombre,
-            mensaje: `No se encontró jugador en la base de datos local para nombre='${raw.nombre}' equipo='${raw.equipoNombre || 'N/A'}' (${motivo})`,
-            timestamp: new Date(),
-          });
-        }
-
-        if (!asociacion.valida) {
-          this.logger.warn(
-            `Liga ${leagueConfig.liga}: tasa de asociación exacta baja (${asociacion.tasaAsociacion.toFixed(1)}%)`,
-          );
-        }
-
-        const estadisticasMap = new Map<string, EstadisticaJugador>();
-
-        for (const { jugador: matchLocal, stats: raw } of asociados) {
-          try {
-            const entidad = EstadisticaJugador.crear({
-              jugadorId: matchLocal.id,
-              temporada: this.config.seasonLabel,
-              liga: leagueConfig.liga,
-              competencia: leagueConfig.nombreTorneo || leagueConfig.liga,
-              etapa: 'Regular Season',
-              fuente: 'whoscored',
-              fechaActualizacion: new Date(),
-              partidosJugados: raw.partidosJugados ?? 0,
-              minutosJugados: raw.minutosJugados ?? 0,
-              goles: raw.goles ?? 0,
-              asistencias: raw.asistencias ?? 0,
-              tirosPorPartido: raw.tirosPorPartido ?? null,
-              precisionPase: raw.precisionPase ?? null,
-              duelosAereosGanadosPorPartido: raw.duelosAereosGanadosPorPartido ?? null,
-              rating: raw.rating ?? null,
-              tarjetasAmarillas: raw.tarjetasAmarillas ?? 0,
-              tarjetasRojas: raw.tarjetasRojas ?? 0,
-              regatesCompletadosPorPartido: raw.regatesCompletadosPorPartido ?? null,
-              pasesClavePorPartido: raw.pasesClavePorPartido ?? null,
-              xgPorPartido: raw.xgPorPartido ?? null,
-              xaPorPartido: raw.xaPorPartido ?? null,
-              grandesOcasionesPorPartido: raw.grandesOcasionesPorPartido ?? null,
-              entradasPorPartido: raw.entradasPorPartido ?? null,
-              intercepccionesPorPartido: raw.intercepccionesPorPartido ?? null,
-              despejesPorPartido: raw.despejesPorPartido ?? null,
-              pasesPorPartido: raw.pasesPorPartido ?? null,
-              centrosPorPartido: raw.centrosPorPartido ?? null,
-              atajadas: raw.atajadas ?? null,
-              golesRecibidos: raw.golesRecibidos ?? null,
-              porcentajeAtajadas: raw.porcentajeAtajadas ?? null,
-              erroresQueGeneraronGol: raw.erroresQueGeneraronGol ?? null,
-              autogoles: raw.autogoles ?? null,
-            });
-
-            const existente = estadisticasMap.get(matchLocal.id);
-            if (!existente || (entidad.minutosJugados ?? 0) >= (existente.minutosJugados ?? 0)) {
-              if (!existente) {
-                ejecucion.incrementarJugadoresProcesados(1);
-              }
-              estadisticasMap.set(matchLocal.id, entidad);
-            }
-          } catch (valErr) {
-            ejecucion.registrarError({
-              liga: leagueConfig.liga,
-              jugadorNombre: raw.nombre,
-              mensaje: `Error validando invariantes: ${(valErr as Error).message}`,
-              timestamp: new Date(),
-            });
-          }
-        }
-
-        const estadisticasAGuardar = Array.from(estadisticasMap.values());
-        const enriquecidosUnicos = Array.from(
-          new Map(jugadoresEnriquecidos.map((j) => [j.id, j])).values(),
-        );
-
-        if (estadisticasAGuardar.length > 0 || enriquecidosUnicos.length > 0) {
-          await this.publicarLigaTransaccional(estadisticasAGuardar, enriquecidosUnicos);
-        }
-
-        if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 10) {
-          ejecucion.registrarDetalle({
-            liga: leagueConfig.liga,
-            descubiertos: rawStatsMap.size,
-            deduplicados: deduplicados.length,
-            asociados: estadisticasAGuardar.length,
-            descartados: deduplicados.length - estadisticasAGuardar.length,
-            timestamp: new Date(),
-          });
-        }
+        await this.procesarLiga(leagueConfig, ejecucion);
       }
 
       ejecucion.finalizarExitoso();

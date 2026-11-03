@@ -165,93 +165,124 @@ export class NormalizadorJugadorService {
     normWS = normWS.replace(/^\d+\s*/, '').trim();
     if (!normWS) return null;
 
+    return (
+      this.buscarCoincidenciaExacta(normWS, jugadoresLocales) ??
+      this.buscarCoincidenciaSinSufijos(normWS, equipoWhoScored, jugadoresLocales) ??
+      this.buscarCoincidenciaPorApellidoYClub(normWS, equipoWhoScored, jugadoresLocales) ??
+      this.buscarCoincidenciaAbreviada(normWS, equipoWhoScored, jugadoresLocales)
+    );
+  }
+
+  private partesDeNombre(normalizado: string): string[] {
+    return normalizado.split(' ').filter((p) => p.length > 0);
+  }
+
+  private buscarCoincidenciaExacta(
+    normWS: string,
+    jugadoresLocales: Jugador[],
+  ): Jugador | null {
+    return (
+      jugadoresLocales.find((j) => this.normalizarTexto(j.nombre) === normWS) ??
+      null
+    );
+  }
+
+  private buscarCoincidenciaSinSufijos(
+    normWS: string,
+    equipoWhoScored: string | undefined,
+    jugadoresLocales: Jugador[],
+  ): Jugador | null {
     const normWSSinSufijo = this.limpiarSufijosNombre(normWS);
 
-    // 1. Coincidencia exacta de nombre
-    for (const j of jugadoresLocales) {
-      const normLocal = this.normalizarTexto(j.nombre);
-      if (normLocal === normWS) {
-        return j;
-      }
+    return (
+      jugadoresLocales.find((j) => {
+        const normLocalSinSufijo = this.limpiarSufijosNombre(
+          this.normalizarTexto(j.nombre),
+        );
+        if (normLocalSinSufijo !== normWSSinSufijo) return false;
+        return (
+          !equipoWhoScored ||
+          !j.equipo?.nombre ||
+          this.coincidenClubes(equipoWhoScored, j.equipo.nombre)
+        );
+      }) ?? null
+    );
+  }
+
+  private pasaFiltroDeClub(j: Jugador, equipoWhoScored: string | undefined): boolean {
+    if (!equipoWhoScored || !j.equipo?.nombre) return true;
+    return Boolean(
+      this.coincidenClubes(equipoWhoScored, j.equipo.nombre) ||
+        (j.equipo.nombreCorto &&
+          this.coincidenClubes(equipoWhoScored, j.equipo.nombreCorto)),
+    );
+  }
+
+  private coincideApellido(
+    j: Jugador,
+    normWS: string,
+    partesWS: string[],
+    apellidoWS: string,
+  ): boolean {
+    const normLocal = this.normalizarTexto(j.nombre);
+    const partesLocal = this.partesDeNombre(normLocal);
+    const apellidoLocal = partesLocal.at(-1);
+
+    if (
+      apellidoLocal === apellidoWS ||
+      normLocal.includes(apellidoWS) ||
+      normWS.includes(apellidoLocal)
+    ) {
+      return true;
     }
 
-    // 2. Coincidencia ignorando sufijos ("Cristian Cásseres" vs "Cristian Cásseres Jr.")
-    for (const j of jugadoresLocales) {
-      const normLocalSinSufijo = this.limpiarSufijosNombre(this.normalizarTexto(j.nombre));
-      if (normLocalSinSufijo === normWSSinSufijo) {
-        if (!equipoWhoScored || !j.equipo?.nombre || this.coincidenClubes(equipoWhoScored, j.equipo.nombre)) {
-          return j;
-        }
-      }
-    }
+    const primerWS = partesWS[0];
+    const primerLocal = partesLocal[0];
+    const esVariacionAlex =
+      (primerWS === 'alex' && primerLocal === 'alejandro') ||
+      (primerWS === 'alejandro' && primerLocal === 'alex');
+    return esVariacionAlex && apellidoLocal === apellidoWS;
+  }
 
-    // 3. Coincidencia con club verificado (apellidos o hipocorísticos comunes)
-    const partesWS = normWS.split(' ').filter((p) => p.length > 0);
+  private buscarCoincidenciaPorApellidoYClub(
+    normWS: string,
+    equipoWhoScored: string | undefined,
+    jugadoresLocales: Jugador[],
+  ): Jugador | null {
+    const partesWS = this.partesDeNombre(normWS);
     const apellidoWS = partesWS.at(-1);
+    if (!apellidoWS || apellidoWS.length < 3) return null;
 
-    if (apellidoWS && apellidoWS.length >= 3) {
-      const candidatosClub = jugadoresLocales.filter((j) => {
+    const candidatosClub = jugadoresLocales.filter(
+      (j) =>
+        this.pasaFiltroDeClub(j, equipoWhoScored) &&
+        this.coincideApellido(j, normWS, partesWS, apellidoWS),
+    );
+
+    return candidatosClub.length === 1 ? candidatosClub[0] : null;
+  }
+
+  private buscarCoincidenciaAbreviada(
+    normWS: string,
+    equipoWhoScored: string | undefined,
+    jugadoresLocales: Jugador[],
+  ): Jugador | null {
+    const partesWS = this.partesDeNombre(normWS);
+    const apellidoWS = partesWS.at(-1);
+    if (!apellidoWS || apellidoWS.length < 3) return null;
+
+    return (
+      jugadoresLocales.find((j) => {
+        const partesLocal = this.partesDeNombre(this.normalizarTexto(j.nombre));
+        if (partesLocal.at(-1) !== apellidoWS) return false;
+
         if (equipoWhoScored && j.equipo?.nombre) {
-          const matchClub =
-            this.coincidenClubes(equipoWhoScored, j.equipo.nombre) ||
-            (j.equipo.nombreCorto && this.coincidenClubes(equipoWhoScored, j.equipo.nombreCorto));
-          if (!matchClub) return false;
+          return this.coincidenClubes(equipoWhoScored, j.equipo.nombre);
         }
-
-        const normLocal = this.normalizarTexto(j.nombre);
-        const partesLocal = normLocal.split(' ').filter((p) => p.length > 0);
-        const apellidoLocal = partesLocal.at(-1);
-
-        // Mismo apellido (o apellido contenido en apellido compuesto: ej "thuram" en "thuram ulien")
-        if (
-          apellidoLocal === apellidoWS ||
-          normLocal.includes(apellidoWS) ||
-          normWS.includes(apellidoLocal)
-        ) {
-          return true;
-        }
-
-        // Variación Álex / Alejandro
-        const primerWS = partesWS[0];
-        const primerLocal = partesLocal[0];
-        if (
-          (primerWS === 'alex' && primerLocal === 'alejandro') ||
-          (primerWS === 'alejandro' && primerLocal === 'alex')
-        ) {
-          if (apellidoLocal === apellidoWS) return true;
-        }
-
-        return false;
-      });
-
-      if (candidatosClub.length === 1) {
-        return candidatosClub[0];
-      }
-    }
-
-    // 4. Coincidencia abreviada (ej. "M. Salah" con "Mohamed Salah")
-    if (apellidoWS && apellidoWS.length >= 3) {
-      for (const j of jugadoresLocales) {
-        const normLocal = this.normalizarTexto(j.nombre);
-        const partesLocal = normLocal.split(' ').filter((p) => p.length > 0);
-        const apellidoLocal = partesLocal.at(-1);
-
-        if (apellidoLocal === apellidoWS) {
-          if (equipoWhoScored && j.equipo?.nombre) {
-            if (this.coincidenClubes(equipoWhoScored, j.equipo.nombre)) {
-              return j;
-            }
-          } else {
-            const inicialWS = partesWS[0]?.[0];
-            const inicialLocal = partesLocal[0]?.[0];
-            if (inicialWS && inicialLocal && inicialWS === inicialLocal) {
-              return j;
-            }
-          }
-        }
-      }
-    }
-
-    return null;
+        const inicialWS = partesWS[0]?.[0];
+        const inicialLocal = partesLocal[0]?.[0];
+        return Boolean(inicialWS && inicialLocal && inicialWS === inicialLocal);
+      }) ?? null
+    );
   }
 }

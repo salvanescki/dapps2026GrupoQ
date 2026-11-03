@@ -82,7 +82,7 @@ export class MiembroEquipoSemanal {
 
     if (
       typeof this._cotizacion !== 'number' ||
-      isNaN(this._cotizacion) ||
+      Number.isNaN(this._cotizacion) ||
       this._cotizacion < 1.0
     ) {
       throw new ReglaDeNegocioException(
@@ -92,7 +92,7 @@ export class MiembroEquipoSemanal {
 
     if (
       typeof this._score !== 'number' ||
-      isNaN(this._score) ||
+      Number.isNaN(this._score) ||
       this._score < 0 ||
       this._score > 1
     ) {

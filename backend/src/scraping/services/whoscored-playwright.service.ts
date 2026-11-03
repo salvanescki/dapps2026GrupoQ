@@ -203,6 +203,161 @@ export function mapearItemResumenWhoScored(
   };
 }
 
+const esErrorRateLimit = (err: any): boolean =>
+  err?.status === 429 || String(err?.message).includes('429');
+
+const construirSelectorTabla = (pestana: string): string =>
+  '#team-squad-stats #statistics-table-' +
+  pestana +
+  ' #player-table-statistics-body tr, #stage-top-player-stats-' +
+  pestana +
+  ' #player-table-statistics-body tr, #player-table-statistics-body tr';
+
+function leerFilasDeTablaDom(rows: Element[]) {
+  return rows.map((tr) => {
+    const playerLink = tr.querySelector('a.player-link');
+    const href = playerLink?.getAttribute('href') || '';
+    const idMatch = href.match(/\/Players\/(\d+)/i);
+    const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
+    let nombre = '';
+    if (playerLink) {
+      const clone = playerLink.cloneNode(true) as HTMLElement;
+      clone.querySelector('.table-ranking')?.remove();
+      nombre = clone.textContent?.trim() || '';
+      nombre = nombre.replace(/^\d+\s*/, '').trim();
+    }
+
+    const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
+    let equipoNombre = teamLink?.textContent?.trim() || '';
+    equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
+
+    const getCol = (colName: string) => {
+      const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);
+      return el?.textContent?.trim() || '';
+    };
+
+    let appsVal = getCol('apps');
+    if (!appsVal) {
+      const minsCell = tr.querySelector('td[class*="minsPlayed"]');
+      const prevText = minsCell?.previousElementSibling?.textContent?.trim() || '';
+      if (prevText) {
+        const mApps = prevText.match(/^(\d+)(?:\((\d+)\))?$/);
+        appsVal = mApps ? String(Number(mApps[1]) + (mApps[2] ? Number(mApps[2]) : 0)) : prevText;
+      }
+    }
+
+    return {
+      whoScoredId,
+      nombre,
+      equipoNombre,
+      apps: appsVal,
+      minsPlayed: getCol('minsPlayed'),
+      goal: getCol('goal'),
+      assistTotal: getCol('assistTotal'),
+      shotsPerGame: getCol('shotsPerGame'),
+      passSuccess: getCol('passSuccess'),
+      aerialWonPerGame: getCol('aerialWonPerGame'),
+      rating: getCol('rating'),
+      yellowCard: getCol('yellowCard'),
+      redCard: getCol('redCard'),
+      dribbleWonPerGame: getCol('dribbleWonPerGame'),
+      keyPassPerGame: getCol('keyPassPerGame'),
+      xgPerGame: getCol('xgPerGame'),
+      xaPerGame: getCol('xaPerGame'),
+      bigChancePerGame: getCol('bigChancePerGame'),
+      tacklePerGame: getCol('tacklePerGame'),
+      interceptionPerGame: getCol('interceptionPerGame'),
+      clearancePerGame: getCol('clearancePerGame'),
+      passesPerGame: getCol('totalPassesPerGame'),
+      crossesPerGame: getCol('accurateCrossesPerGame'),
+      savePerGame: getCol('savePerGame'),
+      goalsConceded: getCol('goalsConceded'),
+      savePercentage: getCol('savePercentage'),
+      errorLeadToGoal: getCol('errorLeadToGoal'),
+      ownGoal: getCol('goalOwn'),
+    };
+  });
+}
+
+type FilaTablaDom = ReturnType<typeof leerFilasDeTablaDom>[number];
+
+const parseDecimalTabla = (val: string | undefined): number | null => {
+  if (!val || val === '-' || val === 'N/A') return null;
+  const n = Number.parseFloat(val);
+  return Number.isNaN(n) ? null : n;
+};
+
+const parseEnteroTabla = (val: string | undefined, defaultVal = 0): number => {
+  const n = parseDecimalTabla(val);
+  return n !== null ? Math.round(n) : defaultVal;
+};
+
+function aplicarFilaResumen(item: RawWhoScoredPlayerStats, f: FilaTablaDom): void {
+  item.partidosJugados = parseEnteroTabla(f.apps, item.partidosJugados ?? 0);
+  item.minutosJugados = parseEnteroTabla(f.minsPlayed, item.minutosJugados ?? 0);
+  item.goles = parseEnteroTabla(f.goal, item.goles ?? 0);
+  item.asistencias = parseEnteroTabla(f.assistTotal, item.asistencias ?? 0);
+  item.tirosPorPartido = parseDecimalTabla(f.shotsPerGame) ?? item.tirosPorPartido ?? null;
+  item.precisionPase = parseDecimalTabla(f.passSuccess) ?? item.precisionPase ?? null;
+  item.duelosAereosGanadosPorPartido = parseDecimalTabla(f.aerialWonPerGame) ?? item.duelosAereosGanadosPorPartido ?? null;
+  item.rating = parseDecimalTabla(f.rating) ?? item.rating ?? null;
+  item.tarjetasAmarillas = parseEnteroTabla(f.yellowCard, item.tarjetasAmarillas ?? 0);
+  item.tarjetasRojas = parseEnteroTabla(f.redCard, item.tarjetasRojas ?? 0);
+}
+
+function aplicarFilaOfensiva(item: RawWhoScoredPlayerStats, f: FilaTablaDom): void {
+  item.regatesCompletadosPorPartido = parseDecimalTabla(f.dribbleWonPerGame) ?? item.regatesCompletadosPorPartido ?? null;
+  item.pasesClavePorPartido = parseDecimalTabla(f.keyPassPerGame) ?? item.pasesClavePorPartido ?? null;
+  item.grandesOcasionesPorPartido = parseDecimalTabla(f.bigChancePerGame) ?? item.grandesOcasionesPorPartido ?? null;
+}
+
+function aplicarFilaDefensiva(item: RawWhoScoredPlayerStats, f: FilaTablaDom): void {
+  item.entradasPorPartido = parseDecimalTabla(f.tacklePerGame) ?? item.entradasPorPartido ?? null;
+  item.intercepccionesPorPartido = parseDecimalTabla(f.interceptionPerGame) ?? item.intercepccionesPorPartido ?? null;
+  item.despejesPorPartido = parseDecimalTabla(f.clearancePerGame) ?? item.despejesPorPartido ?? null;
+  item.atajadas = parseDecimalTabla(f.savePerGame) ?? item.atajadas ?? null;
+  const gc = parseDecimalTabla(f.goalsConceded);
+  if (gc !== null) item.golesRecibidos = Math.round(gc);
+  const og = parseDecimalTabla(f.ownGoal);
+  if (og !== null) item.autogoles = Math.round(og);
+}
+
+function aplicarFilaPases(item: RawWhoScoredPlayerStats, f: FilaTablaDom): void {
+  item.pasesPorPartido = parseDecimalTabla(f.passesPerGame) ?? item.pasesPorPartido ?? null;
+  item.centrosPorPartido = parseDecimalTabla(f.crossesPerGame) ?? item.centrosPorPartido ?? null;
+}
+
+const APLICADORES_FILA_POR_PESTANA: Record<
+  string,
+  (item: RawWhoScoredPlayerStats, f: FilaTablaDom) => void
+> = {
+  summary: aplicarFilaResumen,
+  offensive: aplicarFilaOfensiva,
+  defensive: aplicarFilaDefensiva,
+  passing: aplicarFilaPases,
+};
+
+function acumularFilaEnItem(
+  acumulador: Map<string, RawWhoScoredPlayerStats>,
+  pestana: string,
+  f: FilaTablaDom,
+): void {
+  if (!f.whoScoredId && !f.nombre) return;
+  const id = f.whoScoredId || f.nombre;
+
+  let item = acumulador.get(id);
+  if (!item) {
+    item = {
+      whoScoredId: id,
+      nombre: f.nombre,
+      equipoNombre: f.equipoNombre,
+    };
+    acumulador.set(id, item);
+  }
+
+  APLICADORES_FILA_POR_PESTANA[pestana]?.(item, f);
+}
+
 @Injectable()
 export class WhoScoredPlaywrightService
   implements OnModuleInit, OnModuleDestroy
@@ -554,6 +709,123 @@ export class WhoScoredPlaywrightService
     return Array.from(acumulador.values());
   }
 
+  private async resolverListaEquipos(
+    config: LigaScrapingConfig,
+    equipos?: EquipoWhoScoredDescubierto[],
+  ): Promise<EquipoWhoScoredDescubierto[]> {
+    if (equipos && equipos.length > 0) return equipos;
+
+    const estructura = await this.descubrirEstructuraCompeticion(config);
+    if (estructura.stageId) {
+      config.stageId = estructura.stageId;
+    }
+    if (estructura.seasonId) {
+      config.seasonId = estructura.seasonId;
+    }
+    return estructura.equipos;
+  }
+
+  private async consultarFeedResumenConReintentos(
+    context: BrowserContext,
+    config: LigaScrapingConfig,
+    equipo: EquipoWhoScoredDescubierto,
+    refererUrl: string,
+    page: Page,
+  ): Promise<RawWhoScoredFeedItem[] | null> {
+    let items: RawWhoScoredFeedItem[] | null = null;
+    let intentos = 0;
+    const maxIntentos = 3;
+
+    while (intentos < maxIntentos && items === null) {
+      intentos++;
+      try {
+        items = await this.consultarFeedEquipo(
+          context,
+          config.stageId,
+          equipo.whoScoredTeamId,
+          refererUrl,
+          page,
+        );
+      } catch (err: any) {
+        if (esErrorRateLimit(err)) {
+          await this.pausaRateLimit(10000);
+        } else if (err instanceof WhoScoredFeedIncompatibleException) {
+          break;
+        } else if (intentos < maxIntentos) {
+          await new Promise((r) => setTimeout(r, 1000 * intentos));
+        }
+      }
+    }
+
+    return items;
+  }
+
+  private async extraerEquipoPorFeed(
+    context: BrowserContext,
+    page: Page,
+    config: LigaScrapingConfig,
+    equipo: EquipoWhoScoredDescubierto,
+    refererUrl: string,
+    jugadores: Map<string, RawWhoScoredPlayerStats>,
+    incidencias: IncidenciaScraping[],
+  ): Promise<void> {
+    await this.delayHumano(1500, 3500);
+    const items = await this.consultarFeedResumenConReintentos(
+      context,
+      config,
+      equipo,
+      refererUrl,
+      page,
+    );
+
+    if (items && items.length > 0) {
+      const jugadoresEquipo = new Map<string, RawWhoScoredPlayerStats>();
+      for (const item of items) {
+        const stats = mapearItemResumenWhoScored(item, equipo.nombre);
+        jugadoresEquipo.set(stats.whoScoredId, stats);
+        jugadores.set(stats.whoScoredId, stats);
+      }
+
+      await this.enriquecerConFeedsComplementarios(
+        context,
+        config.stageId,
+        equipo,
+        refererUrl,
+        page,
+        jugadoresEquipo,
+        incidencias,
+      );
+      return;
+    }
+
+    this.logger.warn(
+      `Activando fallback DOM observable para equipo ${equipo.nombre} (${equipo.whoScoredTeamId})`,
+    );
+    incidencias.push({
+      tipo: 'FALLBACK_DOM_ACTIVADO',
+      equipoId: equipo.whoScoredTeamId,
+      equipoNombre: equipo.nombre,
+      detalle: `Fallback DOM activado tras falla o incompatibilidad en el feed para equipo ${equipo.nombre}`,
+    });
+
+    try {
+      const statsDom = await this.extraerEquipoDesdeDOM(page, equipo, config);
+      for (const s of statsDom) {
+        jugadores.set(s.whoScoredId, s);
+      }
+    } catch (domErr: any) {
+      this.logger.error(
+        `Fallo de extracción en equipo ${equipo.nombre} (${equipo.whoScoredTeamId}) tanto en feed como en DOM: ${domErr.message}`,
+      );
+      incidencias.push({
+        tipo: 'EQUIPO_FALLIDO_AISLADO',
+        equipoId: equipo.whoScoredTeamId,
+        equipoNombre: equipo.nombre,
+        detalle: `Aislamiento de falla: ${domErr.message}`,
+      });
+    }
+  }
+
   public async extraerEstadisticasLigaPorEquipos(
     config: LigaScrapingConfig,
     equipos?: EquipoWhoScoredDescubierto[],
@@ -573,93 +845,19 @@ export class WhoScoredPlaywrightService
     try {
       await this.configurarInterceptores(page);
 
-      let listaEquipos = equipos;
-      if (!listaEquipos || listaEquipos.length === 0) {
-        const estructura = await this.descubrirEstructuraCompeticion(config);
-        listaEquipos = estructura.equipos;
-        if (estructura.stageId) {
-          config.stageId = estructura.stageId;
-        }
-        if (estructura.seasonId) {
-          config.seasonId = estructura.seasonId;
-        }
-      }
-
+      const listaEquipos = await this.resolverListaEquipos(config, equipos);
       const refererUrl = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
 
       for (const equipo of listaEquipos) {
-        await this.delayHumano(1500, 3500);
-        let items: RawWhoScoredFeedItem[] | null = null;
-        let intentos = 0;
-        const maxIntentos = 3;
-
-        while (intentos < maxIntentos && items === null) {
-          intentos++;
-          try {
-            items = await this.consultarFeedEquipo(
-              context,
-              config.stageId,
-              equipo.whoScoredTeamId,
-              refererUrl,
-              page,
-            );
-          } catch (err: any) {
-            const isRateLimit = err?.status === 429 || String(err?.message).includes('429');
-            if (isRateLimit) {
-              await this.pausaRateLimit(10000);
-            } else if (err instanceof WhoScoredFeedIncompatibleException) {
-              break;
-            } else if (intentos < maxIntentos) {
-              await new Promise((r) => setTimeout(r, 1000 * intentos));
-            }
-          }
-        }
-
-        if (items && items.length > 0) {
-          const jugadoresEquipo = new Map<string, RawWhoScoredPlayerStats>();
-          for (const item of items) {
-            const stats = mapearItemResumenWhoScored(item, equipo.nombre);
-            jugadoresEquipo.set(stats.whoScoredId, stats);
-            jugadores.set(stats.whoScoredId, stats);
-          }
-
-          await this.enriquecerConFeedsComplementarios(
-            context,
-            config.stageId,
-            equipo,
-            refererUrl,
-            page,
-            jugadoresEquipo,
-            incidencias,
-          );
-        } else {
-          this.logger.warn(
-            `Activando fallback DOM observable para equipo ${equipo.nombre} (${equipo.whoScoredTeamId})`,
-          );
-          incidencias.push({
-            tipo: 'FALLBACK_DOM_ACTIVADO',
-            equipoId: equipo.whoScoredTeamId,
-            equipoNombre: equipo.nombre,
-            detalle: `Fallback DOM activado tras falla o incompatibilidad en el feed para equipo ${equipo.nombre}`,
-          });
-
-          try {
-            const statsDom = await this.extraerEquipoDesdeDOM(page, equipo, config);
-            for (const s of statsDom) {
-              jugadores.set(s.whoScoredId, s);
-            }
-          } catch (domErr: any) {
-            this.logger.error(
-              `Fallo de extracción en equipo ${equipo.nombre} (${equipo.whoScoredTeamId}) tanto en feed como en DOM: ${domErr.message}`,
-            );
-            incidencias.push({
-              tipo: 'EQUIPO_FALLIDO_AISLADO',
-              equipoId: equipo.whoScoredTeamId,
-              equipoNombre: equipo.nombre,
-              detalle: `Aislamiento de falla: ${domErr.message}`,
-            });
-          }
-        }
+        await this.extraerEquipoPorFeed(
+          context,
+          page,
+          config,
+          equipo,
+          refererUrl,
+          jugadores,
+          incidencias,
+        );
       }
     } finally {
       await page.close().catch(() => null);
@@ -675,6 +873,38 @@ export class WhoScoredPlaywrightService
    * falla en un feed complementario no descarta los datos del summary ni activa el fallback DOM;
    * sólo se registra como incidencia observable.
    */
+  private async consultarFeedComplementario(
+    context: BrowserContext,
+    stageId: number,
+    equipo: EquipoWhoScoredDescubierto,
+    refererUrl: string,
+    page: Page,
+    feed: FeedComplementarioWhoScored,
+  ): Promise<{ items: RawWhoScoredFeedItem[] | null; ultimoError: string | null }> {
+    let items: RawWhoScoredFeedItem[] | null = null;
+    let ultimoError: string | null = null;
+
+    for (let intento = 1; intento <= 2 && items === null; intento++) {
+      try {
+        items = await this.consultarFeedEquipo(
+          context,
+          stageId,
+          equipo.whoScoredTeamId,
+          refererUrl,
+          page,
+          { category: feed.category, subcategory: feed.subcategory, extraQuery: feed.extraQuery },
+        );
+      } catch (err: any) {
+        ultimoError = err?.message ?? String(err);
+        if (esErrorRateLimit(err) && intento < 2) {
+          await this.pausaRateLimit(10000);
+        }
+      }
+    }
+
+    return { items, ultimoError };
+  }
+
   private async enriquecerConFeedsComplementarios(
     context: BrowserContext,
     stageId: number,
@@ -686,27 +916,14 @@ export class WhoScoredPlaywrightService
   ): Promise<void> {
     for (const feed of FEEDS_COMPLEMENTARIOS_WHOSCORED) {
       await this.delayHumano(300, 700);
-      let items: RawWhoScoredFeedItem[] | null = null;
-      let ultimoError: string | null = null;
-
-      for (let intento = 1; intento <= 2 && items === null; intento++) {
-        try {
-          items = await this.consultarFeedEquipo(
-            context,
-            stageId,
-            equipo.whoScoredTeamId,
-            refererUrl,
-            page,
-            { category: feed.category, subcategory: feed.subcategory, extraQuery: feed.extraQuery },
-          );
-        } catch (err: any) {
-          ultimoError = err?.message ?? String(err);
-          const isRateLimit = err?.status === 429 || String(err?.message).includes('429');
-          if (isRateLimit && intento < 2) {
-            await this.pausaRateLimit(10000);
-          }
-        }
-      }
+      const { items, ultimoError } = await this.consultarFeedComplementario(
+        context,
+        stageId,
+        equipo,
+        refererUrl,
+        page,
+        feed,
+      );
 
       if (!items) {
         this.logger.warn(
@@ -806,16 +1023,69 @@ export class WhoScoredPlaywrightService
     return resultado;
   }
 
+  private async esperarTablaEstadisticas(page: Page): Promise<boolean> {
+    try {
+      await page.waitForSelector('#player-table-statistics-body', {
+        timeout: 10000,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async hayBotonSiguienteHabilitado(
+    page: Page,
+    pestana: string,
+  ): Promise<any> {
+    let nextBtn: any = null;
+    try {
+      nextBtn = await page.$(
+        `#statistics-paging-${pestana} a#next, #statistics-paging-${pestana} a.next, a#next:not(.disabled), a.next:not(.disabled)`,
+      );
+    } catch {
+      return null;
+    }
+    if (!nextBtn) return null;
+
+    let deshabilitado = true;
+    try {
+      const evalRes = await page.evaluate((btn: any) => {
+        if (!btn) return true;
+        const cl = btn.className || '';
+        return (
+          cl.includes('disabled') ||
+          btn.getAttribute('aria-disabled') === 'true' ||
+          btn.getAttribute('disabled') !== null ||
+          btn.style?.display === 'none'
+        );
+      }, nextBtn);
+      deshabilitado = evalRes === undefined ? true : Boolean(evalRes);
+    } catch {
+      deshabilitado = true;
+    }
+
+    return deshabilitado ? null : nextBtn;
+  }
+
+  private async avanzarPagina(page: Page, pestana: string): Promise<boolean> {
+    const nextBtn = await this.hayBotonSiguienteHabilitado(page, pestana);
+    if (!nextBtn) return false;
+
+    try {
+      await nextBtn.click();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async extraerFilasTabla(
     page: Page,
     pestana: string,
     acumulador: Map<string, RawWhoScoredPlayerStats>,
   ): Promise<void> {
-    try {
-      await page.waitForSelector('#player-table-statistics-body', {
-        timeout: 10000,
-      });
-    } catch {
+    if (!(await this.esperarTablaEstadisticas(page))) {
       return;
     }
 
@@ -824,143 +1094,17 @@ export class WhoScoredPlaywrightService
     let ultimoPrimerId: string | null = null;
 
     while (pagina <= maxPaginas) {
-      const selectorTabla =
-        '#team-squad-stats #statistics-table-' +
-        pestana +
-        ' #player-table-statistics-body tr, #stage-top-player-stats-' +
-        pestana +
-        ' #player-table-statistics-body tr, #player-table-statistics-body tr';
-      const filas = await page.$$eval(selectorTabla, (rows) => {
-        return rows.map((tr) => {
-          const playerLink = tr.querySelector('a.player-link');
-          const href = playerLink?.getAttribute('href') || '';
-          const idMatch = href.match(/\/Players\/(\d+)/i);
-          const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
-          let nombre = '';
-          if (playerLink) {
-            const clone = playerLink.cloneNode(true) as HTMLElement;
-            clone.querySelector('.table-ranking')?.remove();
-            nombre = clone.textContent?.trim() || '';
-            nombre = nombre.replace(/^\d+\s*/, '').trim();
-          }
-
-          const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
-          let equipoNombre = teamLink?.textContent?.trim() || '';
-          equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
-
-          const getCol = (colName: string) => {
-            const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);
-            return el?.textContent?.trim() || '';
-          };
-
-          // En las tablas de equipo, la columna Apps tiene encabezado <th class="ap"> pero el <td>
-          // carece de clase (es la celda inmediatamente anterior a td.minsPlayed).
-          let appsVal = getCol('apps');
-          if (!appsVal) {
-            const minsCell = tr.querySelector('td[class*="minsPlayed"]');
-            const prevText = minsCell?.previousElementSibling?.textContent?.trim() || '';
-            if (prevText) {
-              const mApps = prevText.match(/^(\d+)(?:\((\d+)\))?$/);
-              appsVal = mApps ? String(Number(mApps[1]) + (mApps[2] ? Number(mApps[2]) : 0)) : prevText;
-            }
-          }
-
-          return {
-            whoScoredId,
-            nombre,
-            equipoNombre,
-            apps: appsVal,
-            minsPlayed: getCol('minsPlayed'),
-            goal: getCol('goal'),
-            assistTotal: getCol('assistTotal'),
-            shotsPerGame: getCol('shotsPerGame'),
-            passSuccess: getCol('passSuccess'),
-            aerialWonPerGame: getCol('aerialWonPerGame'),
-            rating: getCol('rating'),
-            yellowCard: getCol('yellowCard'),
-            redCard: getCol('redCard'),
-            dribbleWonPerGame: getCol('dribbleWonPerGame'),
-            keyPassPerGame: getCol('keyPassPerGame'),
-            xgPerGame: getCol('xgPerGame'),
-            xaPerGame: getCol('xaPerGame'),
-            bigChancePerGame: getCol('bigChancePerGame'),
-            tacklePerGame: getCol('tacklePerGame'),
-            interceptionPerGame: getCol('interceptionPerGame'),
-            clearancePerGame: getCol('clearancePerGame'),
-            passesPerGame: getCol('totalPassesPerGame'),
-            crossesPerGame: getCol('accurateCrossesPerGame'),
-            savePerGame: getCol('savePerGame'),
-            goalsConceded: getCol('goalsConceded'),
-            savePercentage: getCol('savePercentage'),
-            errorLeadToGoal: getCol('errorLeadToGoal'),
-            ownGoal: getCol('goalOwn'),
-          };
-        });
-      });
+      const filas = await page.$$eval(
+        construirSelectorTabla(pestana),
+        leerFilasDeTablaDom,
+      );
 
       if (!filas || filas.length === 0) {
         break;
       }
 
       for (const f of filas) {
-        if (!f.whoScoredId && !f.nombre) continue;
-        const id = f.whoScoredId || f.nombre;
-
-        let item = acumulador.get(id);
-        if (!item) {
-          item = {
-            whoScoredId: id,
-            nombre: f.nombre,
-            equipoNombre: f.equipoNombre,
-          };
-          acumulador.set(id, item);
-        }
-
-        const parseNum = (val: string | undefined): number | null => {
-          if (!val || val === '-' || val === 'N/A') return null;
-          const n = Number.parseFloat(val);
-          return Number.isNaN(n) ? null : n;
-        };
-
-        const parseIntVal = (val: string | undefined, defaultVal = 0): number => {
-          const n = parseNum(val);
-          return n !== null ? Math.round(n) : defaultVal;
-        };
-
-        if (pestana === 'summary') {
-          item.partidosJugados = parseIntVal(f.apps, item.partidosJugados ?? 0);
-          item.minutosJugados = parseIntVal(f.minsPlayed, item.minutosJugados ?? 0);
-          item.goles = parseIntVal(f.goal, item.goles ?? 0);
-          item.asistencias = parseIntVal(f.assistTotal, item.asistencias ?? 0);
-          item.tirosPorPartido = parseNum(f.shotsPerGame) ?? item.tirosPorPartido ?? null;
-          item.precisionPase = parseNum(f.passSuccess) ?? item.precisionPase ?? null;
-          item.duelosAereosGanadosPorPartido = parseNum(f.aerialWonPerGame) ?? item.duelosAereosGanadosPorPartido ?? null;
-          item.rating = parseNum(f.rating) ?? item.rating ?? null;
-          item.tarjetasAmarillas = parseIntVal(f.yellowCard, item.tarjetasAmarillas ?? 0);
-          item.tarjetasRojas = parseIntVal(f.redCard, item.tarjetasRojas ?? 0);
-        }
-
-        if (pestana === 'offensive') {
-          item.regatesCompletadosPorPartido = parseNum(f.dribbleWonPerGame) ?? item.regatesCompletadosPorPartido ?? null;
-          item.pasesClavePorPartido = parseNum(f.keyPassPerGame) ?? item.pasesClavePorPartido ?? null;
-          item.grandesOcasionesPorPartido = parseNum(f.bigChancePerGame) ?? item.grandesOcasionesPorPartido ?? null;
-        }
-
-        if (pestana === 'defensive') {
-          item.entradasPorPartido = parseNum(f.tacklePerGame) ?? item.entradasPorPartido ?? null;
-          item.intercepccionesPorPartido = parseNum(f.interceptionPerGame) ?? item.intercepccionesPorPartido ?? null;
-          item.despejesPorPartido = parseNum(f.clearancePerGame) ?? item.despejesPorPartido ?? null;
-          item.atajadas = parseNum(f.savePerGame) ?? item.atajadas ?? null;
-          const gc = parseNum(f.goalsConceded);
-          if (gc !== null) item.golesRecibidos = Math.round(gc);
-          const og = parseNum(f.ownGoal);
-          if (og !== null) item.autogoles = Math.round(og);
-        }
-
-        if (pestana === 'passing') {
-          item.pasesPorPartido = parseNum(f.passesPerGame) ?? item.pasesPorPartido ?? null;
-          item.centrosPorPartido = parseNum(f.crossesPerGame) ?? item.centrosPorPartido ?? null;
-        }
+        acumularFilaEnItem(acumulador, pestana, f);
       }
 
       const primerIdActual = filas[0]?.whoScoredId || filas[0]?.nombre || '';
@@ -969,47 +1113,12 @@ export class WhoScoredPlaywrightService
       }
       ultimoPrimerId = primerIdActual;
 
-      let nextBtn: any = null;
-      try {
-        nextBtn = await page.$(
-          `#statistics-paging-${pestana} a#next, #statistics-paging-${pestana} a.next, a#next:not(.disabled), a.next:not(.disabled)`,
-        );
-      } catch {
-        nextBtn = null;
-      }
-
-      if (!nextBtn) {
+      if (!(await this.avanzarPagina(page, pestana))) {
         break;
       }
 
-      let deshabilitado = true;
-      try {
-        const evalRes = await page.evaluate((btn: any) => {
-          if (!btn) return true;
-          const cl = btn.className || '';
-          return (
-            cl.includes('disabled') ||
-            btn.getAttribute('aria-disabled') === 'true' ||
-            btn.getAttribute('disabled') !== null ||
-            btn.style?.display === 'none'
-          );
-        }, nextBtn);
-        deshabilitado = evalRes === undefined ? true : Boolean(evalRes);
-      } catch {
-        deshabilitado = true;
-      }
-
-      if (deshabilitado) {
-        break;
-      }
-
-      try {
-        await nextBtn.click();
-        pagina++;
-        await this.delayHumano(800, 1500);
-      } catch {
-        break;
-      }
+      pagina++;
+      await this.delayHumano(800, 1500);
     }
   }
 }

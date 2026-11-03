@@ -28,7 +28,7 @@ import {
 import { ReglaDeNegocioException } from '../domain/exceptions/regla-de-negocio.exception';
 import { MiembroEquipoSemanal } from '../domain/miembro-equipo-semanal.entity';
 
-export const calcularAnoYSemanaIso = obtenerAnoYSemanaIso;
+export { obtenerAnoYSemanaIso as calcularAnoYSemanaIso } from '../domain/equipo-semanal.entity';
 
 export interface ResultadoGeneracionAutomatica {
   generado: boolean;
