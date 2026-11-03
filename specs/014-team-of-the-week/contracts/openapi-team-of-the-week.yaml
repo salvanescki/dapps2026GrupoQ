@@ -1,0 +1,288 @@
+openapi: 3.0.3
+info:
+  title: Football Token Marketplace - Team of the Week API
+  version: 1.0.0
+  description: Endpoints para la consulta y administración del Equipo de la Semana (Once Ideal) basado en cotizaciones de mercado vigentes.
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
+paths:
+  /team-of-the-week:
+    get:
+      summary: Consultar el Equipo de la Semana vigente
+      description: Retorna la alineación ideal de la semana actual más recientemente generada sobre la formación 4-3-3.
+      tags:
+        - Equipo de la Semana
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Equipo de la semana vigente obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipoSemanalRespuesta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Aún no existe ningún equipo de la semana generado en la plataforma.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                codigoEstado: 404
+                mensaje: "No se ha generado ningún Equipo de la Semana todavía."
+                marcaDeTiempo: "2026-11-02T01:00:00.000Z"
+
+  /team-of-the-week/weeks:
+    get:
+      summary: Listar semanas históricas disponibles
+      description: Retorna el catálogo ordenado descendentemente de todas las semanas que cuentan con un Equipo de la Semana generado.
+      tags:
+        - Equipo de la Semana
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Listado de semanas obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SemanaDisponible'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /team-of-the-week/weeks/{year}/{week}:
+    get:
+      summary: Consultar Equipo de la Semana histórico específico
+      description: Retorna el snapshot inmutable del equipo ideal generado para el año y semana ISO especificados.
+      tags:
+        - Equipo de la Semana
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          description: Año ISO de la semana (ej. 2026)
+          schema:
+            type: integer
+            example: 2026
+        - name: week
+          in: path
+          required: true
+          description: Número de semana ISO-8601 (1 a 53)
+          schema:
+            type: integer
+            example: 44
+      responses:
+        '200':
+          description: Equipo de la semana histórico obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipoSemanalRespuesta'
+        '400':
+          description: Parámetros de año o semana inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No existe registro para el año y semana solicitados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+
+  /team-of-the-week/generate:
+    post:
+      summary: Disparar manualmente la generación del Equipo de la Semana (Solo ADMIN)
+      description: Fuerza el recálculo y publicación inmediata del once ideal para la semana en curso. Si ya existía un equipo para dicha semana, lo recalcula y sobrescribe. Una semana cerrada (a partir del lunes siguiente 00:00 UTC) no puede regenerarse.
+      tags:
+        - Equipo de la Semana
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Equipo de la semana generado/sobrescrito exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenGeneracionEquipo'
+        '400':
+          description: Regla de negocio incumplida (cupo insuficiente en alguna posición del 4-3-3, o semana ya cerrada).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                codigoEstado: 400
+                mensaje: "No se puede generar el Equipo de la Semana: se requieren al menos 4 defensas elegibles, pero solo se encontraron 2."
+                marcaDeTiempo: "2026-11-02T01:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: No autenticado o token JWT expirado/inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorRespuesta'
+          example:
+            codigoEstado: 401
+            mensaje: "No autorizado"
+            marcaDeTiempo: "2026-11-02T01:00:00.000Z"
+    Forbidden:
+      description: Acceso denegado. Requiere rol ADMIN.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorRespuesta'
+          example:
+            codigoEstado: 403
+            mensaje: "Acceso denegado: se requiere rol de administrador"
+            marcaDeTiempo: "2026-11-02T01:00:00.000Z"
+
+  schemas:
+    MiembroEquipoSemanal:
+      type: object
+      required:
+        - jugadorId
+        - nombre
+        - equipoNombre
+        - posicion
+        - cotizacion
+        - score
+        - orden
+      properties:
+        jugadorId:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        nombre:
+          type: string
+          example: "Kylian Mbappé"
+        equipoNombre:
+          type: string
+          example: "Real Madrid"
+        posicion:
+          type: string
+          enum: [Portero, Defensa, Mediocampista, Delantero]
+          example: "Delantero"
+        cotizacion:
+          type: number
+          format: float
+          example: 2.8500
+        score:
+          type: number
+          format: float
+          example: 0.9250
+        orden:
+          type: integer
+          example: 11
+
+    EquipoSemanalRespuesta:
+      type: object
+      required:
+        - id
+        - ano
+        - semanaIso
+        - formacion
+        - estrategiaId
+        - estrategiaVersion
+        - fechaGeneracion
+        - miembros
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f9e8d7c6-b5a4-3210-fedc-ba9876543210"
+        ano:
+          type: integer
+          example: 2026
+        semanaIso:
+          type: integer
+          example: 44
+        formacion:
+          type: string
+          example: "4-3-3"
+        estrategiaId:
+          type: string
+          example: "POSICIONAL"
+        estrategiaVersion:
+          type: string
+          example: "POSICIONAL_v1"
+        fechaGeneracion:
+          type: string
+          format: date-time
+          example: "2026-11-02T01:00:00.000Z"
+        miembros:
+          type: array
+          minItems: 11
+          maxItems: 11
+          items:
+            $ref: '#/components/schemas/MiembroEquipoSemanal'
+
+    SemanaDisponible:
+      type: object
+      required:
+        - ano
+        - semanaIso
+        - fechaGeneracion
+      properties:
+        ano:
+          type: integer
+          example: 2026
+        semanaIso:
+          type: integer
+          example: 44
+        fechaGeneracion:
+          type: string
+          format: date-time
+          example: "2026-11-02T01:00:00.000Z"
+
+    ResumenGeneracionEquipo:
+      type: object
+      required:
+        - mensaje
+        - equipo
+      properties:
+        mensaje:
+          type: string
+          example: "Equipo de la Semana generado exitosamente."
+        equipo:
+          $ref: '#/components/schemas/EquipoSemanalRespuesta'
+
+    ErrorRespuesta:
+      type: object
+      required:
+        - codigoEstado
+        - mensaje
+        - marcaDeTiempo
+      properties:
+        codigoEstado:
+          type: integer
+          example: 400
+        mensaje:
+          type: string
+          example: "Mensaje descriptivo del error"
+        marcaDeTiempo:
+          type: string
+          format: date-time
+          example: "2026-11-02T01:00:00.000Z"

@@ -23,6 +23,11 @@ export function construirItemsNavegacion(rol?: RolUsuario): NavItem[] {
       to: '/portfolio',
       id: 'nav-portfolio',
     },
+    {
+      label: 'Equipo de la Semana',
+      to: '/team-of-the-week',
+      id: 'nav-team-of-the-week',
+    },
   ];
 
   if (rol === 'ADMIN') {
@@ -42,4 +47,3 @@ export function esRutaActiva(pathname: string, itemTo: string): boolean {
   }
   return pathname === itemTo || pathname.startsWith(`${itemTo}/`);
 }
-

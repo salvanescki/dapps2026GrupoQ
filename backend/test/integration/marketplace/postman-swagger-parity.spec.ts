@@ -73,7 +73,8 @@ function aplanarColeccionPostman(
         .replace(
           /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
           '{id}',
-        );
+        )
+        .replace(/^(\/team-of-the-week\/weeks)\/\d{4}\/\d{1,2}$/, '$1/{year}/{week}');
 
       const queryParams = (it.request.url.query || [])
         .filter((q) => !q.disabled)

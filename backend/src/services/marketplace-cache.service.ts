@@ -96,4 +96,49 @@ export class MarketplaceCacheService implements OnModuleDestroy {
       );
     }
   }
+
+  public async guardarEquipoSemanal(
+    clave: string,
+    datos: any,
+    ttlSegundos: number = 1800,
+  ): Promise<void> {
+    if (!this.redisClient) return;
+    const key = `marketplace:team-of-the-week:${clave}`;
+    try {
+      await this.redisClient.setex(key, ttlSegundos, JSON.stringify(datos));
+    } catch (err) {
+      this.logger.warn(
+        `Degradación controlada: fallo al escribir equipo semanal en caché (${key}): ${(err as Error).message}`,
+      );
+    }
+  }
+
+  public async obtenerEquipoSemanal<T>(clave: string): Promise<T | null> {
+    if (!this.redisClient) return null;
+    const key = `marketplace:team-of-the-week:${clave}`;
+    try {
+      const data = await this.redisClient.get(key);
+      if (!data) return null;
+      return JSON.parse(data) as T;
+    } catch (err) {
+      this.logger.warn(
+        `Degradación controlada: fallo al leer equipo semanal de caché (${key}): ${(err as Error).message}`,
+      );
+      return null;
+    }
+  }
+
+  public async invalidarEquipoSemanal(): Promise<void> {
+    if (!this.redisClient) return;
+    try {
+      const keys = await this.redisClient.keys('marketplace:team-of-the-week:*');
+      if (keys && keys.length > 0) {
+        await this.redisClient.del(...keys);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Degradación controlada: fallo al invalidar equipo semanal en caché: ${(err as Error).message}`,
+      );
+    }
+  }
 }

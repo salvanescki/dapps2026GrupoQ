@@ -4,6 +4,7 @@ import { CreateInitialCatalogAndUserTables1700000000000 } from '../migrations/17
 import { CreateScrapingTables1715000000000 } from '../migrations/1715000000000-create-scraping-tables';
 import { AddWhoscoredExternalIdentitiesAndContextualUniqueness1729860000000 } from '../migrations/1729860000000-add-whoscored-external-identities-and-contextual-uniqueness';
 import { CreateMarketplaceAndOmsTables1730000000000 } from '../migrations/1730000000000-create-marketplace-and-oms-tables';
+import { CreateTeamOfTheWeekTables1730500000000 } from '../migrations/1730500000000-create-team-of-the-week-tables';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ export const getDatabaseConfig = (): TypeOrmModuleOptions => ({
     CreateScrapingTables1715000000000,
     AddWhoscoredExternalIdentitiesAndContextualUniqueness1729860000000,
     CreateMarketplaceAndOmsTables1730000000000,
+    CreateTeamOfTheWeekTables1730500000000,
   ],
   logging: process.env.DB_LOGGING === 'true',
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
