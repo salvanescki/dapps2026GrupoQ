@@ -46,6 +46,28 @@ export interface EquipoSemanalProps {
   miembros: MiembroEquipoSemanal[];
 }
 
+interface CandidatoEquipo {
+  jugador: Jugador;
+  cotizacion: Cotizacion;
+}
+
+const CUPOS_FORMACION_433: ReadonlyArray<readonly [PosicionJugador, number]> = [
+  ['Portero', 1],
+  ['Defensa', 4],
+  ['Mediocampista', 3],
+  ['Delantero', 3],
+];
+
+function compararCandidatos(a: CandidatoEquipo, b: CandidatoEquipo): number {
+  if (b.cotizacion.valor !== a.cotizacion.valor) {
+    return b.cotizacion.valor - a.cotizacion.valor;
+  }
+  if (b.cotizacion.score !== a.cotizacion.score) {
+    return b.cotizacion.score - a.cotizacion.score;
+  }
+  return a.jugador.nombre.localeCompare(b.jugador.nombre, 'en');
+}
+
 export class EquipoSemanal {
   private readonly _id: string;
   private readonly _ano: number;
@@ -82,162 +104,27 @@ export class EquipoSemanal {
       semanaIso,
       estrategiaId,
       estrategiaVersion,
-      jugadoresActivos,
-      cotizacionesPorJugador,
-      minutosPorJugador,
       fechaGeneracion = new Date(),
     } = params;
 
-    // 1. Filtrar jugadores elegibles
-    const candidatosElegibles: { jugador: Jugador; cotizacion: Cotizacion }[] = [];
+    const elegibles = EquipoSemanal.filtrarElegibles(params);
 
-    for (const jugador of jugadoresActivos) {
-      if (!jugador.activo) continue;
-
-      const cotizacion = cotizacionesPorJugador.get(jugador.id);
-      if (!cotizacion) continue;
-      if (cotizacion.sinEstadisticas) continue;
-      if ((minutosPorJugador.get(jugador.id) ?? 0) < MINUTOS_MINIMOS_ELEGIBILIDAD) {
-        continue;
-      }
-
-      const pos = jugador.posicion;
-      if (
-        pos !== 'Portero' &&
-        pos !== 'Defensa' &&
-        pos !== 'Mediocampista' &&
-        pos !== 'Delantero'
-      ) {
-        continue;
-      }
-
-      candidatosElegibles.push({ jugador, cotizacion });
-    }
-
-    // 2. Agrupar por posición
-    const porteros = candidatosElegibles.filter(
-      (c) => c.jugador.posicion === 'Portero',
-    );
-    const defensas = candidatosElegibles.filter(
-      (c) => c.jugador.posicion === 'Defensa',
-    );
-    const mediocampistas = candidatosElegibles.filter(
-      (c) => c.jugador.posicion === 'Mediocampista',
-    );
-    const delanteros = candidatosElegibles.filter(
-      (c) => c.jugador.posicion === 'Delantero',
+    const seleccionados = CUPOS_FORMACION_433.flatMap(([posicion, requeridos]) =>
+      EquipoSemanal.seleccionarPorPosicion(elegibles, posicion, requeridos),
     );
 
-    // 3. Validar cupos mínimos requeridos (1, 4, 3, 3)
-    if (porteros.length < 1) {
-      throw new ReglaDeNegocioException(
-        `No hay suficientes jugadores elegibles en la posición Portero para conformar el Equipo de la Semana (requeridos: 1, disponibles: ${porteros.length}).`,
-      );
-    }
-    if (defensas.length < 4) {
-      throw new ReglaDeNegocioException(
-        `No hay suficientes jugadores elegibles en la posición Defensa para conformar el Equipo de la Semana (requeridos: 4, disponibles: ${defensas.length}).`,
-      );
-    }
-    if (mediocampistas.length < 3) {
-      throw new ReglaDeNegocioException(
-        `No hay suficientes jugadores elegibles en la posición Mediocampista para conformar el Equipo de la Semana (requeridos: 3, disponibles: ${mediocampistas.length}).`,
-      );
-    }
-    if (delanteros.length < 3) {
-      throw new ReglaDeNegocioException(
-        `No hay suficientes jugadores elegibles en la posición Delantero para conformar el Equipo de la Semana (requeridos: 3, disponibles: ${delanteros.length}).`,
-      );
-    }
-
-    // 4. Ordenar candidatos por: valor DESC -> score DESC -> nombre ASC
-    const comparador = (
-      a: { jugador: Jugador; cotizacion: Cotizacion },
-      b: { jugador: Jugador; cotizacion: Cotizacion },
-    ): number => {
-      if (b.cotizacion.valor !== a.cotizacion.valor) {
-        return b.cotizacion.valor - a.cotizacion.valor;
-      }
-      if (b.cotizacion.score !== a.cotizacion.score) {
-        return b.cotizacion.score - a.cotizacion.score;
-      }
-      return a.jugador.nombre.localeCompare(b.jugador.nombre, 'en');
-    };
-
-    porteros.sort(comparador);
-    defensas.sort(comparador);
-    mediocampistas.sort(comparador);
-    delanteros.sort(comparador);
-
-    // 5. Seleccionar los mejores de cada grupo
-    const seleccionadosPorteros = porteros.slice(0, 1);
-    const seleccionadosDefensas = defensas.slice(0, 4);
-    const seleccionadosMedios = mediocampistas.slice(0, 3);
-    const seleccionadosDelanteros = delanteros.slice(0, 3);
-
-    // 6. Construir los miembros con orden 1..11
-    const miembros: MiembroEquipoSemanal[] = [];
-    let ordenActual = 1;
-
-    for (const cand of seleccionadosPorteros) {
-      miembros.push(
-        MiembroEquipoSemanal.crear({
-          equipoSemanalId: id,
-          jugadorId: cand.jugador.id,
-          nombre: cand.jugador.nombre,
-          equipoNombre: cand.jugador.equipo?.nombre || 'Sin Equipo',
-          posicion: cand.jugador.posicion,
-          cotizacion: cand.cotizacion.valor,
-          score: cand.cotizacion.score,
-          orden: ordenActual++,
-        }),
-      );
-    }
-
-    for (const cand of seleccionadosDefensas) {
-      miembros.push(
-        MiembroEquipoSemanal.crear({
-          equipoSemanalId: id,
-          jugadorId: cand.jugador.id,
-          nombre: cand.jugador.nombre,
-          equipoNombre: cand.jugador.equipo?.nombre || 'Sin Equipo',
-          posicion: cand.jugador.posicion,
-          cotizacion: cand.cotizacion.valor,
-          score: cand.cotizacion.score,
-          orden: ordenActual++,
-        }),
-      );
-    }
-
-    for (const cand of seleccionadosMedios) {
-      miembros.push(
-        MiembroEquipoSemanal.crear({
-          equipoSemanalId: id,
-          jugadorId: cand.jugador.id,
-          nombre: cand.jugador.nombre,
-          equipoNombre: cand.jugador.equipo?.nombre || 'Sin Equipo',
-          posicion: cand.jugador.posicion,
-          cotizacion: cand.cotizacion.valor,
-          score: cand.cotizacion.score,
-          orden: ordenActual++,
-        }),
-      );
-    }
-
-    for (const cand of seleccionadosDelanteros) {
-      miembros.push(
-        MiembroEquipoSemanal.crear({
-          equipoSemanalId: id,
-          jugadorId: cand.jugador.id,
-          nombre: cand.jugador.nombre,
-          equipoNombre: cand.jugador.equipo?.nombre || 'Sin Equipo',
-          posicion: cand.jugador.posicion,
-          cotizacion: cand.cotizacion.valor,
-          score: cand.cotizacion.score,
-          orden: ordenActual++,
-        }),
-      );
-    }
+    const miembros = seleccionados.map((cand, indice) =>
+      MiembroEquipoSemanal.crear({
+        equipoSemanalId: id,
+        jugadorId: cand.jugador.id,
+        nombre: cand.jugador.nombre,
+        equipoNombre: cand.jugador.equipo?.nombre || 'Sin Equipo',
+        posicion: cand.jugador.posicion,
+        cotizacion: cand.cotizacion.valor,
+        score: cand.cotizacion.score,
+        orden: indice + 1,
+      }),
+    );
 
     return new EquipoSemanal({
       id,
@@ -249,6 +136,45 @@ export class EquipoSemanal {
       fechaGeneracion,
       miembros,
     });
+  }
+
+  private static filtrarElegibles(
+    params: ParametrosSeleccionEquipo,
+  ): CandidatoEquipo[] {
+    const { jugadoresActivos, cotizacionesPorJugador, minutosPorJugador } = params;
+    const posicionesValidas = new Set<PosicionJugador>(
+      CUPOS_FORMACION_433.map(([posicion]) => posicion),
+    );
+    const elegibles: CandidatoEquipo[] = [];
+
+    for (const jugador of jugadoresActivos) {
+      const cotizacion = cotizacionesPorJugador.get(jugador.id);
+      if (!jugador.activo || !cotizacion || cotizacion.sinEstadisticas) continue;
+
+      const minutos = minutosPorJugador.get(jugador.id) ?? 0;
+      if (minutos < MINUTOS_MINIMOS_ELEGIBILIDAD) continue;
+      if (!posicionesValidas.has(jugador.posicion)) continue;
+
+      elegibles.push({ jugador, cotizacion });
+    }
+
+    return elegibles;
+  }
+
+  private static seleccionarPorPosicion(
+    elegibles: CandidatoEquipo[],
+    posicion: PosicionJugador,
+    requeridos: number,
+  ): CandidatoEquipo[] {
+    const candidatos = elegibles.filter((c) => c.jugador.posicion === posicion);
+
+    if (candidatos.length < requeridos) {
+      throw new ReglaDeNegocioException(
+        `No hay suficientes jugadores elegibles en la posición ${posicion} para conformar el Equipo de la Semana (requeridos: ${requeridos}, disponibles: ${candidatos.length}).`,
+      );
+    }
+
+    return candidatos.sort(compararCandidatos).slice(0, requeridos);
   }
 
   public estaCerrada(ahora: Date = new Date()): boolean {
@@ -298,7 +224,7 @@ export class EquipoSemanal {
       );
     }
 
-    if (!this._miembros || this._miembros.length !== 11) {
+    if (this._miembros?.length !== 11) {
       throw new ReglaDeNegocioException(
         `El Equipo de la Semana debe contener exactamente 11 jugadores titulares. Cantidad recibida: ${this._miembros ? this._miembros.length : 0}`,
       );

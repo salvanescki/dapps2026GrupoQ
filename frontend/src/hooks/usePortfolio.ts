@@ -66,6 +66,29 @@ function esAbortError(err: unknown): boolean {
   );
 }
 
+function hayFiltrosActivos(f: FiltrosHistorialUi): boolean {
+  return (
+    f.tipo !== 'Todas' ||
+    Boolean(f.jugadorId.trim()) ||
+    Boolean(f.desde.trim()) ||
+    Boolean(f.hasta.trim())
+  );
+}
+
+function comoLista<T>(valor: T[]): T[] {
+  return Array.isArray(valor) ? valor : [];
+}
+
+function filtrarOrdenesAbiertas(ordenes: OrdenVenta[]): OrdenVenta[] {
+  return comoLista(ordenes).filter(
+    (o) => o.estado === 'PENDIENTE' || o.estado === 'PARCIAL',
+  );
+}
+
+function mensajeDeError(err: unknown, mensajePorDefecto: string): string {
+  return err instanceof Error ? err.message : mensajePorDefecto;
+}
+
 export function usePortfolio(): UsePortfolioResult {
   const auth = useContext(AuthContext);
   const usuarioId = auth?.usuario?.id;
@@ -140,23 +163,11 @@ export function usePortfolio(): UsePortfolioResult {
         if (signal?.aborted) return;
 
         setPortfolio(resPortfolio);
-        const listaBase = Array.isArray(resTxBase) ? resTxBase : [];
+        const listaBase = comoLista(resTxBase);
         setTransaccionesBase(listaBase);
-        setOrdenesAbiertas(
-          Array.isArray(resOrdenes)
-            ? resOrdenes.filter(
-                (o) => o.estado === 'PENDIENTE' || o.estado === 'PARCIAL',
-              )
-            : [],
-        );
+        setOrdenesAbiertas(filtrarOrdenesAbiertas(resOrdenes));
 
-        const hayFiltrosActivos =
-          filtrosHistorial.tipo !== 'Todas' ||
-          Boolean(filtrosHistorial.jugadorId.trim()) ||
-          Boolean(filtrosHistorial.desde.trim()) ||
-          Boolean(filtrosHistorial.hasta.trim());
-
-        if (hayFiltrosActivos && !errorValidacionFiltros) {
+        if (hayFiltrosActivos(filtrosHistorial) && !errorValidacionFiltros) {
           const resFiltradas = await obtenerTransaccionesUsuario(
             tokenDeAcceso,
             usuarioId,
@@ -164,20 +175,19 @@ export function usePortfolio(): UsePortfolioResult {
             signal,
           );
           if (!signal?.aborted) {
-            setTransaccionesFiltradas(
-              Array.isArray(resFiltradas) ? resFiltradas : [],
-            );
+            setTransaccionesFiltradas(comoLista(resFiltradas));
           }
         } else if (!errorValidacionFiltros) {
           setTransaccionesFiltradas(listaBase);
         }
       } catch (err) {
         if (signal?.aborted || esAbortError(err)) return;
-        const mensaje =
-          err instanceof Error
-            ? err.message
-            : 'No fue posible obtener los datos de tu Portfolio Personal.';
-        setError(mensaje);
+        setError(
+          mensajeDeError(
+            err,
+            'No fue posible obtener los datos de tu Portfolio Personal.',
+          ),
+        );
       } finally {
         if (!signal?.aborted) {
           setCargando(false);

@@ -29,7 +29,7 @@ export const WeekSelector: React.FC<WeekSelectorProps> = ({
     const [anoStr, semanaStr] = e.target.value.split('-');
     const ano = Number.parseInt(anoStr, 10);
     const semanaIso = Number.parseInt(semanaStr, 10);
-    if (!isNaN(ano) && !isNaN(semanaIso)) {
+    if (!Number.isNaN(ano) && !Number.isNaN(semanaIso)) {
       onSeleccionar(ano, semanaIso);
     }
   };

@@ -32,6 +32,28 @@ import {
   POSICIONES_FILTRO,
 } from '../controllers/dto/filtro-jugadores.dto';
 
+const CAMPOS_OPCIONALES_ESTADISTICAS = [
+  'rating',
+  'tirosPorPartido',
+  'precisionPase',
+  'duelosAereosGanadosPorPartido',
+  'regatesCompletadosPorPartido',
+  'pasesClavePorPartido',
+  'xgPorPartido',
+  'xaPorPartido',
+  'grandesOcasionesPorPartido',
+  'entradasPorPartido',
+  'intercepccionesPorPartido',
+  'despejesPorPartido',
+  'pasesPorPartido',
+  'centrosPorPartido',
+  'atajadas',
+  'golesRecibidos',
+  'porcentajeAtajadas',
+  'erroresQueGeneraronGol',
+  'autogoles',
+] as const;
+
 @Injectable()
 export class JugadorService {
   constructor(
@@ -165,25 +187,12 @@ export class JugadorService {
       tarjetasRojas: e.tarjetasRojas,
     };
 
-    if (e.rating !== null && e.rating !== undefined) dto.rating = e.rating;
-    if (e.tirosPorPartido !== null && e.tirosPorPartido !== undefined) dto.tirosPorPartido = e.tirosPorPartido;
-    if (e.precisionPase !== null && e.precisionPase !== undefined) dto.precisionPase = e.precisionPase;
-    if (e.duelosAereosGanadosPorPartido !== null && e.duelosAereosGanadosPorPartido !== undefined) dto.duelosAereosGanadosPorPartido = e.duelosAereosGanadosPorPartido;
-    if (e.regatesCompletadosPorPartido !== null && e.regatesCompletadosPorPartido !== undefined) dto.regatesCompletadosPorPartido = e.regatesCompletadosPorPartido;
-    if (e.pasesClavePorPartido !== null && e.pasesClavePorPartido !== undefined) dto.pasesClavePorPartido = e.pasesClavePorPartido;
-    if (e.xgPorPartido !== null && e.xgPorPartido !== undefined) dto.xgPorPartido = e.xgPorPartido;
-    if (e.xaPorPartido !== null && e.xaPorPartido !== undefined) dto.xaPorPartido = e.xaPorPartido;
-    if (e.grandesOcasionesPorPartido !== null && e.grandesOcasionesPorPartido !== undefined) dto.grandesOcasionesPorPartido = e.grandesOcasionesPorPartido;
-    if (e.entradasPorPartido !== null && e.entradasPorPartido !== undefined) dto.entradasPorPartido = e.entradasPorPartido;
-    if (e.intercepccionesPorPartido !== null && e.intercepccionesPorPartido !== undefined) dto.intercepccionesPorPartido = e.intercepccionesPorPartido;
-    if (e.despejesPorPartido !== null && e.despejesPorPartido !== undefined) dto.despejesPorPartido = e.despejesPorPartido;
-    if (e.pasesPorPartido !== null && e.pasesPorPartido !== undefined) dto.pasesPorPartido = e.pasesPorPartido;
-    if (e.centrosPorPartido !== null && e.centrosPorPartido !== undefined) dto.centrosPorPartido = e.centrosPorPartido;
-    if (e.atajadas !== null && e.atajadas !== undefined) dto.atajadas = e.atajadas;
-    if (e.golesRecibidos !== null && e.golesRecibidos !== undefined) dto.golesRecibidos = e.golesRecibidos;
-    if (e.porcentajeAtajadas !== null && e.porcentajeAtajadas !== undefined) dto.porcentajeAtajadas = e.porcentajeAtajadas;
-    if (e.erroresQueGeneraronGol !== null && e.erroresQueGeneraronGol !== undefined) dto.erroresQueGeneraronGol = e.erroresQueGeneraronGol;
-    if (e.autogoles !== null && e.autogoles !== undefined) dto.autogoles = e.autogoles;
+    for (const campo of CAMPOS_OPCIONALES_ESTADISTICAS) {
+      const valor = e[campo];
+      if (valor !== null && valor !== undefined) {
+        dto[campo] = valor;
+      }
+    }
 
     return dto;
   }

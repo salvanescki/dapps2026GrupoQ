@@ -66,6 +66,14 @@ function ordenarLibroSecundario(ordenes: OrdenVenta[]): OrdenVenta[] {
     });
 }
 
+function buscarTokensDisponibles<
+  T extends { jugadorId: string; tokensDisponibles: number },
+>(ranking: T[] | null, jugadorId: string): number | null {
+  if (!Array.isArray(ranking)) return null;
+  const item = ranking.find((r) => r.jugadorId === jugadorId);
+  return item ? item.tokensDisponibles : null;
+}
+
 export function usePlayerMarketPanel(
   jugadorId: string | null,
   onMarketMutation?: () => void,
@@ -126,12 +134,9 @@ export function usePlayerMarketPanel(
           Array.isArray(resOrdenes) ? ordenarLibroSecundario(resOrdenes) : [],
         );
 
-        if (Array.isArray(resRanking)) {
-          const item = resRanking.find((r) => r.jugadorId === jugadorId);
-          setTokensDisponiblesRanking(item ? item.tokensDisponibles : null);
-        } else {
-          setTokensDisponiblesRanking(null);
-        }
+        setTokensDisponiblesRanking(
+          buscarTokensDisponibles(resRanking, jugadorId),
+        );
 
         if (resPortfolio) {
           setSaldoPortfolio(resPortfolio.saldoBilletera);

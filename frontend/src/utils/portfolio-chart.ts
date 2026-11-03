@@ -92,6 +92,31 @@ export function enriquecerPosicionesPortfolio(
   });
 }
 
+function compararCronologicamente(
+  a: TransaccionUsuario,
+  b: TransaccionUsuario,
+): number {
+  const diff = Date.parse(a.fecha) - Date.parse(b.fecha);
+  if (!Number.isNaN(diff) && diff !== 0) {
+    return diff;
+  }
+  return a.transaccionId.localeCompare(b.transaccionId);
+}
+
+function revertirTenencia(
+  tenencias: Map<string, number>,
+  tx: TransaccionUsuario,
+): Map<string, number> {
+  const previa = new Map(tenencias);
+  const actual = previa.get(tx.jugadorId) ?? 0;
+  const cantidadPrevia =
+    tx.tipoOperacion === 'COMPRA'
+      ? Math.max(0, actual - tx.cantidadTokens)
+      : actual + tx.cantidadTokens;
+  previa.set(tx.jugadorId, cantidadPrevia);
+  return previa;
+}
+
 export function reconstruirSeriePatrimonial(
   portfolio: PortfolioUsuario,
   transacciones: TransaccionUsuario[],
@@ -111,13 +136,7 @@ export function reconstruirSeriePatrimonial(
   }
 
   // 1. Clonar y ordenar ascendentemente por fecha, desempatando por transaccionId
-  const ordenadasAsc = [...transacciones].sort((a, b) => {
-    const diff = Date.parse(a.fecha) - Date.parse(b.fecha);
-    if (!Number.isNaN(diff) && diff !== 0) {
-      return diff;
-    }
-    return a.transaccionId.localeCompare(b.transaccionId);
-  });
+  const ordenadasAsc = [...transacciones].sort(compararCronologicamente);
 
   const n = ordenadasAsc.length;
   const saldosCentavos: number[] = new Array(n + 1).fill(0);
@@ -149,17 +168,7 @@ export function reconstruirSeriePatrimonial(
       tx.tipoOperacion === 'COMPRA' ? -montoCentavos : montoCentavos;
     saldosCentavos[k - 1] = saldosCentavos[k] - deltaEfectivo;
 
-    const tenenciaPrevia = new Map(snapshotsTenencias[k]);
-    const actualJugador = tenenciaPrevia.get(tx.jugadorId) ?? 0;
-    if (tx.tipoOperacion === 'COMPRA') {
-      tenenciaPrevia.set(
-        tx.jugadorId,
-        Math.max(0, actualJugador - tx.cantidadTokens),
-      );
-    } else {
-      tenenciaPrevia.set(tx.jugadorId, actualJugador + tx.cantidadTokens);
-    }
-    snapshotsTenencias[k - 1] = tenenciaPrevia;
+    snapshotsTenencias[k - 1] = revertirTenencia(snapshotsTenencias[k], tx);
 
     if (!precioInicialFallbackCentavos.has(tx.jugadorId)) {
       precioInicialFallbackCentavos.set(

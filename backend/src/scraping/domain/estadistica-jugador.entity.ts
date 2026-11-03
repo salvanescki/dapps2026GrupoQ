@@ -37,6 +37,46 @@ export interface EstadisticaJugadorProps {
   autogoles?: number | null;
 }
 
+const CAMPOS_ACTUALIZABLES = [
+  'partidosJugados',
+  'minutosJugados',
+  'goles',
+  'asistencias',
+  'tirosPorPartido',
+  'precisionPase',
+  'duelosAereosGanadosPorPartido',
+  'rating',
+  'tarjetasAmarillas',
+  'tarjetasRojas',
+  'regatesCompletadosPorPartido',
+  'pasesClavePorPartido',
+  'xgPorPartido',
+  'xaPorPartido',
+  'grandesOcasionesPorPartido',
+  'entradasPorPartido',
+  'intercepccionesPorPartido',
+  'despejesPorPartido',
+  'pasesPorPartido',
+  'centrosPorPartido',
+  'atajadas',
+  'golesRecibidos',
+  'porcentajeAtajadas',
+  'erroresQueGeneraronGol',
+  'autogoles',
+] as const;
+
+function estaVacio(valor: string | null | undefined): boolean {
+  return !valor || valor.trim().length === 0;
+}
+
+function excedeLongitud(valor: string | null | undefined, maximo: number): boolean {
+  return Boolean(valor) && (valor as string).length > maximo;
+}
+
+function fueraDeRango(valor: number | null, minimo: number, maximo: number): boolean {
+  return valor !== null && (valor < minimo || valor > maximo);
+}
+
 export class EstadisticaJugador {
   private readonly _id: string;
   private readonly _jugadorId: string;
@@ -115,94 +155,59 @@ export class EstadisticaJugador {
   }
 
   public validarInvariantes(): void {
-    if (!this._jugadorId || this._jugadorId.trim().length === 0) {
-      throw new ReglaDeNegocioException('El jugadorId es obligatorio.');
-    }
-
-    if (!this._temporada || this._temporada.trim().length === 0) {
-      throw new ReglaDeNegocioException('La temporada es obligatoria.');
-    }
-
-    if (!this._liga || this._liga.trim().length === 0) {
-      throw new ReglaDeNegocioException('La liga es obligatoria.');
-    }
-
-    if (this._competencia && this._competencia.length > 100) {
-      throw new ReglaDeNegocioException(
+    const reglas: Array<[boolean, string]> = [
+      [estaVacio(this._jugadorId), 'El jugadorId es obligatorio.'],
+      [estaVacio(this._temporada), 'La temporada es obligatoria.'],
+      [estaVacio(this._liga), 'La liga es obligatoria.'],
+      [
+        excedeLongitud(this._competencia, 100),
         'La competencia no puede superar los 100 caracteres.',
-      );
-    }
-
-    if (this._etapa && this._etapa.length > 50) {
-      throw new ReglaDeNegocioException(
+      ],
+      [
+        excedeLongitud(this._etapa, 50),
         'La etapa no puede superar los 50 caracteres.',
-      );
-    }
+      ],
+      [this._goles < 0, 'La cantidad de goles no puede ser negativa.'],
+      [this._asistencias < 0, 'La cantidad de asistencias no puede ser negativa.'],
+      [this._partidosJugados < 0, 'Los partidos jugados no pueden ser negativos.'],
+      [this._minutosJugados < 0, 'Los minutos jugados no pueden ser negativos.'],
+      [
+        this._tarjetasAmarillas < 0 || this._tarjetasRojas < 0,
+        'Las tarjetas no pueden ser negativas.',
+      ],
+      [
+        fueraDeRango(this._rating, 0, 10),
+        'El rating debe encontrarse en el rango [0, 10].',
+      ],
+      [
+        fueraDeRango(this._precisionPase, 0, 100),
+        'La precisión de pase debe encontrarse en el rango [0, 100].',
+      ],
+      [
+        fueraDeRango(this._porcentajeAtajadas, 0, 100),
+        'El porcentaje de atajadas debe encontrarse en el rango [0, 100].',
+      ],
+    ];
 
-    if (this._goles < 0) {
-      throw new ReglaDeNegocioException('La cantidad de goles no puede ser negativa.');
-    }
-
-    if (this._asistencias < 0) {
-      throw new ReglaDeNegocioException('La cantidad de asistencias no puede ser negativa.');
-    }
-
-    if (this._partidosJugados < 0) {
-      throw new ReglaDeNegocioException('Los partidos jugados no pueden ser negativos.');
-    }
-
-    if (this._minutosJugados < 0) {
-      throw new ReglaDeNegocioException('Los minutos jugados no pueden ser negativos.');
-    }
-
-    if (this._tarjetasAmarillas < 0 || this._tarjetasRojas < 0) {
-      throw new ReglaDeNegocioException('Las tarjetas no pueden ser negativas.');
-    }
-
-    if (this._rating !== null && (this._rating < 0 || this._rating > 10)) {
-      throw new ReglaDeNegocioException('El rating debe encontrarse en el rango [0, 10].');
-    }
-
-    if (this._precisionPase !== null && (this._precisionPase < 0 || this._precisionPase > 100)) {
-      throw new ReglaDeNegocioException('La precisión de pase debe encontrarse en el rango [0, 100].');
-    }
-
-    if (this._porcentajeAtajadas !== null && (this._porcentajeAtajadas < 0 || this._porcentajeAtajadas > 100)) {
-      throw new ReglaDeNegocioException('El porcentaje de atajadas debe encontrarse en el rango [0, 100].');
+    const violada = reglas.find(([incumple]) => incumple);
+    if (violada) {
+      throw new ReglaDeNegocioException(violada[1]);
     }
   }
 
   public actualizarEstadisticas(props: Partial<EstadisticaJugadorProps>): void {
-    if (props.partidosJugados !== undefined) this._partidosJugados = props.partidosJugados;
-    if (props.minutosJugados !== undefined) this._minutosJugados = props.minutosJugados;
-    if (props.goles !== undefined) this._goles = props.goles;
-    if (props.asistencias !== undefined) this._asistencias = props.asistencias;
-    if (props.tirosPorPartido !== undefined) this._tirosPorPartido = props.tirosPorPartido;
-    if (props.precisionPase !== undefined) this._precisionPase = props.precisionPase;
-    if (props.duelosAereosGanadosPorPartido !== undefined) this._duelosAereosGanadosPorPartido = props.duelosAereosGanadosPorPartido;
-    if (props.rating !== undefined) this._rating = props.rating;
-    if (props.tarjetasAmarillas !== undefined) this._tarjetasAmarillas = props.tarjetasAmarillas;
-    if (props.tarjetasRojas !== undefined) this._tarjetasRojas = props.tarjetasRojas;
-    if (props.regatesCompletadosPorPartido !== undefined) this._regatesCompletadosPorPartido = props.regatesCompletadosPorPartido;
-    if (props.pasesClavePorPartido !== undefined) this._pasesClavePorPartido = props.pasesClavePorPartido;
-    if (props.xgPorPartido !== undefined) this._xgPorPartido = props.xgPorPartido;
-    if (props.xaPorPartido !== undefined) this._xaPorPartido = props.xaPorPartido;
-    if (props.grandesOcasionesPorPartido !== undefined) this._grandesOcasionesPorPartido = props.grandesOcasionesPorPartido;
-    if (props.entradasPorPartido !== undefined) this._entradasPorPartido = props.entradasPorPartido;
-    if (props.intercepccionesPorPartido !== undefined) this._intercepccionesPorPartido = props.intercepccionesPorPartido;
-    if (props.despejesPorPartido !== undefined) this._despejesPorPartido = props.despejesPorPartido;
-    if (props.pasesPorPartido !== undefined) this._pasesPorPartido = props.pasesPorPartido;
-    if (props.centrosPorPartido !== undefined) this._centrosPorPartido = props.centrosPorPartido;
-    if (props.atajadas !== undefined) this._atajadas = props.atajadas;
-    if (props.golesRecibidos !== undefined) this._golesRecibidos = props.golesRecibidos;
-    if (props.porcentajeAtajadas !== undefined) this._porcentajeAtajadas = props.porcentajeAtajadas;
-    if (props.erroresQueGeneraronGol !== undefined) this._erroresQueGeneraronGol = props.erroresQueGeneraronGol;
-    if (props.autogoles !== undefined) this._autogoles = props.autogoles;
+    const destino = this as unknown as Record<string, unknown>;
+    for (const campo of CAMPOS_ACTUALIZABLES) {
+      const valor = props[campo];
+      if (valor !== undefined) {
+        destino[`_${campo}`] = valor;
+      }
+    }
     if (props.competencia !== undefined) {
-      this._competencia = props.competencia ? props.competencia.trim() : null;
+      this._competencia = props.competencia?.trim() || null;
     }
     if (props.etapa !== undefined) {
-      this._etapa = props.etapa ? props.etapa.trim() : null;
+      this._etapa = props.etapa?.trim() || null;
     }
     this._fechaActualizacion = props.fechaActualizacion || new Date();
 

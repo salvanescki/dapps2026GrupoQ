@@ -44,7 +44,7 @@ export const TeamOfTheWeekView: React.FC = () => {
     <WeekSelector
       semanas={semanasDisponibles}
       semanaActual={semanaSeleccionada}
-      onSeleccionar={(ano, semana) => void seleccionarSemana(ano, semana)}
+      onSeleccionar={seleccionarSemana}
     />
   );
 
