@@ -1747,6 +1747,226 @@
           }
         }
       ]
+    },
+    {
+      "name": "7. Equipo de la Semana",
+      "item": [
+        {
+          "name": "GET Equipo de la Semana Vigente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Alineación 4-3-3 con 11 miembros', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.formacion).to.eql('4-3-3');",
+                  "    pm.expect(data.miembros.length).to.eql(11);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trader1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Equipo de la Semana Vigente (Sin Auth - 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Semanas Históricas Disponibles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK y listado de semanas', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(Array.isArray(pm.response.json())).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trader1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week/weeks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week",
+                "weeks"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Equipo Histórico Específico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trader1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week/weeks/2026/44",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week",
+                "weeks",
+                "2026",
+                "44"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Generar Equipo Manualmente (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const res = pm.response.json();",
+                  "pm.test('Equipo generado con 11 futbolistas', () => {",
+                  "  pm.expect(res.equipo.miembros.length).to.eql(11);",
+                  "});",
+                  "if (res.equipo) {",
+                  "  pm.collectionVariables.set('team_of_the_week_ano', res.equipo.ano);",
+                  "  pm.collectionVariables.set('team_of_the_week_semana_iso', res.equipo.semanaIso);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week/generate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week",
+                "generate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Generar Equipo Manualmente (Trader - 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trader1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-of-the-week/generate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-of-the-week",
+                "generate"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [

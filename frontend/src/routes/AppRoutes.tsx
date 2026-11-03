@@ -5,6 +5,7 @@ import { HomeView } from '../views/HomeView';
 import { PlayersCatalogView } from '../views/PlayersCatalogView';
 import { MarketplaceView } from '../views/MarketplaceView';
 import { PortfolioView } from '../views/PortfolioView';
+import { TeamOfTheWeekView } from '../views/TeamOfTheWeekView';
 import { AdminGovernanceView } from '../views/AdminGovernanceView';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AdminRoute } from './AdminRoute';
@@ -58,6 +59,22 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <PortfolioView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/team-of-the-week"
+        element={
+          <ProtectedRoute>
+            <TeamOfTheWeekView />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/team-of-the-week/:year/:week"
+        element={
+          <ProtectedRoute>
+            <TeamOfTheWeekView />
           </ProtectedRoute>
         }
       />
