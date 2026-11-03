@@ -135,7 +135,7 @@ describe('QuotesService (Integration with Testcontainers)', () => {
       jugadorId,
       10,
     );
-    expect(historial.length).toBe(2);
+    expect(historial).toHaveLength(2);
     expect(historial[0].id).toBe(c2Id);
     expect(historial[0].valor).toBe(1.45);
     expect(historial[0].metricas).toEqual({ keyPasses: 0.8 });
@@ -199,7 +199,7 @@ describe('QuotesService (Integration with Testcontainers)', () => {
     const duracionSinCache = Date.now() - t0;
 
     expect(duracionSinCache).toBeLessThan(200); // Latencia < 200 ms
-    expect(rankingSinCache.length).toBe(2);
+    expect(rankingSinCache).toHaveLength(2);
 
     // Lautaro primero (1.85 > 1.50)
     expect(rankingSinCache[0].posicionRanking).toBe(1);
@@ -225,7 +225,7 @@ describe('QuotesService (Integration with Testcontainers)', () => {
 
     // Filtrar por posición Delantero
     const rankingDelanteros = await quotesService.obtenerRanking(10, 'Delantero');
-    expect(rankingDelanteros.length).toBe(1);
+    expect(rankingDelanteros).toHaveLength(1);
     expect(rankingDelanteros[0].nombre).toBe('Lautaro Martinez');
   });
 

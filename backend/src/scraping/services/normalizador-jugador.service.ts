@@ -115,12 +115,12 @@ export class NormalizadorJugadorService {
     if (!texto) return '';
     return texto
       .toLowerCase()
-      .replace(/ø/g, 'o')
-      .replace(/æ/g, 'ae')
-      .replace(/œ/g, 'oe')
-      .replace(/ß/g, 'ss')
-      .replace(/ð/g, 'd')
-      .replace(/ł/g, 'l')
+      .replaceAll('ø', 'o')
+      .replaceAll('æ', 'ae')
+      .replaceAll('œ', 'oe')
+      .replaceAll('ß', 'ss')
+      .replaceAll('ð', 'd')
+      .replaceAll('ł', 'l')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9\s]/g, ' ')
@@ -187,7 +187,7 @@ export class NormalizadorJugadorService {
 
     // 3. Coincidencia con club verificado (apellidos o hipocorísticos comunes)
     const partesWS = normWS.split(' ').filter((p) => p.length > 0);
-    const apellidoWS = partesWS[partesWS.length - 1];
+    const apellidoWS = partesWS.at(-1);
 
     if (apellidoWS && apellidoWS.length >= 3) {
       const candidatosClub = jugadoresLocales.filter((j) => {
@@ -200,7 +200,7 @@ export class NormalizadorJugadorService {
 
         const normLocal = this.normalizarTexto(j.nombre);
         const partesLocal = normLocal.split(' ').filter((p) => p.length > 0);
-        const apellidoLocal = partesLocal[partesLocal.length - 1];
+        const apellidoLocal = partesLocal.at(-1);
 
         // Mismo apellido (o apellido contenido en apellido compuesto: ej "thuram" en "thuram ulien")
         if (
@@ -234,7 +234,7 @@ export class NormalizadorJugadorService {
       for (const j of jugadoresLocales) {
         const normLocal = this.normalizarTexto(j.nombre);
         const partesLocal = normLocal.split(' ').filter((p) => p.length > 0);
-        const apellidoLocal = partesLocal[partesLocal.length - 1];
+        const apellidoLocal = partesLocal.at(-1);
 
         if (apellidoLocal === apellidoWS) {
           if (equipoWhoScored && j.equipo?.nombre) {

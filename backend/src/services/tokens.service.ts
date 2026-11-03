@@ -80,7 +80,7 @@ export class TokensService {
     }
 
     const jugador = await this.jugadorRepository.buscarPorId(jugadorId);
-    if (!jugador || !jugador.activo) {
+    if (!jugador?.activo) {
       this.logger.warn(
         `El jugador ${jugadorId} no existe o no se encuentra activo. No se emitirán tokens.`,
       );

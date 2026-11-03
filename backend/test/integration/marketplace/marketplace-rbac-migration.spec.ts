@@ -49,7 +49,7 @@ describe('Marketplace RBAC, Migración e Inmutabilidad (Integration with Testcon
           SELECT table_name FROM information_schema.tables 
           WHERE table_name IN ('cotizaciones', 'transacciones', 'ordenes', 'balances_tokens', 'configuraciones_mercado')
         `);
-        expect(tablasDown.length).toBe(0);
+        expect(tablasDown).toHaveLength(0);
 
         // Ejecutar up nuevamente
         await migration.up(queryRunner);
@@ -59,13 +59,13 @@ describe('Marketplace RBAC, Migración e Inmutabilidad (Integration with Testcon
           SELECT table_name FROM information_schema.tables 
           WHERE table_name IN ('cotizaciones', 'transacciones', 'ordenes', 'balances_tokens', 'configuraciones_mercado')
         `);
-        expect(tablasUp.length).toBe(5);
+        expect(tablasUp).toHaveLength(5);
 
         // Validar que la semilla singleton id = 1 existe
         const config = await queryRunner.query(
           `SELECT * FROM configuraciones_mercado WHERE id = 1`,
         );
-        expect(config.length).toBe(1);
+        expect(config).toHaveLength(1);
         expect(config[0].estrategia_activa_id).toBe('GLOBAL');
       } finally {
         await queryRunner.release();

@@ -35,5 +35,5 @@ export async function bootstrapScraper(exitProcess = true): Promise<number> {
 }
 
 if (require.main === module) {
-  bootstrapScraper(true);
+  void bootstrapScraper(true);
 }

@@ -64,9 +64,9 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
   ...rest
 }) => {
   const uniqueId = useId();
-  const sanitizedId = uniqueId.replace(/:/g, '');
+  const sanitizedId = uniqueId.replaceAll(':', '');
   const chartId = `chart-${id || sanitizedId}`;
-  const sinResizeObserver = typeof globalThis.ResizeObserver === 'undefined';
+  const sinResizeObserver = globalThis.ResizeObserver === undefined;
 
   return (
     <ChartContext.Provider value={{ config }}>

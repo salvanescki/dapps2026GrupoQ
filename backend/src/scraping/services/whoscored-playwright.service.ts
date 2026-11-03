@@ -273,7 +273,7 @@ export class WhoScoredPlaywrightService
   }
 
   public async obtenerNavegador(): Promise<Browser> {
-    if (!this.browser || !this.browser.isConnected()) {
+    if (!this.browser?.isConnected()) {
       this.logger.log('Inicializando instancia Chromium con plugin Stealth...');
       if (!WhoScoredPlaywrightService.stealthRegistrado) {
         chromium.use(stealthPlugin());

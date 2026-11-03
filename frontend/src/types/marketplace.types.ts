@@ -1,7 +1,7 @@
 import type { PosicionJugador } from './player.types';
 
 export type EstrategiaId = 'GLOBAL' | 'POSICIONAL';
-export type EstrategiaVersion = 'GLOBAL_v1' | 'POSICIONAL_v1' | string;
+export type EstrategiaVersion = string;
 export type PosicionFiltroRanking = Exclude<PosicionJugador, 'No Clasificado'>;
 export type TipoMercado = 'PRIMARIO' | 'SECUNDARIO';
 export type TipoOperacionUsuario = 'COMPRA' | 'VENTA';

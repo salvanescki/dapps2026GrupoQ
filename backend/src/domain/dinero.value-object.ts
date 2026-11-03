@@ -19,7 +19,7 @@ export class Dinero {
   public static desdeMonto(monto: number | string): Dinero {
     const num = typeof monto === 'string' ? Number(monto) : monto;
 
-    if (num === null || num === undefined || isNaN(num) || !isFinite(num)) {
+    if (num === null || num === undefined || Number.isNaN(num) || !Number.isFinite(num)) {
       throw new ReglaDeNegocioException('El monto monetario no es válido.');
     }
 

@@ -96,7 +96,8 @@ export const PortfolioBalanceLinearChart: React.FC<
                   const raw = payload[0]?.payload as
                     | Record<string, unknown>
                     | undefined;
-                  return String(raw?.fechaFormateada ?? '');
+                  const fecha = raw?.fechaFormateada;
+                  return typeof fecha === 'string' ? fecha : '';
                 }}
                 valueFormatter={(val) => `${formatearCreditos(val)} cr.`}
                 renderExtraFooter={(raw) => (

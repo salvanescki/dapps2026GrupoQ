@@ -245,7 +245,7 @@ describe('Quotes Admin & Strategy Governance (Integration with Testcontainers)',
     const cotizaciones = await dataSource.query(`
       SELECT * FROM cotizaciones WHERE jugador_id = '${jugadorId}' ORDER BY fecha_cotizacion DESC LIMIT 1
     `);
-    expect(cotizaciones.length).toBe(1);
+    expect(cotizaciones).toHaveLength(1);
     expect(cotizaciones[0].estrategia_id).toBe('POSICIONAL');
     expect(cotizaciones[0].estrategia_version).toBe('POSICIONAL_v1');
     expect(Number(cotizaciones[0].valor)).toBeGreaterThan(1.0);
