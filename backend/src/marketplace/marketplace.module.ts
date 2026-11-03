@@ -30,6 +30,14 @@ import { OrdersController } from '../controllers/orders.controller';
 import { UsersController } from '../controllers/users.controller';
 import { AdminTransactionsController } from '../controllers/admin-transactions.controller';
 
+import { EquipoSemanalOrmEntity } from '../data-access/equipo-semanal.orm-entity';
+import { MiembroEquipoSemanalOrmEntity } from '../data-access/miembro-equipo-semanal.orm-entity';
+import { EquipoSemanalTypeOrmRepository } from '../data-access/equipo-semanal.typeorm-repository';
+import { EQUIPO_SEMANAL_REPOSITORY } from '../domain/equipo-semanal.repository.interface';
+import { EquipoSemanalService } from '../services/equipo-semanal.service';
+import { TeamOfTheWeekSchedulerService } from '../services/scheduler/team-of-the-week-scheduler.service';
+import { TeamOfTheWeekController } from '../controllers/team-of-the-week.controller';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -38,6 +46,8 @@ import { AdminTransactionsController } from '../controllers/admin-transactions.c
       CotizacionOrmEntity,
       OrdenOrmEntity,
       TransaccionOrmEntity,
+      EquipoSemanalOrmEntity,
+      MiembroEquipoSemanalOrmEntity,
     ]),
     AuthModule,
     forwardRef(() => PlayersModule),
@@ -64,18 +74,25 @@ import { AdminTransactionsController } from '../controllers/admin-transactions.c
       provide: TRANSACCION_REPOSITORY,
       useClass: TransaccionTypeOrmRepository,
     },
+    {
+      provide: EQUIPO_SEMANAL_REPOSITORY,
+      useClass: EquipoSemanalTypeOrmRepository,
+    },
     MarketplaceCacheService,
     TokensService,
     AdminBootstrapService,
     QuotesService,
     QuotesSchedulerService,
     OmsService,
+    EquipoSemanalService,
+    TeamOfTheWeekSchedulerService,
   ],
   controllers: [
     QuotesController,
     OrdersController,
     UsersController,
     AdminTransactionsController,
+    TeamOfTheWeekController,
   ],
   exports: [
     CONFIGURACION_MERCADO_REPOSITORY,
@@ -83,12 +100,14 @@ import { AdminTransactionsController } from '../controllers/admin-transactions.c
     COTIZACION_REPOSITORY,
     ORDEN_REPOSITORY,
     TRANSACCION_REPOSITORY,
+    EQUIPO_SEMANAL_REPOSITORY,
     MarketplaceCacheService,
     TokensService,
     QuotesService,
     QuotesSchedulerService,
     OmsService,
+    EquipoSemanalService,
+    TeamOfTheWeekSchedulerService,
   ],
 })
 export class MarketplaceModule {}
-
