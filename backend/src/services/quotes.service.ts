@@ -37,7 +37,7 @@ import {
   EstrategiaDisponibleDto,
 } from '../controllers/dto/configuracion-estrategia.dto';
 import { ResumenRecalculoDto } from '../controllers/dto/recalculo-cotizaciones.dto';
-import { EstrategiaId, EstrategiaVersion } from '../domain/configuracion-mercado.entity';
+import { EstrategiaId } from '../domain/configuracion-mercado.entity';
 
 @Injectable()
 export class QuotesService {

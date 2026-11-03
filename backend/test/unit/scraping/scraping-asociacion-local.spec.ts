@@ -57,9 +57,9 @@ describe('ScrapingService - Asociación Local y Umbral >= 85% (Bloque 6)', () =>
 
     const resultado = service.asociarJugadoresLocales([raw], [jugadorLocal], 85);
 
-    expect(resultado.asociados.length).toBe(1);
+    expect(resultado.asociados).toHaveLength(1);
     expect(resultado.asociados[0].jugador.id).toBe('j-1');
-    expect(resultado.enriquecidos.length).toBe(0); // Ya tenía whoScoredPlayerId
+    expect(resultado.enriquecidos).toHaveLength(0); // Ya tenía whoScoredPlayerId
     expect(resultado.tasaAsociacion).toBe(100);
     expect(resultado.valida).toBe(true);
   });
@@ -83,9 +83,9 @@ describe('ScrapingService - Asociación Local y Umbral >= 85% (Bloque 6)', () =>
 
     const resultado = service.asociarJugadoresLocales([raw], [jugadorLocal], 85);
 
-    expect(resultado.asociados.length).toBe(1);
+    expect(resultado.asociados).toHaveLength(1);
     expect(resultado.asociados[0].jugador.id).toBe('j-2');
-    expect(resultado.enriquecidos.length).toBe(1);
+    expect(resultado.enriquecidos).toHaveLength(1);
     expect(resultado.enriquecidos[0].whoScoredPlayerId).toBe('80767');
   });
 
@@ -118,8 +118,8 @@ describe('ScrapingService - Asociación Local y Umbral >= 85% (Bloque 6)', () =>
       85,
     );
 
-    expect(resultado.asociados.length).toBe(0);
-    expect(resultado.descartados.length).toBe(1);
+    expect(resultado.asociados).toHaveLength(0);
+    expect(resultado.descartados).toHaveLength(1);
     expect(resultado.descartados[0].motivo).toContain('ambigüedad');
   });
 
@@ -158,7 +158,7 @@ describe('ScrapingService - Asociación Local y Umbral >= 85% (Bloque 6)', () =>
     };
 
     const resultado = service.asociarJugadoresLocales([raw], [jugadorLocal], 85);
-    expect(resultado.asociados.length).toBe(1);
+    expect(resultado.asociados).toHaveLength(1);
     expect(resultado.asociados[0].jugador.id).toBe('j-kobbie');
   });
 

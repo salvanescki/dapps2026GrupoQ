@@ -1,7 +1,6 @@
 import type {
   FiltroJugadoresParams,
   RespuestaCatalogoJugadores,
-  Jugador,
   JugadorDetalle,
   OpcionesFiltroRespuesta,
 } from '../types/player.types';

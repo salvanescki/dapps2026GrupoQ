@@ -41,7 +41,7 @@ describe('Scraping - Auditoría, Operación y Contratos HTTP (Bloque 8)', () => 
         timestamp: new Date(),
       });
 
-      expect(ejecucion.detalle.length).toBe(1);
+      expect(ejecucion.detalle).toHaveLength(1);
       const metricaPL = ejecucion.detalle[0] as any;
       expect(metricaPL.liga).toBe('PL');
       expect(metricaPL.descubiertos).toBe(420);
@@ -59,7 +59,7 @@ describe('Scraping - Auditoría, Operación y Contratos HTTP (Bloque 8)', () => 
       });
 
       expect(ejecucion.errores).toBe(1);
-      expect(ejecucion.detalle.length).toBe(1);
+      expect(ejecucion.detalle).toHaveLength(1);
     });
   });
 

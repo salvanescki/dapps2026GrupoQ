@@ -39,12 +39,12 @@ describe('ScrapingService - Agregación, Deduplicación y Cobertura (Bloque 5)',
 
       const { deduplicados, incidencias } = service.deduplicarYConsolidarJugadores(records);
 
-      expect(deduplicados.length).toBe(1);
+      expect(deduplicados).toHaveLength(1);
       expect(deduplicados[0].whoScoredId).toBe('5001');
       expect(deduplicados[0].equipoNombre).toBe('Arsenal'); // Mayor cantidad de minutos (750 > 200)
       expect(deduplicados[0].minutosJugados).toBe(750);
       expect(deduplicados[0].goles).toBe(4);
-      expect(incidencias.length).toBe(0);
+      expect(incidencias).toHaveLength(0);
     });
 
     it('debe excluir preventivamente y registrar incidencia ante jugador transferido ambiguo con minutos idénticos', () => {
@@ -70,8 +70,8 @@ describe('ScrapingService - Agregación, Deduplicación y Cobertura (Bloque 5)',
       const { deduplicados, incidencias } =
         service.deduplicarYConsolidarJugadores(recordsAmbiguos);
 
-      expect(deduplicados.length).toBe(0); // Excluido preventivamente
-      expect(incidencias.length).toBe(1);
+      expect(deduplicados).toHaveLength(0); // Excluido preventivamente
+      expect(incidencias).toHaveLength(1);
       expect(incidencias[0].tipo).toBe('TRANSFERENCIA_AMBIGUA_EXCLUIDA');
       expect(incidencias[0].equipoId).toBe('5002');
     });

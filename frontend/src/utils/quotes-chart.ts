@@ -139,7 +139,7 @@ export function prepararSerieCotizaciones(
     };
   });
 
-  const cotizacionVigente = ordenadasAsc[ordenadasAsc.length - 1] ?? null;
+  const cotizacionVigente = ordenadasAsc.at(-1) ?? null;
   const dominioY = calcularDominioCotizacion(puntos.map((p) => p.valor));
 
   return {

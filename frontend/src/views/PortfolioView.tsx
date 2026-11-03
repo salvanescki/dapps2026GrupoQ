@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { AppLayout } from '../components/layout/AppLayout';
-import { Navbar } from '../components/layout/Navbar';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';

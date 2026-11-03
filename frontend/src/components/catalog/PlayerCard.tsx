@@ -28,7 +28,15 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onSelect }) => {
     <article
       className="player-card"
       data-testid={`player-card-${player.id}`}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
       onClick={() => onSelect?.(player.id)}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onSelect(player.id);
+        }
+      }}
       style={onSelect ? { cursor: 'pointer' } : undefined}
       aria-label={`Ver detalle de ${player.nombre}`}
     >

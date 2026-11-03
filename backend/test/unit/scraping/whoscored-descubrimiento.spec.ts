@@ -62,7 +62,7 @@ describe('WhoScoredPlaywrightService - Descubrimiento de Competición y Equipos 
     expect(estructura.stageId).toBe(22345);
     expect(estructura.competencia).toBe('Premier League');
     expect(estructura.etapa).toBe('Regular Season');
-    expect(estructura.equipos.length).toBe(4);
+    expect(estructura.equipos).toHaveLength(4);
     expect(estructura.equipos[0]).toEqual({
       whoScoredTeamId: '13',
       nombre: 'Arsenal',
@@ -100,7 +100,7 @@ describe('WhoScoredPlaywrightService - Descubrimiento de Competición y Equipos 
       const estructura = await service.descubrirEstructuraCompeticion(config);
       expect(estructura.tournamentId).toBe(config.tournamentId);
       expect(estructura.competencia).toBe(config.nombreTorneo);
-      expect(estructura.equipos.length).toBe(2);
+      expect(estructura.equipos).toHaveLength(2);
       expect(estructura.equipos[0].whoScoredTeamId).toBe('101');
     }
   });

@@ -7,8 +7,8 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
-import { DataSource, EntityManager, In } from 'typeorm';
-import { Orden, EstadoOrden } from '../domain/orden.entity';
+import { DataSource, EntityManager } from 'typeorm';
+import { Orden } from '../domain/orden.entity';
 import { IOrdenRepository, ORDEN_REPOSITORY } from '../domain/orden.repository.interface';
 import { Transaccion } from '../domain/transaccion.entity';
 import { ITransaccionRepository, TRANSACCION_REPOSITORY } from '../domain/transaccion.repository.interface';
@@ -19,7 +19,6 @@ import { IJugadorRepository, I_JUGADOR_REPOSITORY } from '../domain/jugador.repo
 import { UsuarioRepository, USUARIO_REPOSITORY } from '../domain/usuario.repository.interface';
 import { Dinero } from '../domain/dinero.value-object';
 import { MarketplaceCacheService } from './marketplace-cache.service';
-import { ReglaDeNegocioException } from '../domain/exceptions/regla-de-negocio.exception';
 import { CrearOrdenCompraDto, ResultadoCompraDto } from '../controllers/dto/orden-compra.dto';
 import { UsuarioOrmEntity } from '../data-access/usuario.orm-entity';
 import { BalanceTokenOrmEntity } from '../data-access/balance-token.orm-entity';
@@ -288,7 +287,7 @@ export class OmsService {
 
       // Validar jugador activo
       const jugadorOrm = await manager.findOne(JugadorOrmEntity, { where: { id: jugadorId } });
-      if (!jugadorOrm || !jugadorOrm.activo) {
+      if (!jugadorOrm?.activo) {
         throw new BadRequestException('El futbolista no se encuentra activo para transacciones.');
       }
 

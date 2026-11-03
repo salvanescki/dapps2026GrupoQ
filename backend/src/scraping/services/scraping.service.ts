@@ -29,10 +29,7 @@ import {
 } from '../../domain/jugador.repository.interface';
 import { Jugador, CriterioFiltroJugador } from '../../domain/jugador.entity';
 import { EstadisticaJugador } from '../domain/estadistica-jugador.entity';
-import {
-  EjecucionScraping,
-  ErrorScrapingDetalle,
-} from '../domain/ejecucion-scraping.entity';
+import { EjecucionScraping } from '../domain/ejecucion-scraping.entity';
 import { getScrapingConfig, ScrapingConfig } from '../../config/scraping.config';
 
 export interface ResultadoAsociacionLocal {
@@ -109,7 +106,7 @@ export class ScrapingService implements OnModuleInit {
     estadisticas: EstadisticaJugador[],
     jugadoresEnriquecidos: Jugador[] = [],
   ): Promise<void> {
-    if (this.dataSource && this.dataSource.isInitialized) {
+    if (this.dataSource?.isInitialized) {
       await this.dataSource.transaction(async (manager: EntityManager) => {
         if (
           jugadoresEnriquecidos.length > 0 &&

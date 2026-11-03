@@ -75,7 +75,7 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
     expect(saka?.duelosAereosGanadosPorPartido).toBe(0.7);
     expect(saka?.tarjetasAmarillas).toBe(2);
     expect(saka?.tarjetasRojas).toBe(0);
-    expect(resultado.incidencias.length).toBe(0);
+    expect(resultado.incidencias).toHaveLength(0);
   });
 
   it('debe enriquecer estadísticas del jugador fusionando feeds complementarios (offensive, defensive, passing, xg, saves)', async () => {
@@ -198,7 +198,7 @@ describe('WhoScoredPlaywrightService - Extracción por Equipo y Resiliencia (Blo
 
     const dibu = resultado.jugadores.get('102248');
     expect(dibu?.atajadas).toBe(4);
-    expect(resultado.incidencias.length).toBe(0);
+    expect(resultado.incidencias).toHaveLength(0);
   });
 
   it('debe conmutar a fallback DOM observable con log WARN si el feed resulta incompatible', async () => {

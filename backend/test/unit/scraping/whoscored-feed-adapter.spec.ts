@@ -37,7 +37,7 @@ describe('WhoScoredFeedAdapter - Validación de Esquema y Sesión Stealth (Bloqu
       };
 
       const items = validarWhoScoredFeedPayload(payload);
-      expect(items.length).toBe(2);
+      expect(items).toHaveLength(2);
       expect(items[0].name).toBe('Bukayo Saka');
       expect(items[0].playerId).toBe(365409);
       expect(items[1].name).toBe('Mohamed Salah');
@@ -58,7 +58,7 @@ describe('WhoScoredFeedAdapter - Validación de Esquema y Sesión Stealth (Bloqu
       ];
 
       const items = validarWhoScoredFeedPayload(itemsRaw);
-      expect(items.length).toBe(1);
+      expect(items).toHaveLength(1);
       expect(items[0].name).toBe('Declan Rice');
     });
 
@@ -165,7 +165,7 @@ describe('WhoScoredFeedAdapter - Validación de Esquema y Sesión Stealth (Bloqu
         'https://www.whoscored.com/Regions/252/Tournaments/2/Seasons/12345/Stages/22345',
       );
 
-      expect(items.length).toBe(1);
+      expect(items).toHaveLength(1);
       expect(items[0].playerId).toBe(13);
       expect(items[0].name).toBe('Martin Odegaard');
     });

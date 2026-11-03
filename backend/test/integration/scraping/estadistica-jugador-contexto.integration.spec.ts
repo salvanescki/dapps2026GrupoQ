@@ -73,7 +73,7 @@ describe('EstadisticaJugador Contexto & Migración (Integration Test)', () => {
       WHERE indexname = 'uq_estadistica_jugador_contexto';
     `);
 
-    expect(result.length).toBe(1);
+    expect(result).toHaveLength(1);
     expect(result[0].indexdef).toContain('COALESCE(fuente');
     expect(result[0].indexdef).toContain('COALESCE(competencia');
     expect(result[0].indexdef).toContain('COALESCE(etapa');
@@ -149,7 +149,7 @@ describe('EstadisticaJugador Contexto & Migración (Integration Test)', () => {
     const conteoFinal = await dataSource.query(
       `SELECT COUNT(*), goles, minutos_jugados FROM estadisticas_jugadores WHERE jugador_id = '${testJugadorId}' GROUP BY goles, minutos_jugados;`,
     );
-    expect(conteoFinal.length).toBe(1);
+    expect(conteoFinal).toHaveLength(1);
     expect(conteoFinal[0].goles).toBe(9);
     expect(conteoFinal[0].minutos_jugados).toBe(990);
   });

@@ -122,7 +122,7 @@ describe('ScrapingService - Publicación Segura e Idempotente por Liga (Integrat
     expect(jugadorActualizado?.whoScoredPlayerId).toBe('10884');
 
     const statsGuardadas = await estadisticaRepo.buscarPorJugador(testJugadorPLId);
-    expect(statsGuardadas.length).toBe(1);
+    expect(statsGuardadas).toHaveLength(1);
     expect(statsGuardadas[0].goles).toBe(8);
   });
 
@@ -196,7 +196,7 @@ describe('ScrapingService - Publicación Segura e Idempotente por Liga (Integrat
 
     // 3. Verificar aislamiento: PL se mantiene persistida, y LL fue revertida completamente
     const statsPL = await estadisticaRepo.buscarPorJugador(testJugadorPLId);
-    expect(statsPL.length).toBe(1);
+    expect(statsPL).toHaveLength(1);
 
     const jugadorLLSinCambios = await jugadorRepo.buscarPorId(testJugadorLLId);
     expect(jugadorLLSinCambios?.whoScoredPlayerId).toBeNull(); // Rollback exitoso

@@ -202,7 +202,7 @@ export class MetricasJugadorParaCotizacion {
   }
 
   private static normalizarYClampear(valor: number | null, max: number): number {
-    if (valor === null || valor === undefined || isNaN(valor) || valor <= 0) {
+    if (valor === null || valor === undefined || Number.isNaN(valor) || valor <= 0) {
       return 0.0;
     }
     const norm = valor / max;
@@ -210,7 +210,7 @@ export class MetricasJugadorParaCotizacion {
   }
 
   private static clamp(valor: number): number {
-    if (isNaN(valor) || valor <= 0) return 0.0;
+    if (Number.isNaN(valor) || valor <= 0) return 0.0;
     if (valor >= 1.0) return 1.0;
     return Math.round((valor + Number.EPSILON) * 10000) / 10000;
   }

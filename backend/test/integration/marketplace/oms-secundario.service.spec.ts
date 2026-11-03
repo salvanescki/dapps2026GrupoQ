@@ -175,7 +175,7 @@ describe('OMS Mercado Secundario (Integration with Testcontainers)', () => {
       estado: 'ACTIVA',
     });
 
-    expect(ofertas.length).toBe(2);
+    expect(ofertas).toHaveLength(2);
     // La más barata (2.0) debe ir primero
     expect(ofertas[0].precioUnitario).toBe(2.0);
     expect(ofertas[0].cantidadRestante).toBe(3);
@@ -319,8 +319,8 @@ describe('OMS Mercado Secundario (Integration with Testcontainers)', () => {
     const fallidos = resultados.filter((r) => r instanceof Error);
 
     // Con 6 tokens y pedidos de 2: exactamente 3 compras exitosas y 1 fallida
-    expect(exitosos.length).toBe(3);
-    expect(fallidos.length).toBe(1);
+    expect(exitosos).toHaveLength(3);
+    expect(fallidos).toHaveLength(1);
 
     // Verificar en BD que la orden quedó con 0 restantes y COMPLETADA
     const ordenDb = await dataSource.query(`SELECT estado, cantidad_restante FROM ordenes WHERE id = '${oferta.ordenId}'`);
