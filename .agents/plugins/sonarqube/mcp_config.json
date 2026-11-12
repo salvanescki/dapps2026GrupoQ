@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sonarqube": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd); exec \"$ROOT/.agents/plugins/sonarqube/scripts/run-sonarqube-mcp.sh\""
+      ]
+    }
+  }
+}
+
