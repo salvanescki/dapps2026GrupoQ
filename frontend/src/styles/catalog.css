@@ -237,6 +237,10 @@
 }
 
 .player-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
@@ -449,7 +453,28 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  animation: modalFadeIn 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .filter-modal-content {
+    animation: modalFadeIn 200ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-modal-content,
+  .player-card,
+  .player-card:hover {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
+
+fieldset.ranking-position-tabs {
+  border: none;
+  margin: 0;
+  padding: 0;
 }
 
 @keyframes modalFadeIn {

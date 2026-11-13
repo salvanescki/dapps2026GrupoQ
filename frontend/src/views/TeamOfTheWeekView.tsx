@@ -67,7 +67,7 @@ export const TeamOfTheWeekView: React.FC = () => {
                 data-testid="btn-generate-team"
                 cargando={generandoManual}
                 textoCarga="Generando..."
-                onClick={() => void dispararGeneracionManual()}
+                onClick={dispararGeneracionManual}
               >
                 Generar Equipo de la Semana Actual
               </Button>
@@ -97,7 +97,7 @@ export const TeamOfTheWeekView: React.FC = () => {
               type="button"
               variant="secondary"
               data-testid="retry-btn"
-              onClick={() => void recargar()}
+              onClick={recargar}
             >
               Reintentar
             </Button>

@@ -40,8 +40,7 @@ export class Orden {
     this._tipo = props.tipo;
     this._tipoMercado = props.tipoMercado;
     this._cantidad = props.cantidad;
-    this._cantidadRestante =
-      props.cantidadRestante !== undefined ? props.cantidadRestante : props.cantidad;
+    this._cantidadRestante = props.cantidadRestante ?? props.cantidad;
 
     if (props.precioUnitario instanceof Dinero) {
       this._precioUnitario = props.precioUnitario;

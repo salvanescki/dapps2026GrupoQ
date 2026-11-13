@@ -30,9 +30,8 @@ export const RankingFiltersBar: React.FC<RankingFiltersBarProps> = ({
       className="ranking-filters-bar"
       aria-label="Filtros del ranking de cotizaciones"
     >
-      <div
+      <fieldset
         className="ranking-position-tabs"
-        role="group"
         aria-label="Filtrar por demarcación táctica"
       >
         {DEMARCACIONES.map((demarcacion) => {
@@ -49,7 +48,7 @@ export const RankingFiltersBar: React.FC<RankingFiltersBarProps> = ({
             </button>
           );
         })}
-      </div>
+      </fieldset>
 
       <Button
         type="button"

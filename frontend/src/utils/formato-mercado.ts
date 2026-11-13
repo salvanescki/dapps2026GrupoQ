@@ -1,5 +1,20 @@
 import type { VarianteTendencia } from '../types/marketplace.types';
 
+function formatearMilesConPunto(parteEntera: string): string {
+  const longitud = parteEntera.length;
+  if (longitud <= 3) {
+    return parteEntera;
+  }
+  const bloques: string[] = [];
+  let fin = longitud;
+  while (fin > 0) {
+    const inicio = Math.max(0, fin - 3);
+    bloques.unshift(parteEntera.slice(inicio, fin));
+    fin = inicio;
+  }
+  return bloques.join('.');
+}
+
 export function formatearCreditos(valor: number): string {
   if (!Number.isFinite(valor)) {
     return '0,00';
@@ -8,7 +23,7 @@ export function formatearCreditos(valor: number): string {
   const signo = centavos < 0 ? '-' : '';
   const absoluto = (Math.abs(centavos) / 100).toFixed(2);
   const [parteEntera, parteDecimal] = absoluto.split('.');
-  const enteraConMiles = parteEntera.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const enteraConMiles = formatearMilesConPunto(parteEntera);
   return `${signo}${enteraConMiles},${parteDecimal}`;
 }
 
