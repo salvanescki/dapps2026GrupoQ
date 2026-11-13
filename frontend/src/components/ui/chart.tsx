@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useId } from 'react';
+import React, { createContext, useContext, useId, useMemo } from 'react';
 import * as RechartsPrimitive from 'recharts';
 import '../../styles/chart.css';
 
@@ -67,9 +67,10 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
   const sanitizedId = uniqueId.replaceAll(':', '');
   const chartId = `chart-${id || sanitizedId}`;
   const sinResizeObserver = globalThis.ResizeObserver === undefined;
+  const contextValue = useMemo(() => ({ config }), [config]);
 
   return (
-    <ChartContext.Provider value={{ config }}>
+    <ChartContext.Provider value={contextValue}>
       <div
         data-chart={chartId}
         className={`shadcn-chart-container ${className}`.trim()}

@@ -34,15 +34,20 @@ export class CotizacionTypeOrmRepository implements ICotizacionRepository {
     const ormEntities = cotizaciones.map((c) => CotizacionMapper.toOrm(c));
 
     const batchSize = 200;
+    const lotes: CotizacionOrmEntity[][] = [];
     for (let i = 0; i < ormEntities.length; i += batchSize) {
-      const batch = ormEntities.slice(i, i + batchSize);
+      lotes.push(ormEntities.slice(i, i + batchSize));
+    }
+
+    await lotes.reduce<Promise<void>>(async (prev, batch) => {
+      await prev;
       await manager
         .createQueryBuilder()
         .insert()
         .into(CotizacionOrmEntity)
         .values(batch)
         .execute();
-    }
+    }, Promise.resolve());
   }
 
   async obtenerUltimaCotizacion(jugadorId: string): Promise<Cotizacion | null> {
@@ -60,19 +65,25 @@ export class CotizacionTypeOrmRepository implements ICotizacionRepository {
     if (!jugadorIds || jugadorIds.length === 0) return resultado;
 
     const batchSize = 1000;
+    const lotes: string[][] = [];
     for (let i = 0; i < jugadorIds.length; i += batchSize) {
-      const slice = jugadorIds.slice(i, i + batchSize);
-      const orms = await this.ormRepository
-        .createQueryBuilder('c')
-        .distinctOn(['c.jugador_id'])
-        .where('c.jugador_id IN (:...ids)', { ids: slice })
-        .orderBy('c.jugador_id')
-        .addOrderBy('c.fecha_cotizacion', 'DESC')
-        .getMany();
+      lotes.push(jugadorIds.slice(i, i + batchSize));
+    }
 
-      for (const orm of orms) {
-        resultado.set(orm.jugadorId, CotizacionMapper.toDomain(orm));
-      }
+    const lotesOrms = await Promise.all(
+      lotes.map((slice) =>
+        this.ormRepository
+          .createQueryBuilder('c')
+          .distinctOn(['c.jugador_id'])
+          .where('c.jugador_id IN (:...ids)', { ids: slice })
+          .orderBy('c.jugador_id')
+          .addOrderBy('c.fecha_cotizacion', 'DESC')
+          .getMany(),
+      ),
+    );
+
+    for (const orm of lotesOrms.flat()) {
+      resultado.set(orm.jugadorId, CotizacionMapper.toDomain(orm));
     }
 
     return resultado;

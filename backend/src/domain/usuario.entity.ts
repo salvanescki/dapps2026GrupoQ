@@ -3,6 +3,7 @@ import { generarId } from '../common/utils/generar-id';
 import { Dinero } from './dinero.value-object';
 
 export type RolUsuario = 'ADMIN' | 'USUARIO';
+export type MontoSaldo = number | string | Dinero;
 
 export interface UsuarioProps {
   id?: string;
@@ -10,7 +11,7 @@ export interface UsuarioProps {
   correo: string;
   contrasenaHash: string;
   rol?: RolUsuario;
-  saldo?: number | string | Dinero;
+  saldo?: MontoSaldo;
   activo?: boolean;
   creadoEn?: Date;
   actualizadoEn?: Date;
@@ -116,7 +117,7 @@ export class Usuario {
     }
   }
 
-  public debitarSaldo(monto: number | string | Dinero): void {
+  public debitarSaldo(monto: MontoSaldo): void {
     if (!this._activo) {
       throw new ReglaDeNegocioException(
         'La cuenta de usuario se encuentra inactiva.',
@@ -137,7 +138,7 @@ export class Usuario {
     this._actualizadoEn = new Date();
   }
 
-  public acreditarSaldo(monto: number | string | Dinero): void {
+  public acreditarSaldo(monto: MontoSaldo): void {
     if (!this._activo) {
       throw new ReglaDeNegocioException(
         'La cuenta de usuario se encuentra inactiva.',

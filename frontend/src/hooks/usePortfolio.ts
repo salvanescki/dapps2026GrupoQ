@@ -133,6 +133,33 @@ export function usePortfolio(): UsePortfolioResult {
     [],
   );
 
+  const sincronizarTransaccionesFiltradas = useCallback(
+    async (
+      token: string,
+      uid: string,
+      listaBase: TransaccionUsuario[],
+      signal?: AbortSignal,
+    ) => {
+      if (errorValidacionFiltros) return;
+
+      if (!hayFiltrosActivos(filtrosHistorial)) {
+        setTransaccionesFiltradas(listaBase);
+        return;
+      }
+
+      const resFiltradas = await obtenerTransaccionesUsuario(
+        token,
+        uid,
+        construirPayloadFiltros(filtrosHistorial),
+        signal,
+      );
+      if (!signal?.aborted) {
+        setTransaccionesFiltradas(comoLista(resFiltradas));
+      }
+    },
+    [filtrosHistorial, errorValidacionFiltros, construirPayloadFiltros],
+  );
+
   const cargarTodo = useCallback(
     async (signal?: AbortSignal) => {
       if (!usuarioId || !tokenDeAcceso) {
@@ -167,19 +194,12 @@ export function usePortfolio(): UsePortfolioResult {
         setTransaccionesBase(listaBase);
         setOrdenesAbiertas(filtrarOrdenesAbiertas(resOrdenes));
 
-        if (hayFiltrosActivos(filtrosHistorial) && !errorValidacionFiltros) {
-          const resFiltradas = await obtenerTransaccionesUsuario(
-            tokenDeAcceso,
-            usuarioId,
-            construirPayloadFiltros(filtrosHistorial),
-            signal,
-          );
-          if (!signal?.aborted) {
-            setTransaccionesFiltradas(comoLista(resFiltradas));
-          }
-        } else if (!errorValidacionFiltros) {
-          setTransaccionesFiltradas(listaBase);
-        }
+        await sincronizarTransaccionesFiltradas(
+          tokenDeAcceso,
+          usuarioId,
+          listaBase,
+          signal,
+        );
       } catch (err) {
         if (signal?.aborted || esAbortError(err)) return;
         setError(
@@ -194,13 +214,7 @@ export function usePortfolio(): UsePortfolioResult {
         }
       }
     },
-    [
-      usuarioId,
-      tokenDeAcceso,
-      filtrosHistorial,
-      errorValidacionFiltros,
-      construirPayloadFiltros,
-    ],
+    [usuarioId, tokenDeAcceso, sincronizarTransaccionesFiltradas],
   );
 
   useEffect(() => {

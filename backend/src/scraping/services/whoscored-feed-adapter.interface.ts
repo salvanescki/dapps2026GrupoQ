@@ -64,11 +64,12 @@ export function validarWhoScoredFeedPayload(payload: any): RawWhoScoredFeedItem[
     throw new WhoScoredFeedIncompatibleException('El payload recibido no es un objeto válido.');
   }
 
-  const items = Array.isArray(payload)
-    ? payload
-    : Array.isArray(payload.playerTableStats)
-    ? payload.playerTableStats
-    : null;
+  let items: RawWhoScoredFeedItem[] | null = null;
+  if (Array.isArray(payload)) {
+    items = payload;
+  } else if (Array.isArray(payload.playerTableStats)) {
+    items = payload.playerTableStats;
+  }
 
   if (!items) {
     throw new WhoScoredFeedIncompatibleException(

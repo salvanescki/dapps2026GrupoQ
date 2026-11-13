@@ -21,7 +21,21 @@
   }
 }
 
+.player-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
 .player-detail-panel {
+  margin: 0;
+  padding: 0;
   background: #0f1219;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.25rem;
@@ -34,7 +48,12 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .player-detail-panel {
+    animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 @keyframes modalSlideUp {
@@ -84,7 +103,7 @@
 }
 
 .player-detail-close-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background-color: #1a202c;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-secondary, #94a3b8);
   width: 2.25rem;
@@ -105,7 +124,7 @@
 
 .player-detail-close-btn:hover,
 .player-detail-close-btn:focus-visible {
-  background: rgba(255, 255, 255, 0.15);
+  background-color: #262d3d;
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.25);
   outline: none;
@@ -205,13 +224,33 @@
   justify-content: center;
   text-align: center;
   gap: 0.25rem;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
   border-color: rgba(16, 185, 129, 0.3);
   background: rgba(255, 255, 255, 0.05);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stat-card {
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-detail-overlay,
+  .player-detail-panel,
+  .stat-card,
+  .stat-card:hover {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
 }
 
 .stat-value {

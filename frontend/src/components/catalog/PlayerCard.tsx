@@ -24,22 +24,8 @@ function getPositionBadgeClass(posicion: PosicionJugador): string {
 export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onSelect }) => {
   const [crestError, setCrestError] = useState(false);
 
-  return (
-    <article
-      className="player-card"
-      data-testid={`player-card-${player.id}`}
-      role={onSelect ? 'button' : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      onClick={() => onSelect?.(player.id)}
-      onKeyDown={(e) => {
-        if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onSelect(player.id);
-        }
-      }}
-      style={onSelect ? { cursor: 'pointer' } : undefined}
-      aria-label={`Ver detalle de ${player.nombre}`}
-    >
+  const contenido = (
+    <>
       <div className="player-card-header">
         <div className="player-identity">
           <h3 className="player-name">{player.nombre}</h3>
@@ -90,6 +76,30 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onSelect }) => {
           </span>
         )}
       </div>
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        className="player-card"
+        data-testid={`player-card-${player.id}`}
+        onClick={() => onSelect(player.id)}
+        style={{ cursor: 'pointer' }}
+        aria-label={`Ver detalle de ${player.nombre}`}
+      >
+        {contenido}
+      </button>
+    );
+  }
+
+  return (
+    <article
+      className="player-card"
+      data-testid={`player-card-${player.id}`}
+    >
+      {contenido}
     </article>
   );
 };

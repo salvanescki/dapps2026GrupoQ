@@ -15,6 +15,7 @@ import type { RolUsuario } from '../types/auth.types';
 import type {
   CotizacionJugador,
   OrdenVenta,
+  PortfolioUsuario,
   PosicionPortafolio,
   ResultadoCompra,
 } from '../types/marketplace.types';
@@ -74,6 +75,45 @@ function buscarTokensDisponibles<
   return item ? item.tokensDisponibles : null;
 }
 
+function resolverCargaInicialPanel(
+  jugadorId: string,
+  usuarioId: string | undefined,
+  tokenDeAcceso: string | null,
+  signal?: AbortSignal,
+) {
+  const promesaPortfolio =
+    usuarioId && tokenDeAcceso
+      ? Promise.resolve(
+          obtenerPortfolioUsuario(tokenDeAcceso, usuarioId, signal),
+        ).catch(() => null)
+      : Promise.resolve(null);
+
+  return Promise.all([
+    obtenerHistorialCotizaciones(jugadorId, 50, signal),
+    listarOrdenesVenta({ jugadorId, estado: 'ACTIVA', limite: 100 }, signal),
+    Promise.resolve(obtenerRankingJugadores({ limite: 50 }, signal)).catch(
+      () => null,
+    ),
+    promesaPortfolio,
+  ]);
+}
+
+function aplicarDatosPortfolioEnPanel(
+  resPortfolio: PortfolioUsuario | null,
+  jugadorId: string,
+  setSaldoPortfolio: (saldo: number | undefined) => void,
+  setPosicionUsuario: (pos: PosicionPortafolio | null) => void,
+): void {
+  if (!resPortfolio) {
+    setPosicionUsuario(null);
+    return;
+  }
+  setSaldoPortfolio(resPortfolio.saldoBilletera);
+  const pos =
+    resPortfolio.posiciones.find((p) => p.jugadorId === jugadorId) ?? null;
+  setPosicionUsuario(pos);
+}
+
 export function usePlayerMarketPanel(
   jugadorId: string | null,
   onMarketMutation?: () => void,
@@ -108,24 +148,13 @@ export function usePlayerMarketPanel(
       setErrorCarga(null);
 
       try {
-        const promesasBase = Promise.all([
-          obtenerHistorialCotizaciones(jugadorId, 50, signal),
-          listarOrdenesVenta(
-            { jugadorId, estado: 'ACTIVA', limite: 100 },
-            signal,
-          ),
-          Promise.resolve(obtenerRankingJugadores({ limite: 50 }, signal)).catch(
-            () => null,
-          ),
-          usuario?.id && tokenDeAcceso
-            ? Promise.resolve(
-                obtenerPortfolioUsuario(tokenDeAcceso, usuario.id, signal),
-              ).catch(() => null)
-            : Promise.resolve(null),
-        ]);
-
         const [resCotizaciones, resOrdenes, resRanking, resPortfolio] =
-          await promesasBase;
+          await resolverCargaInicialPanel(
+            jugadorId,
+            usuario?.id,
+            tokenDeAcceso,
+            signal,
+          );
 
         if (signal?.aborted) return;
 
@@ -138,14 +167,12 @@ export function usePlayerMarketPanel(
           buscarTokensDisponibles(resRanking, jugadorId),
         );
 
-        if (resPortfolio) {
-          setSaldoPortfolio(resPortfolio.saldoBilletera);
-          const pos =
-            resPortfolio.posiciones.find((p) => p.jugadorId === jugadorId) ?? null;
-          setPosicionUsuario(pos);
-        } else {
-          setPosicionUsuario(null);
-        }
+        aplicarDatosPortfolioEnPanel(
+          resPortfolio,
+          jugadorId,
+          setSaldoPortfolio,
+          setPosicionUsuario,
+        );
       } catch (err) {
         if (signal?.aborted || esAbortError(err)) {
           return;

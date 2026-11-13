@@ -34,10 +34,14 @@ export class JugadorTypeOrmRepository implements IJugadorRepository {
     const manager = transactionalEntityManager || this.ormRepository.manager;
     const ormEntities = jugadores.map((j) => JugadorMapper.toOrm(j));
     const batchSize = 100;
+    const lotes: JugadorOrmEntity[][] = [];
     for (let i = 0; i < ormEntities.length; i += batchSize) {
-      const batch = ormEntities.slice(i, i + batchSize);
-      await manager.save(batch);
+      lotes.push(ormEntities.slice(i, i + batchSize));
     }
+    await lotes.reduce<Promise<void>>(async (prev, batch) => {
+      await prev;
+      await manager.save(batch);
+    }, Promise.resolve());
   }
 
   async buscarPorId(id: string): Promise<Jugador | null> {

@@ -215,33 +215,29 @@ export class QuotesService {
     }
 
     // Mapear jugadores con sus cotizaciones
-    const rankingItems: {
-      jugador: (typeof filtrados)[0];
-      cotizacion: Cotizacion;
-      variacionPorcentual: number;
-      tokensDisponibles: number;
-    }[] = [];
+    const filtradosConCotizacion = filtrados.filter((j) =>
+      ultimasCotizaciones.has(j.id),
+    );
+    const rankingItems = await Promise.all(
+      filtradosConCotizacion.map(async (jugador) => {
+        const cotizacion = ultimasCotizaciones.get(jugador.id)!;
+        const variacionInfo = await this.cotizacionRepo.obtenerVariacion(
+          jugador.id,
+        );
+        const variacionPorcentual = variacionInfo?.variacionPorcentual ?? 0.0;
 
-    for (const jugador of filtrados) {
-      const cotizacion = ultimasCotizaciones.get(jugador.id);
-      if (!cotizacion) continue;
+        const disponiblePrimario = adminBalancesMap.get(jugador.id) ?? 0;
+        const disponibleSecundario = secundariasMap.get(jugador.id) ?? 0;
+        const tokensDisponibles = disponiblePrimario + disponibleSecundario;
 
-      const variacionInfo = await this.cotizacionRepo.obtenerVariacion(
-        jugador.id,
-      );
-      const variacionPorcentual = variacionInfo?.variacionPorcentual ?? 0.0;
-
-      const disponiblePrimario = adminBalancesMap.get(jugador.id) ?? 0;
-      const disponibleSecundario = secundariasMap.get(jugador.id) ?? 0;
-      const tokensDisponibles = disponiblePrimario + disponibleSecundario;
-
-      rankingItems.push({
-        jugador,
-        cotizacion,
-        variacionPorcentual,
-        tokensDisponibles,
-      });
-    }
+        return {
+          jugador,
+          cotizacion,
+          variacionPorcentual,
+          tokensDisponibles,
+        };
+      }),
+    );
 
     // Ordenar descendentemente por cotizacion.valor DESC, luego cotizacion.score DESC, luego nombre ASC
     rankingItems.sort((a, b) => {
@@ -357,7 +353,8 @@ export class QuotesService {
       this.logger.warn(
         `Fallo al guardar lote de cotizaciones masivo; recurriendo a guardado individual resiliente: ${(batchErr as Error).message}`,
       );
-      for (const cot of nuevasCotizaciones) {
+      await nuevasCotizaciones.reduce<Promise<void>>(async (prev, cot) => {
+        await prev;
         try {
           await this.cotizacionRepo.guardar(cot);
         } catch (individualErr) {
@@ -366,7 +363,7 @@ export class QuotesService {
           );
           fallidos++;
         }
-      }
+      }, Promise.resolve());
     }
 
     // 7. Invalidar la caché de ranking

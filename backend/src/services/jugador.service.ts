@@ -197,6 +197,26 @@ export class JugadorService {
     return dto;
   }
 
+  private mapearEquipoResumenDto(j: Jugador): JugadorItemDto['equipo'] {
+    return {
+      id: j.equipo?.id || j.equipoId,
+      nombre: j.equipo?.nombre || 'Equipo no disponible',
+      nombreCorto: j.equipo?.nombreCorto || undefined,
+      tla: j.equipo?.tla || undefined,
+      escudoUrl: j.equipo?.escudoUrl || undefined,
+    };
+  }
+
+  private mapearLigaResumenDto(j: Jugador): JugadorItemDto['liga'] {
+    return {
+      id: j.liga?.id || j.ligaId,
+      codigo: j.liga?.codigo || '',
+      nombre: j.liga?.nombre || 'Liga no disponible',
+      pais: j.liga?.pais || undefined,
+      emblemaUrl: j.liga?.emblemaUrl || undefined,
+    };
+  }
+
   private mapearAJugadorItemDto(
     j: Jugador,
     estadisticas?: EstadisticasJugadorDto | null,
@@ -210,20 +230,8 @@ export class JugadorService {
       fechaNacimiento: j.fechaNacimiento || undefined,
       nacionalidad: j.nacionalidad,
       dorsal: j.dorsal ?? undefined,
-      equipo: {
-        id: j.equipo?.id || j.equipoId,
-        nombre: j.equipo?.nombre || 'Equipo no disponible',
-        nombreCorto: j.equipo?.nombreCorto || undefined,
-        tla: j.equipo?.tla || undefined,
-        escudoUrl: j.equipo?.escudoUrl || undefined,
-      },
-      liga: {
-        id: j.liga?.id || j.ligaId,
-        codigo: j.liga?.codigo || '',
-        nombre: j.liga?.nombre || 'Liga no disponible',
-        pais: j.liga?.pais || undefined,
-        emblemaUrl: j.liga?.emblemaUrl || undefined,
-      },
+      equipo: this.mapearEquipoResumenDto(j),
+      liga: this.mapearLigaResumenDto(j),
     };
 
     if (estadisticas !== undefined) {

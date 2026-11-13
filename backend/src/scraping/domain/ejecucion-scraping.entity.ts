@@ -27,7 +27,7 @@ export class EjecucionScraping {
   private _jugadoresProcesados: number;
   private _errores: number;
   private _estado: EstadoEjecucion;
-  private _detalle: ErrorScrapingDetalle[];
+  private readonly _detalle: ErrorScrapingDetalle[];
 
   private constructor(props: EjecucionScrapingProps) {
     this._id = props.id || generarId();

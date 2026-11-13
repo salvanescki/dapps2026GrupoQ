@@ -49,7 +49,8 @@ export class TokensService {
     let emitidos = 0;
     let omitidos = 0;
 
-    for (const jugador of jugadoresActivos) {
+    await jugadoresActivos.reduce<Promise<void>>(async (prev, jugador) => {
+      await prev;
       const emitido = await this.ejecutarEmisionIdempotente(
         admin.id,
         jugador,
@@ -61,7 +62,7 @@ export class TokensService {
       } else {
         omitidos++;
       }
-    }
+    }, Promise.resolve());
 
     this.logger.log(
       `Emisión de tokens completada. Emitidos: ${emitidos}, Ya existentes/omitidos: ${omitidos}`,
@@ -98,7 +99,7 @@ export class TokensService {
     );
   }
 
-  private async ejecutarEmisionIdempotente(
+  private ejecutarEmisionIdempotente(
     adminId: string,
     jugador: Jugador,
     estrategiaId: string,

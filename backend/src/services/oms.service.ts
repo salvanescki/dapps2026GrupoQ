@@ -77,13 +77,12 @@ export class OmsService {
     }
   }
 
-  private async ejecutarCompraPrimaria(
+  private ejecutarCompraPrimaria(
     compradorId: string,
     dto: CrearOrdenCompraDto,
   ): Promise<ResultadoCompraDto> {
-    const { jugadorId, cantidad, precioMaximoUnitario } = dto;
-
     return this.dataSource.transaction(async (manager: EntityManager) => {
+      const { jugadorId, cantidad, precioMaximoUnitario } = dto;
       // 1. Validar que el jugador existe y está activo
       const jugadorOrm = await manager.findOne(JugadorOrmEntity, {
         where: { id: jugadorId },
@@ -255,13 +254,12 @@ export class OmsService {
   }
 
   // Placeholder para la rama secundaria (se completará exhaustivamente en Phase 7 / US5)
-  private async ejecutarCompraSecundaria(
+  private ejecutarCompraSecundaria(
     compradorId: string,
     dto: CrearOrdenCompraDto,
   ): Promise<ResultadoCompraDto> {
-    const { ordenVentaId, cantidad, precioMaximoUnitario } = dto;
-
     return this.dataSource.transaction(async (manager: EntityManager) => {
+      const { ordenVentaId, cantidad, precioMaximoUnitario } = dto;
       // 1. Bloquear orden de venta FOR UPDATE
       const ordenOrm = await manager
         .createQueryBuilder(OrdenOrmEntity, 'o')
@@ -417,13 +415,12 @@ export class OmsService {
     });
   }
 
-  public async crearOrdenVenta(
+  public crearOrdenVenta(
     vendedorId: string,
     dto: CrearOrdenVentaDto,
   ): Promise<OrdenVentaRespuestaDto> {
-    const { jugadorId, cantidad, precioUnitario } = dto;
-
     return this.dataSource.transaction(async (manager: EntityManager) => {
+      const { jugadorId, cantidad, precioUnitario } = dto;
       // 1. Validar que el jugador existe y está activo
       const jugadorOrm = await manager.findOne(JugadorOrmEntity, { where: { id: jugadorId } });
       if (!jugadorOrm) {
@@ -499,7 +496,7 @@ export class OmsService {
     }));
   }
 
-  public async cancelarOrdenVenta(
+  public cancelarOrdenVenta(
     usuarioId: string,
     ordenId: string,
   ): Promise<OrdenVentaRespuestaDto> {

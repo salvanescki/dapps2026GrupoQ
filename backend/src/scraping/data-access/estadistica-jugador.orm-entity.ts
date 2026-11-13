@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { JugadorOrmEntity } from '../../data-access/jugador.orm-entity';
 
+export type ValorDecimalNullableOrm = string | number | null;
+
 @Entity('estadisticas_jugadores')
 export class EstadisticaJugadorOrmEntity {
   @PrimaryColumn('uuid')
@@ -60,7 +62,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'tiros_por_partido',
   })
-  tirosPorPartido: string | number | null;
+  tirosPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -69,7 +71,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'precision_pase',
   })
-  precisionPase: string | number | null;
+  precisionPase: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -78,7 +80,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'duelos_aereos_ganados_por_partido',
   })
-  duelosAereosGanadosPorPartido: string | number | null;
+  duelosAereosGanadosPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -86,7 +88,7 @@ export class EstadisticaJugadorOrmEntity {
     scale: 2,
     nullable: true,
   })
-  rating: string | number | null;
+  rating: ValorDecimalNullableOrm;
 
   @Column({ type: 'integer', default: 0, name: 'tarjetas_amarillas' })
   tarjetasAmarillas: number;
@@ -101,7 +103,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'regates_completados_por_partido',
   })
-  regatesCompletadosPorPartido: string | number | null;
+  regatesCompletadosPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -110,7 +112,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'pases_clave_por_partido',
   })
-  pasesClavePorPartido: string | number | null;
+  pasesClavePorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -119,7 +121,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'xg_por_partido',
   })
-  xgPorPartido: string | number | null;
+  xgPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -128,7 +130,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'xa_por_partido',
   })
-  xaPorPartido: string | number | null;
+  xaPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -137,7 +139,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'grandes_ocasiones_por_partido',
   })
-  grandesOcasionesPorPartido: string | number | null;
+  grandesOcasionesPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -146,7 +148,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'entradas_por_partido',
   })
-  entradasPorPartido: string | number | null;
+  entradasPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -155,7 +157,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'intercepcciones_por_partido',
   })
-  intercepccionesPorPartido: string | number | null;
+  intercepccionesPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -164,7 +166,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'despejes_por_partido',
   })
-  despejesPorPartido: string | number | null;
+  despejesPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -173,7 +175,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'pases_por_partido',
   })
-  pasesPorPartido: string | number | null;
+  pasesPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -182,7 +184,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'centros_por_partido',
   })
-  centrosPorPartido: string | number | null;
+  centrosPorPartido: ValorDecimalNullableOrm;
 
   @Column({
     type: 'numeric',
@@ -190,7 +192,7 @@ export class EstadisticaJugadorOrmEntity {
     scale: 2,
     nullable: true,
   })
-  atajadas: string | number | null;
+  atajadas: ValorDecimalNullableOrm;
 
   @Column({ type: 'integer', nullable: true, name: 'goles_recibidos' })
   golesRecibidos: number | null;
@@ -202,7 +204,7 @@ export class EstadisticaJugadorOrmEntity {
     nullable: true,
     name: 'porcentaje_atajadas',
   })
-  porcentajeAtajadas: string | number | null;
+  porcentajeAtajadas: ValorDecimalNullableOrm;
 
   @Column({
     type: 'integer',
