@@ -1,53 +1,20 @@
 import { ReglaDeNegocioException } from '../../domain/exceptions/regla-de-negocio.exception';
 import { generarId } from '../../common/utils/generar-id';
 
-export interface EstadisticaJugadorProps {
-  id?: string;
-  jugadorId: string;
-  temporada: string;
-  liga: string;
-  competencia?: string | null;
-  etapa?: string | null;
-  fuente?: string;
-  fechaActualizacion?: Date;
-  partidosJugados?: number;
-  minutosJugados?: number;
-  goles?: number;
-  asistencias?: number;
-  tirosPorPartido?: number | null;
-  precisionPase?: number | null;
-  duelosAereosGanadosPorPartido?: number | null;
-  rating?: number | null;
-  tarjetasAmarillas?: number;
-  tarjetasRojas?: number;
-  regatesCompletadosPorPartido?: number | null;
-  pasesClavePorPartido?: number | null;
-  xgPorPartido?: number | null;
-  xaPorPartido?: number | null;
-  grandesOcasionesPorPartido?: number | null;
-  entradasPorPartido?: number | null;
-  intercepccionesPorPartido?: number | null;
-  despejesPorPartido?: number | null;
-  pasesPorPartido?: number | null;
-  centrosPorPartido?: number | null;
-  atajadas?: number | null;
-  golesRecibidos?: number | null;
-  porcentajeAtajadas?: number | null;
-  erroresQueGeneraronGol?: number | null;
-  autogoles?: number | null;
-}
-
-const CAMPOS_ACTUALIZABLES = [
+export const CAMPOS_CONTADORES_ESTADISTICOS = [
   'partidosJugados',
   'minutosJugados',
   'goles',
   'asistencias',
+  'tarjetasAmarillas',
+  'tarjetasRojas',
+] as const;
+
+export const CAMPOS_METRICAS_OPCIONALES = [
   'tirosPorPartido',
   'precisionPase',
   'duelosAereosGanadosPorPartido',
   'rating',
-  'tarjetasAmarillas',
-  'tarjetasRojas',
   'regatesCompletadosPorPartido',
   'pasesClavePorPartido',
   'xgPorPartido',
@@ -64,6 +31,31 @@ const CAMPOS_ACTUALIZABLES = [
   'erroresQueGeneraronGol',
   'autogoles',
 ] as const;
+
+const CAMPOS_ACTUALIZABLES = [
+  ...CAMPOS_CONTADORES_ESTADISTICOS,
+  ...CAMPOS_METRICAS_OPCIONALES,
+] as const;
+
+export type CampoContadorEstadistico =
+  (typeof CAMPOS_CONTADORES_ESTADISTICOS)[number];
+export type CampoMetricaOpcional = (typeof CAMPOS_METRICAS_OPCIONALES)[number];
+
+export type MetricasEstadisticasJugador = Partial<
+  Record<CampoContadorEstadistico, number> &
+    Record<CampoMetricaOpcional, number | null>
+>;
+
+export interface EstadisticaJugadorProps extends MetricasEstadisticasJugador {
+  id?: string;
+  jugadorId: string;
+  temporada: string;
+  liga: string;
+  competencia?: string | null;
+  etapa?: string | null;
+  fuente?: string;
+  fechaActualizacion?: Date;
+}
 
 function estaVacio(valor: string | null | undefined): boolean {
   return !valor || valor.trim().length === 0;

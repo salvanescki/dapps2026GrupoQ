@@ -50,7 +50,29 @@ export interface Jugador {
   };
 }
 
-export interface EstadisticasJugador {
+export type CampoMetricaOpcionalJugador =
+  | 'rating'
+  | 'tirosPorPartido'
+  | 'precisionPase'
+  | 'duelosAereosGanadosPorPartido'
+  | 'regatesCompletadosPorPartido'
+  | 'pasesClavePorPartido'
+  | 'xgPorPartido'
+  | 'xaPorPartido'
+  | 'grandesOcasionesPorPartido'
+  | 'entradasPorPartido'
+  | 'intercepccionesPorPartido'
+  | 'despejesPorPartido'
+  | 'pasesPorPartido'
+  | 'centrosPorPartido'
+  | 'atajadas'
+  | 'golesRecibidos'
+  | 'porcentajeAtajadas'
+  | 'erroresQueGeneraronGol'
+  | 'autogoles';
+
+export interface EstadisticasJugador
+  extends Partial<Record<CampoMetricaOpcionalJugador, number | null>> {
   temporada: string;
   liga: string;
   partidosJugados: number;
@@ -59,25 +81,6 @@ export interface EstadisticasJugador {
   asistencias: number;
   tarjetasAmarillas: number;
   tarjetasRojas: number;
-  rating?: number | null;
-  tirosPorPartido?: number | null;
-  precisionPase?: number | null;
-  duelosAereosGanadosPorPartido?: number | null;
-  regatesCompletadosPorPartido?: number | null;
-  pasesClavePorPartido?: number | null;
-  xgPorPartido?: number | null;
-  xaPorPartido?: number | null;
-  grandesOcasionesPorPartido?: number | null;
-  entradasPorPartido?: number | null;
-  intercepccionesPorPartido?: number | null;
-  despejesPorPartido?: number | null;
-  pasesPorPartido?: number | null;
-  centrosPorPartido?: number | null;
-  atajadas?: number | null;
-  golesRecibidos?: number | null;
-  porcentajeAtajadas?: number | null;
-  erroresQueGeneraronGol?: number | null;
-  autogoles?: number | null;
 }
 
 export interface JugadorDetalle extends Jugador {
