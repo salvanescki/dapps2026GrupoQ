@@ -18,6 +18,48 @@ export const POSICIONES_VALIDAS: PosicionJugador[] = [
   'No Clasificado',
 ];
 
+const REGLAS_NORMALIZACION_POSICION: ReadonlyArray<
+  readonly [PosicionJugador, readonly string[]]
+> = [
+  ['Portero', ['goalkeeper', 'arquero', 'portero']],
+  [
+    'Defensa',
+    [
+      'defence',
+      'defender',
+      'defensa',
+      'back',
+      'centre-back',
+      'left-back',
+      'right-back',
+    ],
+  ],
+  [
+    'Mediocampista',
+    [
+      'midfield',
+      'midfielder',
+      'mediocampista',
+      'volante',
+      'central midfield',
+      'defensive midfield',
+      'attacking midfield',
+    ],
+  ],
+  [
+    'Delantero',
+    [
+      'offence',
+      'forward',
+      'winger',
+      'striker',
+      'delantero',
+      'extremo',
+      'punta',
+    ],
+  ],
+];
+
 export interface JugadorProps {
   id?: string;
   externalId: number;
@@ -120,52 +162,10 @@ export class Jugador {
   ): PosicionJugador {
     if (!posicionOriginal) return 'No Clasificado';
     const pos = posicionOriginal.toLowerCase().trim();
-
-    if (
-      pos.includes('goalkeeper') ||
-      pos.includes('arquero') ||
-      pos.includes('portero')
-    ) {
-      return 'Portero';
-    }
-
-    if (
-      pos.includes('defence') ||
-      pos.includes('defender') ||
-      pos.includes('defensa') ||
-      pos.includes('back') ||
-      pos.includes('centre-back') ||
-      pos.includes('left-back') ||
-      pos.includes('right-back')
-    ) {
-      return 'Defensa';
-    }
-
-    if (
-      pos.includes('midfield') ||
-      pos.includes('midfielder') ||
-      pos.includes('mediocampista') ||
-      pos.includes('volante') ||
-      pos.includes('central midfield') ||
-      pos.includes('defensive midfield') ||
-      pos.includes('attacking midfield')
-    ) {
-      return 'Mediocampista';
-    }
-
-    if (
-      pos.includes('offence') ||
-      pos.includes('forward') ||
-      pos.includes('winger') ||
-      pos.includes('striker') ||
-      pos.includes('delantero') ||
-      pos.includes('extremo') ||
-      pos.includes('punta')
-    ) {
-      return 'Delantero';
-    }
-
-    return 'No Clasificado';
+    const reglaCoincidente = REGLAS_NORMALIZACION_POSICION.find(([, terminos]) =>
+      terminos.some((termino) => pos.includes(termino)),
+    );
+    return reglaCoincidente ? reglaCoincidente[0] : 'No Clasificado';
   }
 
   public validarInvariantes(): void {
