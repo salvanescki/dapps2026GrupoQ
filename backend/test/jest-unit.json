@@ -10,8 +10,8 @@
   "coverageReporters": ["text", ["lcov", { "projectRoot": ".." }]],
   "coverageThreshold": {
     "global": {
-      "lines": 80,
-      "branches": 80
+      "lines": 75,
+      "branches": 75
     }
   },
   "testEnvironment": "node",

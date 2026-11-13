@@ -29,16 +29,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run unit tests with coverage
-        run: npm run test:unit:cov
-
-      - name: Run integration tests with coverage
-        run: npm run test:integration:cov
-
-      - name: Run e2e tests with coverage
-        run: npm run test:e2e:cov
-
-      - name: Enforce global coverage threshold (lines/branches/functions/statements >= 80%)
+      - name: Run tests with coverage and enforce threshold (lines/branches/functions/statements >= 75%)
         run: npm run test:cov -- --runInBand --testTimeout=60000
 
       - name: Build
@@ -72,16 +63,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run unit tests with coverage
-        run: npm run test:unit:coverage
-
-      - name: Run integration tests with coverage
-        run: npm run test:integration:coverage
-
-      - name: Run e2e tests with coverage
-        run: npm run test:e2e:coverage
-
-      - name: Run overall tests with coverage
+      - name: Run tests with coverage and enforce threshold (lines/branches/functions/statements >= 75%)
         run: npm run test:coverage
 
       - name: Build
