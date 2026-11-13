@@ -194,6 +194,12 @@ export class EquipoSemanal {
   }
 
   public validarInvariantes(): void {
+    this.validarParametrosTemporalesYEstrategia();
+    this.validarUnicidadDeMiembros();
+    this.validarDistribucionTactica433();
+  }
+
+  private validarParametrosTemporalesYEstrategia(): void {
     if (!this._ano || this._ano < 2024) {
       throw new ReglaDeNegocioException(
         `El año del equipo semanal debe ser mayor o igual a 2024. Valor recibido: ${this._ano}`,
@@ -223,14 +229,15 @@ export class EquipoSemanal {
         'La versión de la estrategia de cotización es obligatoria.',
       );
     }
+  }
 
+  private validarUnicidadDeMiembros(): void {
     if (this._miembros?.length !== 11) {
       throw new ReglaDeNegocioException(
-        `El Equipo de la Semana debe contener exactamente 11 jugadores titulares. Cantidad recibida: ${this._miembros ? this._miembros.length : 0}`,
+        `El Equipo de la Semana debe contener exactamente 11 jugadores titulares. Cantidad recibida: ${this._miembros?.length ?? 0}`,
       );
     }
 
-    // Verificar duplicidad de jugadores
     const idsVistos = new Set<string>();
     for (const miembro of this._miembros) {
       if (idsVistos.has(miembro.jugadorId)) {
@@ -240,8 +247,9 @@ export class EquipoSemanal {
       }
       idsVistos.add(miembro.jugadorId);
     }
+  }
 
-    // Verificar distribución de formación 4-3-3
+  private validarDistribucionTactica433(): void {
     const conteoPorPosicion = this._miembros.reduce(
       (acc, m) => {
         acc[m.posicion] = (acc[m.posicion] || 0) + 1;
@@ -250,25 +258,20 @@ export class EquipoSemanal {
       {} as Record<PosicionJugador, number>,
     );
 
-    if (conteoPorPosicion['Portero'] !== 1) {
-      throw new ReglaDeNegocioException(
-        `La formación 4-3-3 requiere exactamente 1 Portero. Cantidad actual: ${conteoPorPosicion['Portero'] || 0}`,
-      );
-    }
-    if (conteoPorPosicion['Defensa'] !== 4) {
-      throw new ReglaDeNegocioException(
-        `La formación 4-3-3 requiere exactamente 4 Defensas. Cantidad actual: ${conteoPorPosicion['Defensa'] || 0}`,
-      );
-    }
-    if (conteoPorPosicion['Mediocampista'] !== 3) {
-      throw new ReglaDeNegocioException(
-        `La formación 4-3-3 requiere exactamente 3 Mediocampistas. Cantidad actual: ${conteoPorPosicion['Mediocampista'] || 0}`,
-      );
-    }
-    if (conteoPorPosicion['Delantero'] !== 3) {
-      throw new ReglaDeNegocioException(
-        `La formación 4-3-3 requiere exactamente 3 Delanteros. Cantidad actual: ${conteoPorPosicion['Delantero'] || 0}`,
-      );
+    const requisitos: ReadonlyArray<readonly [PosicionJugador, number, string]> = [
+      ['Portero', 1, '1 Portero'],
+      ['Defensa', 4, '4 Defensas'],
+      ['Mediocampista', 3, '3 Mediocampistas'],
+      ['Delantero', 3, '3 Delanteros'],
+    ];
+
+    for (const [posicion, requerido, etiqueta] of requisitos) {
+      const actual = conteoPorPosicion[posicion] || 0;
+      if (actual !== requerido) {
+        throw new ReglaDeNegocioException(
+          `La formación 4-3-3 requiere exactamente ${etiqueta}. Cantidad actual: ${actual}`,
+        );
+      }
     }
   }
 

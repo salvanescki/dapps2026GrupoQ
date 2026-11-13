@@ -117,6 +117,70 @@ function revertirTenencia(
   return previa;
 }
 
+function inicializarTenenciasYPrecios(
+  posiciones: PosicionPortafolio[],
+): {
+  tenenciasActuales: Map<string, number>;
+  precioInicialFallbackCentavos: Map<string, number>;
+} {
+  const tenenciasActuales = new Map<string, number>();
+  const precioInicialFallbackCentavos = new Map<string, number>();
+
+  for (const pos of posiciones) {
+    tenenciasActuales.set(
+      pos.jugadorId,
+      pos.cantidadTokensDisponibles + pos.cantidadTokensEnVenta,
+    );
+    precioInicialFallbackCentavos.set(
+      pos.jugadorId,
+      Math.round(pos.precioPromedioAdquisicion * 100),
+    );
+  }
+
+  return { tenenciasActuales, precioInicialFallbackCentavos };
+}
+
+function calcularValoracionPasoCentavos(
+  tenencias: Map<string, number>,
+  ultimoPrecioObservado: Map<string, number>,
+): number {
+  let total = 0;
+  for (const [jugadorId, cantidad] of tenencias.entries()) {
+    if (cantidad > 0) {
+      const unitario = ultimoPrecioObservado.get(jugadorId) ?? 0;
+      total += cantidad * unitario;
+    }
+  }
+  return total;
+}
+
+function construirPuntoTransaccion(
+  tx: TransaccionUsuario,
+  k: number,
+  saldoCentavos: number,
+  valPasoCentavos: number,
+  ocurrenciaEtiqueta: Map<string, number>,
+): PuntoGraficoPatrimonio {
+  const baseEje = etiquetaCortaUtc(tx.fecha, k);
+  const vistasPrevias = (ocurrenciaEtiqueta.get(baseEje) ?? 0) + 1;
+  ocurrenciaEtiqueta.set(baseEje, vistasPrevias);
+  const etiquetaEjeX =
+    vistasPrevias > 1 ? `${baseEje} (${vistasPrevias})` : baseEje;
+
+  const verbo = tx.tipoOperacion === 'COMPRA' ? 'Compra' : 'Venta';
+  const mercado = tx.tipoMercado === 'PRIMARIO' ? 'Primario' : 'Secundario';
+
+  return {
+    indice: k,
+    etiquetaEjeX,
+    fechaFormateada: formatearFechaHoraCorta(tx.fecha),
+    hitoOperativo: `${verbo} ${tx.cantidadTokens}x ${tx.nombreJugador} (${mercado})`,
+    saldoBilletera: saldoCentavos / 100,
+    valoracionTokens: valPasoCentavos / 100,
+    patrimonioNeto: (saldoCentavos + valPasoCentavos) / 100,
+  };
+}
+
 export function reconstruirSeriePatrimonial(
   portfolio: PortfolioUsuario,
   transacciones: TransaccionUsuario[],
@@ -143,19 +207,8 @@ export function reconstruirSeriePatrimonial(
   saldosCentavos[n] = Math.round(portfolio.saldoBilletera * 100);
 
   // Tenencias en cada paso k in [0..n]
-  const tenenciasActuales = new Map<string, number>();
-  const precioInicialFallbackCentavos = new Map<string, number>();
-
-  for (const pos of portfolio.posiciones) {
-    tenenciasActuales.set(
-      pos.jugadorId,
-      pos.cantidadTokensDisponibles + pos.cantidadTokensEnVenta,
-    );
-    precioInicialFallbackCentavos.set(
-      pos.jugadorId,
-      Math.round(pos.precioPromedioAdquisicion * 100),
-    );
-  }
+  const { tenenciasActuales, precioInicialFallbackCentavos } =
+    inicializarTenenciasYPrecios(portfolio.posiciones);
 
   const snapshotsTenencias: Array<Map<string, number>> = new Array(n + 1);
   snapshotsTenencias[n] = new Map(tenenciasActuales);
@@ -194,18 +247,10 @@ export function reconstruirSeriePatrimonial(
   const ultimoPrecioObservado = new Map<string, number>(primerPrecioObservado);
   const puntos: PuntoGraficoPatrimonio[] = [];
 
-  const calcularValoracionPasoCentavos = (tenencias: Map<string, number>): number => {
-    let total = 0;
-    for (const [jugadorId, cantidad] of tenencias.entries()) {
-      if (cantidad > 0) {
-        const unitario = ultimoPrecioObservado.get(jugadorId) ?? 0;
-        total += cantidad * unitario;
-      }
-    }
-    return total;
-  };
-
-  const valInicialCentavos = calcularValoracionPasoCentavos(snapshotsTenencias[0]);
+  const valInicialCentavos = calcularValoracionPasoCentavos(
+    snapshotsTenencias[0],
+    ultimoPrecioObservado,
+  );
   puntos.push({
     indice: 0,
     etiquetaEjeX: 'Inicio',
@@ -225,25 +270,19 @@ export function reconstruirSeriePatrimonial(
       Math.round(tx.precioUnitario * 100),
     );
 
-    const valPasoCentavos = calcularValoracionPasoCentavos(snapshotsTenencias[k]);
-    const baseEje = etiquetaCortaUtc(tx.fecha, k);
-    const vistasPrevias = (ocurrenciaEtiqueta.get(baseEje) ?? 0) + 1;
-    ocurrenciaEtiqueta.set(baseEje, vistasPrevias);
-    const etiquetaEjeX =
-      vistasPrevias > 1 ? `${baseEje} (${vistasPrevias})` : baseEje;
-
-    const verbo = tx.tipoOperacion === 'COMPRA' ? 'Compra' : 'Venta';
-    const mercado = tx.tipoMercado === 'PRIMARIO' ? 'Primario' : 'Secundario';
-
-    puntos.push({
-      indice: k,
-      etiquetaEjeX,
-      fechaFormateada: formatearFechaHoraCorta(tx.fecha),
-      hitoOperativo: `${verbo} ${tx.cantidadTokens}x ${tx.nombreJugador} (${mercado})`,
-      saldoBilletera: saldosCentavos[k] / 100,
-      valoracionTokens: valPasoCentavos / 100,
-      patrimonioNeto: (saldosCentavos[k] + valPasoCentavos) / 100,
-    });
+    const valPasoCentavos = calcularValoracionPasoCentavos(
+      snapshotsTenencias[k],
+      ultimoPrecioObservado,
+    );
+    puntos.push(
+      construirPuntoTransaccion(
+        tx,
+        k,
+        saldosCentavos[k],
+        valPasoCentavos,
+        ocurrenciaEtiqueta,
+      ),
+    );
   }
 
   // Punto de convergencia matemática 100% exacta con el snapshot vigente del Portfolio

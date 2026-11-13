@@ -29,8 +29,8 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 **Purpose**: Confirmar el estado inicial de compilación y la limpieza del árbol de pruebas antes de iniciar las refactorizaciones.
 
-- [ ] T001 Verificar compilación inicial de TypeScript ejecutando `npm run build` sobre `backend/package.json` y `frontend/package.json` conforme a `specs/015-fix-sonarcloud-issues/quickstart.md`
-- [ ] T002 Verificar el estado limpio e inmutable de los archivos de prueba preexistentes en `backend/test/` y `frontend/tests/` según `specs/015-fix-sonarcloud-issues/quickstart.md`
+- [X] T001 Verificar compilación inicial de TypeScript ejecutando `npm run build` sobre `backend/package.json` y `frontend/package.json` conforme a `specs/015-fix-sonarcloud-issues/quickstart.md`
+- [X] T002 Verificar el estado limpio e inmutable de los archivos de prueba preexistentes en `backend/test/` y `frontend/tests/` según `specs/015-fix-sonarcloud-issues/quickstart.md`
 
 ---
 
@@ -40,8 +40,8 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 **⚠️ CRITICAL**: Ninguna historia de usuario debe comenzar sin confirmar que la línea base de pruebas compila y pasa sin errores.
 
-- [ ] T003 [P] Ejecutar la línea base de pruebas unitarias y cobertura (`npm run test:unit:cov`) definida en `backend/package.json`
-- [ ] T004 [P] Ejecutar la línea base de pruebas y cobertura (`npm run test:coverage`) definida en `frontend/package.json`
+- [X] T003 [P] Ejecutar la línea base de pruebas unitarias y cobertura (`npm run test:unit:cov`) definida en `backend/package.json`
+- [X] T004 [P] Ejecutar la línea base de pruebas y cobertura (`npm run test:coverage`) definida en `frontend/package.json`
 
 **Checkpoint**: Línea base verificada — la implementación de las historias de usuario puede comenzar.
 
@@ -55,19 +55,19 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 ### Implementation for User Story 1 — Módulo `backend` (`domain` → `services`)
 
-- [ ] T005 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `seleccionarOnceIdeal` y descomponer `validarInvariantes` en `validarParametrosTemporalesYEstrategia`, `validarUnicidadDeMiembros` y `validarDistribucionTactica433` en `backend/src/domain/equipo-semanal.entity.ts`
-- [ ] T006 [P] [US1] Consolidar la simplificación declarativa de `validarInvariantes` y `actualizarEstadisticas` (`typescript:S3776`, 2 ocurrencias) mediante la tabla `reglas` y la lista `CAMPOS_ACTUALIZABLES` con complejidad $\le 6$ en `backend/src/scraping/domain/estadistica-jugador.entity.ts`
-- [ ] T007 [P] [US1] Consolidar la descomposición de `buscarCoincidencia` (`typescript:S3776`) en `buscarCoincidenciaExacta`, `buscarCoincidenciaSinSufijos`, `buscarCoincidenciaPorApellidoYClub` y `buscarCoincidenciaAbreviada` en `backend/src/scraping/services/normalizador-jugador.service.ts`
-- [ ] T008 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `ejecutarPipeline` (mediante `procesarLiga` y subtareas privadas) y de `asociarJugadoresLocales` (extrayendo `coincideClubEnAsociacion` y `asociarJugadorIndividual`) en `backend/src/scraping/services/scraping.service.ts`
-- [ ] T009 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`, 3 ocurrencias) en `extraerEquipoDesdeDOM`, `enriquecerConFeedsComplementarios`, `extraerFilasTabla`, `leerFilasDeTablaDom` y `descubrirEstructuraCompeticion` (extrayendo `construirUrlDescubrimiento`, `extraerMetadatosTemporadaYEtapa`, `extraerTituloCompetencia`, `extraerNombreEtapa` y `extraerEquiposDesdeStandings`) en `backend/src/scraping/services/whoscored-playwright.service.ts`
-- [ ] T010 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `mapearAEstadisticasDto` (con `CAMPOS_OPCIONALES_ESTADISTICAS`) y extraer `mapearEquipoResumenDto` y `mapearLigaResumenDto` desde `mapearAJugadorItemDto` en `backend/src/services/jugador.service.ts`
+- [X] T005 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `seleccionarOnceIdeal` y descomponer `validarInvariantes` en `validarParametrosTemporalesYEstrategia`, `validarUnicidadDeMiembros` y `validarDistribucionTactica433` en `backend/src/domain/equipo-semanal.entity.ts`
+- [X] T006 [P] [US1] Consolidar la simplificación declarativa de `validarInvariantes` y `actualizarEstadisticas` (`typescript:S3776`, 2 ocurrencias) mediante la tabla `reglas` y la lista `CAMPOS_ACTUALIZABLES` con complejidad $\le 6$ en `backend/src/scraping/domain/estadistica-jugador.entity.ts`
+- [X] T007 [P] [US1] Consolidar la descomposición de `buscarCoincidencia` (`typescript:S3776`) en `buscarCoincidenciaExacta`, `buscarCoincidenciaSinSufijos`, `buscarCoincidenciaPorApellidoYClub` y `buscarCoincidenciaAbreviada` en `backend/src/scraping/services/normalizador-jugador.service.ts`
+- [X] T008 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `ejecutarPipeline` (mediante `procesarLiga` y subtareas privadas) y de `asociarJugadoresLocales` (extrayendo `coincideClubEnAsociacion` y `asociarJugadorIndividual`) en `backend/src/scraping/services/scraping.service.ts`
+- [X] T009 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`, 3 ocurrencias) en `extraerEquipoDesdeDOM`, `enriquecerConFeedsComplementarios`, `extraerFilasTabla`, `leerFilasDeTablaDom` y `descubrirEstructuraCompeticion` (extrayendo `construirUrlDescubrimiento`, `extraerMetadatosTemporadaYEtapa`, `extraerTituloCompetencia`, `extraerNombreEtapa` y `extraerEquiposDesdeStandings`) en `backend/src/scraping/services/whoscored-playwright.service.ts`
+- [X] T010 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `mapearAEstadisticasDto` (con `CAMPOS_OPCIONALES_ESTADISTICAS`) y extraer `mapearEquipoResumenDto` y `mapearLigaResumenDto` desde `mapearAJugadorItemDto` en `backend/src/services/jugador.service.ts`
 
 ### Implementation for User Story 1 — Módulo `frontend` (`utils` → `hooks` → `views`)
 
-- [ ] T011 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `reconstruirSeriePatrimonial` extrayendo `inicializarTenenciasYPrecios` y `construirPuntoTransaccion` en `frontend/src/utils/portfolio-chart.ts`
-- [ ] T012 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `cargarPanel` extrayendo `buscarTokensDisponibles`, `resolverCargaInicialPanel` y `aplicarDatosPortfolioEnPanel` en `frontend/src/hooks/usePlayerMarketPanel.ts`
-- [ ] T013 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `cargarTodo` extrayendo `sincronizarTransaccionesFiltradas` en `frontend/src/hooks/usePortfolio.ts`
-- [ ] T014 [P] [US1] Eliminar el uso innecesario del operador `void` (`typescript:S3735`) en la prop `onSeleccionar={seleccionarSemana}` y en el manejador `onClick` de generación manual en `frontend/src/views/TeamOfTheWeekView.tsx`
+- [X] T011 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `reconstruirSeriePatrimonial` extrayendo `inicializarTenenciasYPrecios` y `construirPuntoTransaccion` en `frontend/src/utils/portfolio-chart.ts`
+- [X] T012 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `cargarPanel` extrayendo `buscarTokensDisponibles`, `resolverCargaInicialPanel` y `aplicarDatosPortfolioEnPanel` en `frontend/src/hooks/usePlayerMarketPanel.ts`
+- [X] T013 [P] [US1] Reducir la complejidad cognitiva (`typescript:S3776`) de `cargarTodo` extrayendo `sincronizarTransaccionesFiltradas` en `frontend/src/hooks/usePortfolio.ts`
+- [X] T014 [P] [US1] Eliminar el uso innecesario del operador `void` (`typescript:S3735`) en la prop `onSeleccionar={seleccionarSemana}` y en el manejador `onClick` de generación manual en `frontend/src/views/TeamOfTheWeekView.tsx`
 
 **Checkpoint**: Los 13 hallazgos `CRITICAL` (US1) quedan resueltos y son verificables de forma independiente en `backend` y `frontend`.
 
@@ -81,21 +81,21 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 ### Implementation for User Story 2 — Módulo `backend` (`domain` → `services`)
 
-- [ ] T015 [P] [US2] Declarar como inmutable (`private readonly _detalle: ErrorScrapingDetalle[]`) la propiedad interna (`typescript:S2933`) en `backend/src/scraping/domain/ejecucion-scraping.entity.ts`
-- [ ] T016 [P] [US2] Desanidar la expresión ternaria de extracción de `items` (`typescript:S3358`) en una estructura condicional `if / else if` explícita en `backend/src/scraping/services/whoscored-feed-adapter.interface.ts`
-- [ ] T017 [P] [US2] Resolver los hallazgos mayores de inmutabilidad (`typescript:S2933` en `private readonly scrapingConfig`), lectura de atributo de datos (`typescript:S7761` usando `(tr as HTMLElement).dataset.playerId`) y ternario anidado (`typescript:S3358` en cálculo de `appsVal`) en `backend/src/scraping/services/whoscored-playwright.service.ts` (ejecutar tras T009 si se trabaja secuencialmente sobre el mismo archivo)
+- [X] T015 [P] [US2] Declarar como inmutable (`private readonly _detalle: ErrorScrapingDetalle[]`) la propiedad interna (`typescript:S2933`) en `backend/src/scraping/domain/ejecucion-scraping.entity.ts`
+- [X] T016 [P] [US2] Desanidar la expresión ternaria de extracción de `items` (`typescript:S3358`) en una estructura condicional `if / else if` explícita en `backend/src/scraping/services/whoscored-feed-adapter.interface.ts`
+- [X] T017 [P] [US2] Resolver los hallazgos mayores de inmutabilidad (`typescript:S2933` en `private readonly scrapingConfig`), lectura de atributo de datos (`typescript:S7761` usando `(tr as HTMLElement).dataset.playerId`) y ternario anidado (`typescript:S3358` en cálculo de `appsVal`) en `backend/src/scraping/services/whoscored-playwright.service.ts` (ejecutar tras T009 si se trabaja secuencialmente sobre el mismo archivo)
 
 ### Implementation for User Story 2 — Módulo `frontend` (`types` → `utils` → `components` → `styles`)
 
-- [ ] T018 [P] [US2] Eliminar el alias redundante `export type EstrategiaVersion = string;` (`typescript:S6564`) y reemplazar sus 5 referencias internas por `string` en `frontend/src/types/marketplace.types.ts`
-- [ ] T019 [P] [US2] Reemplazar la expresión regular con backtracking super-lineal (`typescript:S8786`) por la función auxiliar de tiempo lineal $O(n)$ `formatearMilesConPunto` en `frontend/src/utils/formato-mercado.ts`
-- [ ] T020 [P] [US2] Memoizar con `useMemo` el objeto `{ config }` provisto a `ChartContext.Provider` (`typescript:S6481`) en `frontend/src/components/ui/chart.tsx`
-- [ ] T021 [P] [US2] Reemplazar el elemento `<article>` con `role="button"` y eventos de teclado/puntero (`typescript:S6819`, `typescript:S6847`) por `<button type="button" className="player-card">` cuando `onSelect` está definido y `<article className="player-card">` estático cuando no es interactivo en `frontend/src/components/catalog/PlayerCard.tsx`
-- [ ] T022 [P] [US2] Reemplazar el contenedor `<div className="ranking-position-tabs" role="group">` (`typescript:S6819`) por un elemento semántico nativo `<fieldset className="ranking-position-tabs">` en `frontend/src/components/marketplace/RankingFiltersBar.tsx`
-- [ ] T023 [US2] Encapsular las animaciones de `.filter-modal-content` con `@media (prefers-reduced-motion: no-preference)` y `@media (prefers-reduced-motion: reduce)` (`css:S9440`) y ajustar los estilos de `button.player-card` y `fieldset.ranking-position-tabs` en `frontend/src/styles/catalog.css` (depende de T021 y T022)
-- [ ] T024 [P] [US2] Reemplazar `<div role="presentation">` y `<div role="dialog">` (`typescript:S6819`, 2 ocurrencias) por `<button type="button" className="player-detail-backdrop" data-testid="player-detail-overlay" onClick={onClose} tabIndex={-1} aria-hidden="true" />` y `<dialog open className="player-detail-panel" aria-modal="true" aria-labelledby="player-detail-title">` en `frontend/src/components/player-detail/PlayerDetailModal.tsx`
-- [ ] T025 [US2] Agregar soporte `@media (prefers-reduced-motion: no-preference)` y `@media (prefers-reduced-motion: reduce)` en `.player-detail-panel` y `.stat-card` (`css:S9440`, 2 ocurrencias), estilizar `.player-detail-backdrop` y fijar color de fondo sólido `#262d3d` en `.player-detail-close-btn:hover, .player-detail-close-btn:focus-visible` (`css:S7924`) en `frontend/src/components/player-detail/PlayerDetailModal.css` (depende de T024)
-- [ ] T026 [P] [US2] Reemplazar `<div role="button" tabIndex={0}>` (`typescript:S6819`) por el control nativo `<button type="button" className="pitch-player-card">` preservando `onClick`, `onKeyDown` y `data-testid` en `frontend/src/components/team-of-the-week/PitchPlayerCard.tsx`
+- [X] T018 [P] [US2] Eliminar el alias redundante `export type EstrategiaVersion = string;` (`typescript:S6564`) y reemplazar sus 5 referencias internas por `string` en `frontend/src/types/marketplace.types.ts`
+- [X] T019 [P] [US2] Reemplazar la expresión regular con backtracking super-lineal (`typescript:S8786`) por la función auxiliar de tiempo lineal $O(n)$ `formatearMilesConPunto` en `frontend/src/utils/formato-mercado.ts`
+- [X] T020 [P] [US2] Memoizar con `useMemo` el objeto `{ config }` provisto a `ChartContext.Provider` (`typescript:S6481`) en `frontend/src/components/ui/chart.tsx`
+- [X] T021 [P] [US2] Reemplazar el elemento `<article>` con `role="button"` y eventos de teclado/puntero (`typescript:S6819`, `typescript:S6847`) por `<button type="button" className="player-card">` cuando `onSelect` está definido y `<article className="player-card">` estático cuando no es interactivo en `frontend/src/components/catalog/PlayerCard.tsx`
+- [X] T022 [P] [US2] Reemplazar el contenedor `<div className="ranking-position-tabs" role="group">` (`typescript:S6819`) por un elemento semántico nativo `<fieldset className="ranking-position-tabs">` en `frontend/src/components/marketplace/RankingFiltersBar.tsx`
+- [X] T023 [US2] Encapsular las animaciones de `.filter-modal-content` con `@media (prefers-reduced-motion: no-preference)` y `@media (prefers-reduced-motion: reduce)` (`css:S9440`) y ajustar los estilos de `button.player-card` y `fieldset.ranking-position-tabs` en `frontend/src/styles/catalog.css` (depende de T021 y T022)
+- [X] T024 [P] [US2] Reemplazar `<div role="presentation">` y `<div role="dialog">` (`typescript:S6819`, 2 ocurrencias) por `<button type="button" className="player-detail-backdrop" data-testid="player-detail-overlay" onClick={onClose} tabIndex={-1} aria-hidden="true" />` y `<dialog open className="player-detail-panel" aria-modal="true" aria-labelledby="player-detail-title">` en `frontend/src/components/player-detail/PlayerDetailModal.tsx`
+- [X] T025 [US2] Agregar soporte `@media (prefers-reduced-motion: no-preference)` y `@media (prefers-reduced-motion: reduce)` en `.player-detail-panel` y `.stat-card` (`css:S9440`, 2 ocurrencias), estilizar `.player-detail-backdrop` y fijar color de fondo sólido `#262d3d` en `.player-detail-close-btn:hover, .player-detail-close-btn:focus-visible` (`css:S7924`) en `frontend/src/components/player-detail/PlayerDetailModal.css` (depende de T024)
+- [X] T026 [P] [US2] Reemplazar `<div role="button" tabIndex={0}>` (`typescript:S6819`) por el control nativo `<button type="button" className="pitch-player-card">` preservando `onClick`, `onKeyDown` y `data-testid` en `frontend/src/components/team-of-the-week/PitchPlayerCard.tsx`
 
 **Checkpoint**: Los 18 hallazgos `MAJOR` (US2) y los 13 `CRITICAL` (US1) quedan resueltos y validados de forma independiente.
 
@@ -109,30 +109,30 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 ### Implementation for User Story 3 — Módulo `backend` Capa `domain`
 
-- [ ] T027 [P] [US3] Simplificar las verificaciones de nulidad de `_miembros` utilizando optional chaining (`this._miembros?.length !== 11` y `this._miembros?.length ?? 0`, `typescript:S6582`) en `backend/src/domain/equipo-semanal.entity.ts` (ejecutar tras T005)
-- [ ] T028 [P] [US3] Consolidar la validación numérica mediante `Number.isNaN` (`typescript:S7773`, 2 ocurrencias) en `backend/src/domain/miembro-equipo-semanal.entity.ts`
-- [ ] T029 [P] [US3] Simplificar la asignación por defecto de `cantidadRestante` con el operador nullish coalescing `props.cantidadRestante ?? props.cantidad` (`typescript:S6606`) en `backend/src/domain/orden.entity.ts`
-- [ ] T030 [P] [US3] Definir el alias de tipo `export type MontoSaldo = number | string | Dinero;` (`typescript:S4323`) y utilizarlo en `UsuarioProps` en `backend/src/domain/usuario.entity.ts`
+- [X] T027 [P] [US3] Simplificar las verificaciones de nulidad de `_miembros` utilizando optional chaining (`this._miembros?.length !== 11` y `this._miembros?.length ?? 0`, `typescript:S6582`) en `backend/src/domain/equipo-semanal.entity.ts` (ejecutar tras T005)
+- [X] T028 [P] [US3] Consolidar la validación numérica mediante `Number.isNaN` (`typescript:S7773`, 2 ocurrencias) en `backend/src/domain/miembro-equipo-semanal.entity.ts`
+- [X] T029 [P] [US3] Simplificar la asignación por defecto de `cantidadRestante` con el operador nullish coalescing `props.cantidadRestante ?? props.cantidad` (`typescript:S6606`) en `backend/src/domain/orden.entity.ts`
+- [X] T030 [P] [US3] Definir el alias de tipo `export type MontoSaldo = number | string | Dinero;` (`typescript:S4323`) y utilizarlo en `UsuarioProps` en `backend/src/domain/usuario.entity.ts`
 
 ### Implementation for User Story 3 — Módulo `backend` Capa `data-access`
 
-- [ ] T031 [P] [US3] Resolver las 2 ocurrencias de `await` dentro de bucles (`typescript:S9382`) empleando encadenamiento secuencial `reduce` en `guardarMuchos` y ejecución concurrente `Promise.all` en `obtenerUltimasPorJugadores` en `backend/src/data-access/cotizacion.typeorm-repository.ts`
-- [ ] T032 [P] [US3] Resolver la ocurrencia de `await` dentro del bucle de `guardarMuchos` (`typescript:S9382`) mediante encadenamiento secuencial `reduce` en `backend/src/data-access/jugador.typeorm-repository.ts`
-- [ ] T033 [P] [US3] Definir el alias de tipo `export type ValorDecimalNullableOrm = string | number | null;` (`typescript:S4323`) y aplicarlo en `tirosPorPartido` y columnas decimales anulables en `backend/src/scraping/data-access/estadistica-jugador.orm-entity.ts`
-- [ ] T034 [P] [US3] Resolver las 2 ocurrencias de `await` dentro de bucles (`typescript:S9382`) empleando encadenamiento secuencial `reduce` en `guardarMuchos` y ejecución concurrente `Promise.all` en `buscarPorJugadores` en `backend/src/scraping/data-access/estadistica-jugador.typeorm-repository.ts`
+- [X] T031 [P] [US3] Resolver las 2 ocurrencias de `await` dentro de bucles (`typescript:S9382`) empleando encadenamiento secuencial `reduce` en `guardarMuchos` y ejecución concurrente `Promise.all` en `obtenerUltimasPorJugadores` en `backend/src/data-access/cotizacion.typeorm-repository.ts`
+- [X] T032 [P] [US3] Resolver la ocurrencia de `await` dentro del bucle de `guardarMuchos` (`typescript:S9382`) mediante encadenamiento secuencial `reduce` en `backend/src/data-access/jugador.typeorm-repository.ts`
+- [X] T033 [P] [US3] Definir el alias de tipo `export type ValorDecimalNullableOrm = string | number | null;` (`typescript:S4323`) y aplicarlo en `tirosPorPartido` y columnas decimales anulables en `backend/src/scraping/data-access/estadistica-jugador.orm-entity.ts`
+- [X] T034 [P] [US3] Resolver las 2 ocurrencias de `await` dentro de bucles (`typescript:S9382`) empleando encadenamiento secuencial `reduce` en `guardarMuchos` y ejecución concurrente `Promise.all` en `buscarPorJugadores` en `backend/src/scraping/data-access/estadistica-jugador.typeorm-repository.ts`
 
 ### Implementation for User Story 3 — Módulo `backend` Capa `services`
 
-- [ ] T035 [P] [US3] Resolver las 5 ocurrencias de `await` en bucles (`typescript:S9382`) mediante recursión asíncrona por página en `cargarJugadoresLocales` y encadenamiento secuencial `reduce` sobre `leagueConfigs` en `ejecutarPipeline` en `backend/src/scraping/services/scraping.service.ts` (ejecutar tras T008)
-- [ ] T036 [P] [US3] Resolver las 14 ocurrencias de `await` en bucles (`typescript:S9382`) mediante encadenamiento `reduce` y funciones recursivas asíncronas en `extraerEquipoDesdeDOM`, `consultarFeedResumenConReintentos`, `extraerEstadisticasLigaPorEquipos`, `consultarFeedComplementario`, `enriquecerConFeedsComplementarios`, `extraerEstadisticasLiga` y `extraerFilasTabla`, y estandarizar búsquedas regex con `RegExp.prototype.exec` (`typescript:S6594`) en `backend/src/scraping/services/whoscored-playwright.service.ts` (ejecutar tras T009 y T017)
-- [ ] T037 [P] [US3] Unificar la reexportación `export { obtenerAnoYSemanaIso as calcularAnoYSemanaIso } from '../domain/equipo-semanal.entity';` (`typescript:S7763`) en `backend/src/services/equipo-semanal.service.ts`
-- [ ] T038 [P] [US3] Remover el modificador `async` ocioso (`typescript:S7503`, 4 ocurrencias) en `ejecutarCompraPrimaria`, `ejecutarCompraSecundaria`, `crearOrdenVenta` y `cancelarOrdenVenta` trasladando la desestructuración inicial al callback de `this.dataSource.transaction` en `backend/src/services/oms.service.ts`
-- [ ] T039 [P] [US3] Resolver las 2 ocurrencias de `await` en bucles (`typescript:S9382`) utilizando `Promise.all` en `obtenerRanking` y encadenamiento secuencial `reduce` en el fallback individual de `recalcularCotizacionesActivas` en `backend/src/services/quotes.service.ts`
-- [ ] T040 [P] [US3] Resolver el `await` en bucle de `emitirFaltantes` (`typescript:S9382`) mediante encadenamiento secuencial `reduce` y remover el modificador `async` ocioso (`typescript:S7503`) en `ejecutarEmisionIdempotente` en `backend/src/services/tokens.service.ts`
+- [X] T035 [P] [US3] Resolver las 5 ocurrencias de `await` en bucles (`typescript:S9382`) mediante recursión asíncrona por página en `cargarJugadoresLocales` y encadenamiento secuencial `reduce` sobre `leagueConfigs` en `ejecutarPipeline` en `backend/src/scraping/services/scraping.service.ts` (ejecutar tras T008)
+- [X] T036 [P] [US3] Resolver las 14 ocurrencias de `await` en bucles (`typescript:S9382`) mediante encadenamiento `reduce` y funciones recursivas asíncronas en `extraerEquipoDesdeDOM`, `consultarFeedResumenConReintentos`, `extraerEstadisticasLigaPorEquipos`, `consultarFeedComplementario`, `enriquecerConFeedsComplementarios`, `extraerEstadisticasLiga` y `extraerFilasTabla`, y estandarizar búsquedas regex con `RegExp.prototype.exec` (`typescript:S6594`) en `backend/src/scraping/services/whoscored-playwright.service.ts` (ejecutar tras T009 y T017)
+- [X] T037 [P] [US3] Unificar la reexportación `export { obtenerAnoYSemanaIso as calcularAnoYSemanaIso } from '../domain/equipo-semanal.entity';` (`typescript:S7763`) en `backend/src/services/equipo-semanal.service.ts`
+- [X] T038 [P] [US3] Remover el modificador `async` ocioso (`typescript:S7503`, 4 ocurrencias) en `ejecutarCompraPrimaria`, `ejecutarCompraSecundaria`, `crearOrdenVenta` y `cancelarOrdenVenta` trasladando la desestructuración inicial al callback de `this.dataSource.transaction` en `backend/src/services/oms.service.ts`
+- [X] T039 [P] [US3] Resolver las 2 ocurrencias de `await` en bucles (`typescript:S9382`) utilizando `Promise.all` en `obtenerRanking` y encadenamiento secuencial `reduce` en el fallback individual de `recalcularCotizacionesActivas` en `backend/src/services/quotes.service.ts`
+- [X] T040 [P] [US3] Resolver el `await` en bucle de `emitirFaltantes` (`typescript:S9382`) mediante encadenamiento secuencial `reduce` y remover el modificador `async` ocioso (`typescript:S7503`) en `ejecutarEmisionIdempotente` en `backend/src/services/tokens.service.ts`
 
 ### Implementation for User Story 3 — Módulo `frontend` Capa `components`
 
-- [ ] T041 [P] [US3] Consolidar la validación numérica con `Number.isNaN` (`typescript:S7773`, 2 ocurrencias) al formatear el selector de semana en `frontend/src/components/team-of-the-week/WeekSelector.tsx`
+- [X] T041 [P] [US3] Consolidar la validación numérica con `Number.isNaN` (`typescript:S7773`, 2 ocurrencias) al formatear el selector de semana en `frontend/src/components/team-of-the-week/WeekSelector.tsx`
 
 **Checkpoint**: La totalidad de los 73 hallazgos abiertos (13 `CRITICAL`, 18 `MAJOR`, 42 `MINOR`) en las 20 reglas queda resuelta.
 
@@ -142,10 +142,10 @@ description: "Task list for Remediación Integral de Issues Abiertos en SonarQub
 
 **Purpose**: Verificación integral de compilación, cobertura independiente $\ge 80\%$, inmutabilidad de tests e invariancia de contratos según `quickstart.md`.
 
-- [ ] T042 [P] Validar compilación limpia de producción (`npm run build`) sin errores de tipos en `backend/tsconfig.json` y `frontend/tsconfig.json`
-- [ ] T043 [P] Ejecutar las suites unitarias con cobertura (`npm run test:unit:cov`) y de integración con PostgreSQL/Testcontainers (`npm run test:integration`) verificando $\ge 80\%$ en `lines` y `branches` en `backend/package.json`
-- [ ] T044 [P] Ejecutar la suite completa de pruebas con cobertura (`npm run test:coverage`) verificando $\ge 80\%$ en `lines` y `branches` en `frontend/package.json`
-- [ ] T045 Auditar el cumplimiento de inmutabilidad de tests (`git status -s backend/test backend/src/**/*.spec.ts frontend/tests`), ausencia de supresiones (`NOSONAR`, `eslint-disable`) e invariancia de contratos REST/OpenAPI conforme a `specs/015-fix-sonarcloud-issues/quickstart.md`
+- [X] T042 [P] Validar compilación limpia de producción (`npm run build`) sin errores de tipos en `backend/tsconfig.json` y `frontend/tsconfig.json`
+- [X] T043 [P] Ejecutar las suites unitarias con cobertura (`npm run test:unit:cov`) y de integración con PostgreSQL/Testcontainers (`npm run test:integration`) verificando $\ge 80\%$ en `lines` y `branches` en `backend/package.json`
+- [X] T044 [P] Ejecutar la suite completa de pruebas con cobertura (`npm run test:coverage`) verificando $\ge 80\%$ en `lines` y `branches` en `frontend/package.json`
+- [X] T045 Auditar el cumplimiento de inmutabilidad de tests (`git status -s backend/test backend/src/**/*.spec.ts frontend/tests`), ausencia de supresiones (`NOSONAR`, `eslint-disable`) e invariancia de contratos REST/OpenAPI conforme a `specs/015-fix-sonarcloud-issues/quickstart.md`
 
 ---
 

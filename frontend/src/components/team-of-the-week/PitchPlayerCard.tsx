@@ -32,9 +32,8 @@ export const PitchPlayerCard: React.FC<PitchPlayerCardProps> = ({
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className="pitch-player-card"
@@ -51,6 +50,7 @@ export const PitchPlayerCard: React.FC<PitchPlayerCardProps> = ({
         boxShadow: 'var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.4))',
         cursor: 'pointer',
         textAlign: 'center',
+        font: 'inherit',
         transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
         minWidth: '70px',
         maxWidth: '105px',
@@ -105,7 +105,7 @@ export const PitchPlayerCard: React.FC<PitchPlayerCardProps> = ({
       >
         {formatearCreditos(miembro.cotizacion)} pts
       </span>
-    </div>
+    </button>
   );
 };
 

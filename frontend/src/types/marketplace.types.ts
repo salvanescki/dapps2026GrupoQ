@@ -1,7 +1,6 @@
 import type { PosicionJugador } from './player.types';
 
 export type EstrategiaId = 'GLOBAL' | 'POSICIONAL';
-export type EstrategiaVersion = string;
 export type PosicionFiltroRanking = Exclude<PosicionJugador, 'No Clasificado'>;
 export type TipoMercado = 'PRIMARIO' | 'SECUNDARIO';
 export type TipoOperacionUsuario = 'COMPRA' | 'VENTA';
@@ -11,13 +10,13 @@ export type VarianteTendencia = 'positiva' | 'negativa' | 'neutra';
 
 export interface EstrategiaDisponible {
   id: EstrategiaId;
-  version: EstrategiaVersion;
+  version: string;
   descripcion: string;
 }
 
 export interface ConfiguracionEstrategia {
   estrategiaActivaId: EstrategiaId;
-  estrategiaActivaVersion: EstrategiaVersion;
+  estrategiaActivaVersion: string;
   actualizadoEn: string;
   estrategiasDisponibles: EstrategiaDisponible[];
 }
@@ -32,7 +31,7 @@ export interface JugadorRanking {
   cotizacionActual: number;
   variacionPorcentual: number;
   estrategiaId: EstrategiaId;
-  estrategiaVersion: EstrategiaVersion;
+  estrategiaVersion: string;
   tokensDisponibles: number;
 }
 
@@ -55,7 +54,7 @@ export interface CotizacionJugador {
   score: number;
   valor: number;
   estrategiaId: EstrategiaId;
-  estrategiaVersion: EstrategiaVersion;
+  estrategiaVersion: string;
   sinEstadisticas: boolean;
   metricas: SnapshotMetricasNormalizadas | null;
   fechaCotizacion: string;
@@ -156,7 +155,7 @@ export interface ResumenRecalculo {
   fallidos: number;
   sinEstadisticas: number;
   estrategiaAplicada: EstrategiaId;
-  versionEstrategia: EstrategiaVersion;
+  versionEstrategia: string;
   duracionMs: number;
 }
 

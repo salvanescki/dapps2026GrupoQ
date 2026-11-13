@@ -68,8 +68,13 @@ export class EstadisticaJugadorTypeOrmRepository
     const ormFinal = Array.from(deduplicadosPorClave.values());
 
     const batchSize = 100;
+    const lotes: EstadisticaJugadorOrmEntity[][] = [];
     for (let i = 0; i < ormFinal.length; i += batchSize) {
-      const batch = ormFinal.slice(i, i + batchSize);
+      lotes.push(ormFinal.slice(i, i + batchSize));
+    }
+
+    await lotes.reduce<Promise<void>>(async (prev, batch) => {
+      await prev;
       await manager
         .createQueryBuilder()
         .insert()
@@ -112,7 +117,7 @@ export class EstadisticaJugadorTypeOrmRepository
             fecha_actualizacion = EXCLUDED.fecha_actualizacion
         `)
         .execute();
-    }
+    }, Promise.resolve());
   }
 
   async buscarPorJugadorYTemporada(
@@ -138,16 +143,20 @@ export class EstadisticaJugadorTypeOrmRepository
   async buscarPorJugadores(jugadorIds: string[]): Promise<EstadisticaJugador[]> {
     if (!jugadorIds || jugadorIds.length === 0) return [];
     const batchSize = 1000;
-    const resultados: EstadisticaJugadorOrmEntity[] = [];
+    const lotes: string[][] = [];
     for (let i = 0; i < jugadorIds.length; i += batchSize) {
-      const slice = jugadorIds.slice(i, i + batchSize);
-      const orms = await this.ormRepository.find({
-        where: { jugadorId: In(slice) },
-        order: { fechaActualizacion: 'DESC' },
-      });
-      resultados.push(...orms);
+      lotes.push(jugadorIds.slice(i, i + batchSize));
     }
-    return resultados
+    const lotesOrms = await Promise.all(
+      lotes.map((slice) =>
+        this.ormRepository.find({
+          where: { jugadorId: In(slice) },
+          order: { fechaActualizacion: 'DESC' },
+        }),
+      ),
+    );
+    return lotesOrms
+      .flat()
       .map((o) => EstadisticaJugadorMapper.toDomain(o))
       .filter((e): e is EstadisticaJugador => e !== null);
   }

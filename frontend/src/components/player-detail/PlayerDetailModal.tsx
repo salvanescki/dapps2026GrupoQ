@@ -53,22 +53,19 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
     return null;
   }
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div
-      className="player-detail-overlay"
-      data-testid="player-detail-overlay"
-      role="presentation"
-      onClick={handleOverlayClick}
-    >
-      <div
+    <div className="player-detail-overlay">
+      <button
+        type="button"
+        className="player-detail-backdrop"
+        data-testid="player-detail-overlay"
+        onClick={onClose}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      <dialog
+        open
         className="player-detail-panel"
-        role="dialog"
         aria-modal="true"
         aria-labelledby="player-detail-title"
       >
@@ -208,7 +205,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
             </>
           )}
         </div>
-      </div>
+      </dialog>
     </div>
   );
 };

@@ -219,6 +219,95 @@ export class ScrapingService implements OnModuleInit {
     };
   }
 
+  private coincideClubEnAsociacion(
+    rawEquipoNombre: string | undefined,
+    normRawTeam: string,
+    jugador: Jugador,
+  ): boolean {
+    if (!normRawTeam || !jugador.equipo?.nombre) {
+      return true;
+    }
+
+    const normLocalTeam = this.normalizador.normalizarTexto(jugador.equipo.nombre);
+    const normLocalShort = jugador.equipo.nombreCorto
+      ? this.normalizador.normalizarTexto(jugador.equipo.nombreCorto)
+      : '';
+
+    const coincidePorDiccionario =
+      this.normalizador.coincidenClubes(rawEquipoNombre, jugador.equipo.nombre) ||
+      Boolean(
+        jugador.equipo.nombreCorto &&
+          this.normalizador.coincidenClubes(
+            rawEquipoNombre,
+            jugador.equipo.nombreCorto,
+          ),
+      );
+
+    if (coincidePorDiccionario) {
+      return true;
+    }
+
+    const coincideNombreLargo =
+      normLocalTeam.includes(normRawTeam) || normRawTeam.includes(normLocalTeam);
+    const coincideNombreCorto = Boolean(
+      normLocalShort &&
+        (normLocalShort.includes(normRawTeam) ||
+          normRawTeam.includes(normLocalShort)),
+    );
+
+    return coincideNombreLargo || coincideNombreCorto;
+  }
+
+  private asociarJugadorIndividual(
+    raw: RawWhoScoredPlayerStats,
+    jugadoresLocales: Jugador[],
+    asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }>,
+    descartados: Array<{ raw: RawWhoScoredPlayerStats; motivo: string }>,
+    enriquecidos: Jugador[],
+  ): void {
+    const matchNivel1 = jugadoresLocales.filter(
+      (j) => j.whoScoredPlayerId && j.whoScoredPlayerId === raw.whoScoredId,
+    );
+
+    if (matchNivel1.length === 1) {
+      asociados.push({ jugador: matchNivel1[0], stats: raw });
+      return;
+    }
+
+    if (matchNivel1.length > 1) {
+      descartados.push({
+        raw,
+        motivo: `Ambigüedad: múltiples jugadores locales comparten whoScoredPlayerId=${raw.whoScoredId}`,
+      });
+      return;
+    }
+
+    const normRawName = this.normalizador.normalizarTexto(raw.nombre);
+    const normRawTeam = this.normalizador.normalizarTexto(raw.equipoNombre);
+
+    const candidatos = jugadoresLocales.filter(
+      (j) =>
+        this.normalizador.normalizarTexto(j.nombre) === normRawName &&
+        this.coincideClubEnAsociacion(raw.equipoNombre, normRawTeam, j),
+    );
+
+    if (candidatos.length === 1) {
+      const candidato = candidatos[0];
+      if (!candidato.whoScoredPlayerId) {
+        candidato.asociarWhoScored(raw.whoScoredId);
+        enriquecidos.push(candidato);
+      }
+      asociados.push({ jugador: candidato, stats: raw });
+      return;
+    }
+
+    const motivo =
+      candidatos.length > 1
+        ? `ambigüedad detectada: ${candidatos.length} jugadores con el mismo nombre normalizado en el club local. Descarte preventivo.`
+        : 'No encontrado en catálogo local';
+    descartados.push({ raw, motivo });
+  }
+
   public asociarJugadoresLocales(
     rawStats: RawWhoScoredPlayerStats[],
     jugadoresLocales: Jugador[],
@@ -229,65 +318,13 @@ export class ScrapingService implements OnModuleInit {
     const enriquecidos: Jugador[] = [];
 
     for (const raw of rawStats) {
-      const matchNivel1 = jugadoresLocales.filter(
-        (j) => j.whoScoredPlayerId && j.whoScoredPlayerId === raw.whoScoredId,
+      this.asociarJugadorIndividual(
+        raw,
+        jugadoresLocales,
+        asociados,
+        descartados,
+        enriquecidos,
       );
-
-      if (matchNivel1.length === 1) {
-        asociados.push({ jugador: matchNivel1[0], stats: raw });
-        continue;
-      }
-
-      if (matchNivel1.length > 1) {
-        descartados.push({
-          raw,
-          motivo: `Ambigüedad: múltiples jugadores locales comparten whoScoredPlayerId=${raw.whoScoredId}`,
-        });
-        continue;
-      }
-
-      const normRawName = this.normalizador.normalizarTexto(raw.nombre);
-      const normRawTeam = this.normalizador.normalizarTexto(raw.equipoNombre);
-
-      const candidatos = jugadoresLocales.filter((j) => {
-        const normLocalName = this.normalizador.normalizarTexto(j.nombre);
-        if (normLocalName !== normRawName) return false;
-
-        if (normRawTeam && j.equipo?.nombre) {
-          const normLocalTeam = this.normalizador.normalizarTexto(j.equipo.nombre);
-          const normLocalShort = j.equipo.nombreCorto
-            ? this.normalizador.normalizarTexto(j.equipo.nombreCorto)
-            : '';
-          const matchClub =
-            this.normalizador.coincidenClubes(raw.equipoNombre, j.equipo.nombre) ||
-            (j.equipo.nombreCorto && this.normalizador.coincidenClubes(raw.equipoNombre, j.equipo.nombreCorto)) ||
-            normLocalTeam.includes(normRawTeam) ||
-            normRawTeam.includes(normLocalTeam) ||
-            (normLocalShort && (normLocalShort.includes(normRawTeam) || normRawTeam.includes(normLocalShort)));
-          if (!matchClub) return false;
-        }
-
-        return true;
-      });
-
-      if (candidatos.length === 1) {
-        const candidato = candidatos[0];
-        if (!candidato.whoScoredPlayerId) {
-          candidato.asociarWhoScored(raw.whoScoredId);
-          enriquecidos.push(candidato);
-        }
-        asociados.push({ jugador: candidato, stats: raw });
-      } else if (candidatos.length > 1) {
-        descartados.push({
-          raw,
-          motivo: `ambigüedad detectada: ${candidatos.length} jugadores con el mismo nombre normalizado en el club local. Descarte preventivo.`,
-        });
-      } else {
-        descartados.push({
-          raw,
-          motivo: 'No encontrado en catálogo local',
-        });
-      }
     }
 
     const total = rawStats.length;
@@ -307,13 +344,19 @@ export class ScrapingService implements OnModuleInit {
   private async cargarJugadoresLocales(ligaCodigo: string): Promise<Jugador[]> {
     const limite = 50;
     const jugadores: Jugador[] = [];
-    for (let pagina = 1; ; pagina++) {
+
+    const cargarPagina = async (pagina: number): Promise<void> => {
       const { items, total } = await this.jugadorRepo.buscarConFiltros(
         new CriterioFiltroJugador({ ligaCodigo, pagina, limite }),
       );
       jugadores.push(...items);
-      if (items.length < limite || jugadores.length >= total) break;
-    }
+      if (items.length < limite || jugadores.length >= total) {
+        return;
+      }
+      await cargarPagina(pagina + 1);
+    };
+
+    await cargarPagina(1);
     return jugadores;
   }
 
@@ -554,9 +597,13 @@ export class ScrapingService implements OnModuleInit {
     this.logger.log(`Iniciando corrida de scraping (${trigger}): ${ejecucion.id}`);
 
     try {
-      for (const leagueConfig of this.config.leagueConfigs) {
-        await this.procesarLiga(leagueConfig, ejecucion);
-      }
+      await this.config.leagueConfigs.reduce<Promise<void>>(
+        async (prev, leagueConfig) => {
+          await prev;
+          await this.procesarLiga(leagueConfig, ejecucion);
+        },
+        Promise.resolve(),
+      );
 
       ejecucion.finalizarExitoso();
       await this.ejecucionRepo.guardar(ejecucion);

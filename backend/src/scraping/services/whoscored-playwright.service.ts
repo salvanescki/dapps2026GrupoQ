@@ -214,35 +214,39 @@ const construirSelectorTabla = (pestana: string): string =>
   ' #player-table-statistics-body tr, #player-table-statistics-body tr';
 
 function leerFilasDeTablaDom(rows: Element[]) {
+  const leerTexto = (el: Element | null | undefined): string =>
+    el?.textContent?.trim() ?? '';
+
   return rows.map((tr) => {
     const playerLink = tr.querySelector('a.player-link');
-    const href = playerLink?.getAttribute('href') || '';
-    const idMatch = href.match(/\/Players\/(\d+)/i);
-    const whoScoredId = idMatch ? idMatch[1] : href || tr.getAttribute('data-player-id') || '';
+    const href = playerLink?.getAttribute('href') ?? '';
+    const idMatch = /\/Players\/(\d+)/i.exec(href);
+    const datasetId = (tr as HTMLElement).dataset.playerId ?? '';
+    const whoScoredId = idMatch?.[1] || href || datasetId;
     let nombre = '';
     if (playerLink) {
       const clone = playerLink.cloneNode(true) as HTMLElement;
       clone.querySelector('.table-ranking')?.remove();
-      nombre = clone.textContent?.trim() || '';
-      nombre = nombre.replace(/^\d+\s*/, '').trim();
+      nombre = leerTexto(clone).replace(/^\d+\s*/, '').trim();
     }
 
-    const teamLink = tr.querySelector('a.team-link') || tr.querySelector('.team-name');
-    let equipoNombre = teamLink?.textContent?.trim() || '';
-    equipoNombre = equipoNombre.replace(/,\s*$/, '').trim();
+    const teamLink = tr.querySelector('a.team-link, .team-name');
+    const equipoNombre = leerTexto(teamLink).replace(/,\s*$/, '').trim();
 
-    const getCol = (colName: string) => {
-      const el = tr.querySelector(`td[class*="${colName}"]`) || tr.querySelector(`td[data-field="${colName}"]`);
-      return el?.textContent?.trim() || '';
-    };
+    const getCol = (colName: string) =>
+      leerTexto(
+        tr.querySelector(`td[class*="${colName}"], td[data-field="${colName}"]`),
+      );
 
     let appsVal = getCol('apps');
     if (!appsVal) {
       const minsCell = tr.querySelector('td[class*="minsPlayed"]');
-      const prevText = minsCell?.previousElementSibling?.textContent?.trim() || '';
-      if (prevText) {
-        const mApps = prevText.match(/^(\d+)(?:\((\d+)\))?$/);
-        appsVal = mApps ? String(Number(mApps[1]) + (mApps[2] ? Number(mApps[2]) : 0)) : prevText;
+      const prevText = leerTexto(minsCell?.previousElementSibling);
+      const mApps = /^(\d+)(?:\((\d+)\))?$/.exec(prevText);
+      if (mApps) {
+        appsVal = String(Number(mApps[1]) + Number(mApps[2] ?? 0));
+      } else {
+        appsVal = prevText;
       }
     }
 
@@ -364,7 +368,7 @@ export class WhoScoredPlaywrightService
 {
   private readonly logger = new Logger(WhoScoredPlaywrightService.name);
   private browser: Browser | null = null;
-  private scrapingConfig: ScrapingConfig;
+  private readonly scrapingConfig: ScrapingConfig;
 
   constructor(
     @Optional() private readonly cacheService?: ScrapingCacheService,
@@ -463,12 +467,123 @@ export class WhoScoredPlaywrightService
     }
   }
 
+  private construirUrlDescubrimiento(config: LigaScrapingConfig): string {
+    const esIdPlaceholder =
+      !config.seasonId ||
+      config.seasonId >= 10000 ||
+      String(config.seasonId).startsWith('1234');
+    if (!esIdPlaceholder && config.stageId && config.stageId < 20000) {
+      return `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
+    }
+    return `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}`;
+  }
+
+  private async extraerMetadatosTemporadaYEtapa(
+    page: Page,
+    config: LigaScrapingConfig,
+  ): Promise<void> {
+    try {
+      const meta = await page.evaluate(() => {
+        let sId: number | null = null;
+        let stId: number | null = null;
+        const links = Array.from(
+          document.querySelectorAll('a[href*="/stages/" i], a[href*="/seasons/" i]'),
+        );
+        for (const a of links) {
+          const href = a.getAttribute('href') ?? '';
+          const m = /seasons\/(\d+)\/stages\/(\d+)/i.exec(href);
+          if (m) {
+            sId = Number(m[1]);
+            stId = Number(m[2]);
+            break;
+          }
+        }
+        return { seasonId: sId, stageId: stId };
+      });
+      if (meta?.seasonId) {
+        config.seasonId = meta.seasonId;
+      }
+      if (meta?.stageId) {
+        config.stageId = meta.stageId;
+      }
+    } catch {
+      // Fallback a config
+    }
+  }
+
+  private async extraerTituloCompetencia(
+    page: Page,
+    competenciaFallback: string,
+  ): Promise<string> {
+    try {
+      const titulo = await page.$eval(
+        'h1, .tournament-title, .header-title',
+        (el) => el.textContent?.trim() ?? '',
+      );
+      if (titulo) {
+        return titulo.split(/\d{4}\/\d{4}/)[0].trim() || competenciaFallback;
+      }
+    } catch {
+      // Fallback a config
+    }
+    return competenciaFallback;
+  }
+
+  private async extraerNombreEtapa(
+    page: Page,
+    etapaFallback: string,
+  ): Promise<string> {
+    try {
+      const etapaTexto = await page.$eval(
+        '#stages option:checked, .stage-name',
+        (el) => el.textContent?.trim() ?? '',
+      );
+      if (etapaTexto) {
+        return etapaTexto;
+      }
+    } catch {
+      // Fallback
+    }
+    return etapaFallback;
+  }
+
+  private async extraerEquiposDesdeStandings(
+    page: Page,
+  ): Promise<EquipoWhoScoredDescubierto[]> {
+    try {
+      return await page.$$eval(
+        'table.standings a.team-link, #standings a.team-link, a[href*="/teams/"], a[href*="/Teams/"]',
+        (links) => {
+          const seen = new Set<string>();
+          const res: { whoScoredTeamId: string; nombre: string; url: string }[] = [];
+          for (const a of links) {
+            const href = a.getAttribute('href') ?? '';
+            const match = /\/teams\/(\d+)/i.exec(href);
+            const id = match?.[1];
+            if (id && !seen.has(id)) {
+              seen.add(id);
+              res.push({
+                whoScoredTeamId: id,
+                nombre: a.textContent?.trim() ?? '',
+                url: href,
+              });
+            }
+          }
+          return res;
+        },
+      );
+    } catch {
+      return [];
+    }
+  }
+
   public async descubrirEstructuraCompeticion(
     config: LigaScrapingConfig,
   ): Promise<EstructuraCompeticionWhoScored> {
+    const nombreTorneo = config.nombreTorneo || config.liga;
     if (this.cacheService) {
       const cached = await this.cacheService.obtenerEstructuraCompeticion(
-        config.nombreTorneo || config.liga,
+        nombreTorneo,
         this.scrapingConfig.seasonLabel,
       );
       if (cached) {
@@ -485,99 +600,22 @@ export class WhoScoredPlaywrightService
     });
 
     const page: Page = await context.newPage();
-    let competencia = config.nombreTorneo || config.liga;
+    let competencia = nombreTorneo;
     let etapa = 'Regular Season';
     let equipos: EquipoWhoScoredDescubierto[] = [];
 
     try {
       await this.configurarInterceptores(page);
-      const esIdPlaceholder =
-        !config.seasonId || config.seasonId >= 10000 || String(config.seasonId).startsWith('1234');
-      const url =
-        !esIdPlaceholder && config.stageId && config.stageId < 20000
-          ? `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`
-          : `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}`;
+      const url = this.construirUrlDescubrimiento(config);
       this.logger.log(`Descubriendo competición WhoScored (${config.liga}): ${url}`);
 
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
       await this.esperarSiHayChallenge(page);
 
-      try {
-        const meta = await page.evaluate(() => {
-          let sId: number | null = null;
-          let stId: number | null = null;
-          const links = Array.from(document.querySelectorAll('a[href*="/stages/" i], a[href*="/seasons/" i]'));
-          for (const a of links) {
-            const m = (a.getAttribute('href') || '').match(/seasons\/(\d+)\/stages\/(\d+)/i);
-            if (m) {
-              sId = Number(m[1]);
-              stId = Number(m[2]);
-              break;
-            }
-          }
-          return { seasonId: sId, stageId: stId };
-        });
-        if (meta.seasonId) {
-          config.seasonId = meta.seasonId;
-        }
-        if (meta.stageId) {
-          config.stageId = meta.stageId;
-        }
-      } catch {
-        // Fallback a config
-      }
-
-      try {
-        const titulo = await page.$eval(
-          'h1, .tournament-title, .header-title',
-          (el) => el.textContent?.trim() || '',
-        );
-        if (titulo) {
-          competencia = titulo.split(/\d{4}\/\d{4}/)[0].trim() || competencia;
-        }
-      } catch {
-        // Fallback a config
-      }
-
-      try {
-        const etapaTexto = await page.$eval(
-          '#stages option:checked, .stage-name',
-          (el) => el.textContent?.trim() || '',
-        );
-        if (etapaTexto) {
-          etapa = etapaTexto;
-        }
-      } catch {
-        // Fallback
-      }
-
-      try {
-        equipos = await page.$$eval(
-          'table.standings a.team-link, #standings a.team-link, a[href*="/teams/"], a[href*="/Teams/"]',
-          (links) => {
-            const seen = new Set<string>();
-            const res: { whoScoredTeamId: string; nombre: string; url: string }[] = [];
-            for (const a of links) {
-              const href = a.getAttribute('href') || '';
-              const match = href.match(/\/teams\/(\d+)/i);
-              if (match) {
-                const id = match[1];
-                if (!seen.has(id)) {
-                  seen.add(id);
-                  res.push({
-                    whoScoredTeamId: id,
-                    nombre: a.textContent?.trim() || '',
-                    url: href,
-                  });
-                }
-              }
-            }
-            return res;
-          },
-        );
-      } catch {
-        equipos = [];
-      }
+      await this.extraerMetadatosTemporadaYEtapa(page, config);
+      competencia = await this.extraerTituloCompetencia(page, competencia);
+      etapa = await this.extraerNombreEtapa(page, etapa);
+      equipos = await this.extraerEquiposDesdeStandings(page);
     } finally {
       await page.close().catch(() => null);
       await context.close().catch(() => null);
@@ -595,7 +633,7 @@ export class WhoScoredPlaywrightService
 
     if (this.cacheService && equipos.length > 0) {
       await this.cacheService.guardarEstructuraCompeticion(
-        config.nombreTorneo || config.liga,
+        nombreTorneo,
         this.scrapingConfig.seasonLabel,
         resEstructura,
       );
@@ -689,7 +727,8 @@ export class WhoScoredPlaywrightService
       { nombre: 'passing', selectorTab: 'a[href="#team-squad-stats-passing"]' },
     ];
 
-    for (const pestana of pestanasEquipo) {
+    await pestanasEquipo.reduce<Promise<void>>(async (prev, pestana) => {
+      await prev;
       try {
         if (pestana.selectorTab) {
           const tabVisible = await page.$(pestana.selectorTab);
@@ -704,7 +743,7 @@ export class WhoScoredPlaywrightService
           `Error en fallback DOM pestaña ${pestana.nombre} para equipo ${equipo.nombre}: ${(tabErr as Error).message}`,
         );
       }
-    }
+    }, Promise.resolve());
 
     return Array.from(acumulador.values());
   }
@@ -732,14 +771,11 @@ export class WhoScoredPlaywrightService
     refererUrl: string,
     page: Page,
   ): Promise<RawWhoScoredFeedItem[] | null> {
-    let items: RawWhoScoredFeedItem[] | null = null;
-    let intentos = 0;
     const maxIntentos = 3;
 
-    while (intentos < maxIntentos && items === null) {
-      intentos++;
+    const intentar = async (intento: number): Promise<RawWhoScoredFeedItem[] | null> => {
       try {
-        items = await this.consultarFeedEquipo(
+        return await this.consultarFeedEquipo(
           context,
           config.stageId,
           equipo.whoScoredTeamId,
@@ -747,17 +783,22 @@ export class WhoScoredPlaywrightService
           page,
         );
       } catch (err: any) {
+        if (err instanceof WhoScoredFeedIncompatibleException) {
+          return null;
+        }
         if (esErrorRateLimit(err)) {
           await this.pausaRateLimit(10000);
-        } else if (err instanceof WhoScoredFeedIncompatibleException) {
-          break;
-        } else if (intentos < maxIntentos) {
-          await new Promise((r) => setTimeout(r, 1000 * intentos));
+        } else if (intento < maxIntentos) {
+          await new Promise((r) => setTimeout(r, 1000 * intento));
         }
+        if (intento >= maxIntentos) {
+          return null;
+        }
+        return intentar(intento + 1);
       }
-    }
+    };
 
-    return items;
+    return intentar(1);
   }
 
   private async extraerEquipoPorFeed(
@@ -848,7 +889,8 @@ export class WhoScoredPlaywrightService
       const listaEquipos = await this.resolverListaEquipos(config, equipos);
       const refererUrl = `https://www.whoscored.com/Regions/${config.regionId}/Tournaments/${config.tournamentId}/Seasons/${config.seasonId}/Stages/${config.stageId}`;
 
-      for (const equipo of listaEquipos) {
+      await listaEquipos.reduce<Promise<void>>(async (prev, equipo) => {
+        await prev;
         await this.extraerEquipoPorFeed(
           context,
           page,
@@ -858,7 +900,7 @@ export class WhoScoredPlaywrightService
           jugadores,
           incidencias,
         );
-      }
+      }, Promise.resolve());
     } finally {
       await page.close().catch(() => null);
       await context.close().catch(() => null);
@@ -881,12 +923,14 @@ export class WhoScoredPlaywrightService
     page: Page,
     feed: FeedComplementarioWhoScored,
   ): Promise<{ items: RawWhoScoredFeedItem[] | null; ultimoError: string | null }> {
-    let items: RawWhoScoredFeedItem[] | null = null;
-    let ultimoError: string | null = null;
+    const maxIntentos = 2;
 
-    for (let intento = 1; intento <= 2 && items === null; intento++) {
+    const intentar = async (
+      intento: number,
+      ultimoErrPrevio: string | null,
+    ): Promise<{ items: RawWhoScoredFeedItem[] | null; ultimoError: string | null }> => {
       try {
-        items = await this.consultarFeedEquipo(
+        const items = await this.consultarFeedEquipo(
           context,
           stageId,
           equipo.whoScoredTeamId,
@@ -894,15 +938,20 @@ export class WhoScoredPlaywrightService
           page,
           { category: feed.category, subcategory: feed.subcategory, extraQuery: feed.extraQuery },
         );
+        return { items, ultimoError: ultimoErrPrevio };
       } catch (err: any) {
-        ultimoError = err?.message ?? String(err);
-        if (esErrorRateLimit(err) && intento < 2) {
+        const ultimoError = err?.message ?? String(err);
+        if (esErrorRateLimit(err) && intento < maxIntentos) {
           await this.pausaRateLimit(10000);
         }
+        if (intento >= maxIntentos) {
+          return { items: null, ultimoError };
+        }
+        return intentar(intento + 1, ultimoError);
       }
-    }
+    };
 
-    return { items, ultimoError };
+    return intentar(1, null);
   }
 
   private async enriquecerConFeedsComplementarios(
@@ -914,37 +963,41 @@ export class WhoScoredPlaywrightService
     jugadoresEquipo: Map<string, RawWhoScoredPlayerStats>,
     incidencias: IncidenciaScraping[],
   ): Promise<void> {
-    for (const feed of FEEDS_COMPLEMENTARIOS_WHOSCORED) {
-      await this.delayHumano(300, 700);
-      const { items, ultimoError } = await this.consultarFeedComplementario(
-        context,
-        stageId,
-        equipo,
-        refererUrl,
-        page,
-        feed,
-      );
-
-      if (!items) {
-        this.logger.warn(
-          `Feed complementario '${feed.clave}' no disponible para equipo ${equipo.nombre} (${equipo.whoScoredTeamId}): ${ultimoError}`,
+    await FEEDS_COMPLEMENTARIOS_WHOSCORED.reduce<Promise<void>>(
+      async (prev, feed) => {
+        await prev;
+        await this.delayHumano(300, 700);
+        const { items, ultimoError } = await this.consultarFeedComplementario(
+          context,
+          stageId,
+          equipo,
+          refererUrl,
+          page,
+          feed,
         );
-        incidencias.push({
-          tipo: 'FEED_COMPLEMENTARIO_FALLIDO',
-          equipoId: equipo.whoScoredTeamId,
-          equipoNombre: equipo.nombre,
-          detalle: `Feed '${feed.clave}' (${feed.category}/${feed.subcategory}) no disponible: ${ultimoError}`,
-        });
-        continue;
-      }
 
-      for (const item of items) {
-        const stats = jugadoresEquipo.get(String(item.playerId));
-        if (stats) {
-          feed.aplicar(item, stats);
+        if (!items) {
+          this.logger.warn(
+            `Feed complementario '${feed.clave}' no disponible para equipo ${equipo.nombre} (${equipo.whoScoredTeamId}): ${ultimoError}`,
+          );
+          incidencias.push({
+            tipo: 'FEED_COMPLEMENTARIO_FALLIDO',
+            equipoId: equipo.whoScoredTeamId,
+            equipoNombre: equipo.nombre,
+            detalle: `Feed '${feed.clave}' (${feed.category}/${feed.subcategory}) no disponible: ${ultimoError}`,
+          });
+          return;
         }
-      }
-    }
+
+        for (const item of items) {
+          const stats = jugadoresEquipo.get(String(item.playerId));
+          if (stats) {
+            feed.aplicar(item, stats);
+          }
+        }
+      },
+      Promise.resolve(),
+    );
   }
 
   private async configurarInterceptores(page: Page): Promise<void> {
@@ -998,7 +1051,8 @@ export class WhoScoredPlaywrightService
         { nombre: 'passing', selectorTab: 'a[href="#stage-top-player-stats-passing"]' },
       ];
 
-      for (const pestana of pestanas) {
+      await pestanas.reduce<Promise<void>>(async (prev, pestana) => {
+        await prev;
         try {
           if (pestana.selectorTab) {
             const tabVisible = await page.$(pestana.selectorTab);
@@ -1014,7 +1068,7 @@ export class WhoScoredPlaywrightService
             `Error al procesar pestaña ${pestana.nombre} en liga ${config.liga}: ${(tabErr as Error).message}`,
           );
         }
-      }
+      }, Promise.resolve());
     } finally {
       await page.close();
       await context.close();
@@ -1089,18 +1143,21 @@ export class WhoScoredPlaywrightService
       return;
     }
 
-    let pagina = 1;
     const maxPaginas = 60;
-    let ultimoPrimerId: string | null = null;
 
-    while (pagina <= maxPaginas) {
+    const procesarPagina = async (
+      pagina: number,
+      ultimoPrimerId: string | null,
+    ): Promise<void> => {
+      if (pagina > maxPaginas) return;
+
       const filas = await page.$$eval(
         construirSelectorTabla(pestana),
         leerFilasDeTablaDom,
       );
 
       if (!filas || filas.length === 0) {
-        break;
+        return;
       }
 
       for (const f of filas) {
@@ -1109,16 +1166,17 @@ export class WhoScoredPlaywrightService
 
       const primerIdActual = filas[0]?.whoScoredId || filas[0]?.nombre || '';
       if (primerIdActual && primerIdActual === ultimoPrimerId) {
-        break;
+        return;
       }
-      ultimoPrimerId = primerIdActual;
 
       if (!(await this.avanzarPagina(page, pestana))) {
-        break;
+        return;
       }
 
-      pagina++;
       await this.delayHumano(800, 1500);
-    }
+      await procesarPagina(pagina + 1, primerIdActual);
+    };
+
+    await procesarPagina(1, null);
   }
 }
