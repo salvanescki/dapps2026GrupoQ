@@ -26,6 +26,7 @@ import {
   ScrapingConfig,
   getScrapingConfig,
 } from '../../config/scraping.config';
+import { MetricasEstadisticasJugador } from '../domain/estadistica-jugador.entity';
 
 export interface EquipoWhoScoredDescubierto {
   whoScoredTeamId: string;
@@ -55,35 +56,10 @@ export interface ResultadoExtraccionLiga {
   incidencias: IncidenciaScraping[];
 }
 
-export interface RawWhoScoredPlayerStats {
+export interface RawWhoScoredPlayerStats extends MetricasEstadisticasJugador {
   whoScoredId: string;
   nombre: string;
   equipoNombre?: string;
-  partidosJugados?: number;
-  minutosJugados?: number;
-  goles?: number;
-  asistencias?: number;
-  tirosPorPartido?: number | null;
-  precisionPase?: number | null;
-  duelosAereosGanadosPorPartido?: number | null;
-  rating?: number | null;
-  tarjetasAmarillas?: number;
-  tarjetasRojas?: number;
-  regatesCompletadosPorPartido?: number | null;
-  pasesClavePorPartido?: number | null;
-  xgPorPartido?: number | null;
-  xaPorPartido?: number | null;
-  grandesOcasionesPorPartido?: number | null;
-  entradasPorPartido?: number | null;
-  intercepccionesPorPartido?: number | null;
-  despejesPorPartido?: number | null;
-  pasesPorPartido?: number | null;
-  centrosPorPartido?: number | null;
-  atajadas?: number | null;
-  golesRecibidos?: number | null;
-  porcentajeAtajadas?: number | null;
-  erroresQueGeneraronGol?: number | null;
-  autogoles?: number | null;
 }
 
 export interface OpcionesFeedEquipo {
