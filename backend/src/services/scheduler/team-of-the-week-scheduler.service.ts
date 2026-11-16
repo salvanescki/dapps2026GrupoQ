@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 import { EquipoSemanalService } from '../equipo-semanal.service';
 import { QuotesService } from '../quotes.service';
 import { EquipoSemanal } from '../../domain/equipo-semanal.entity';
+import { AppMetricsService } from '../../observability/services/app-metrics.service';
 
 @Injectable()
 export class TeamOfTheWeekSchedulerService {
@@ -14,6 +15,7 @@ export class TeamOfTheWeekSchedulerService {
     private readonly dataSource: DataSource,
     private readonly equipoSemanalService: EquipoSemanalService,
     private readonly quotesService: QuotesService,
+    @Optional() private readonly metricsService?: AppMetricsService,
   ) {}
 
   @Cron(process.env.TEAM_OF_THE_WEEK_CRON || '0 1 * * 1') // Cada lunes a las 01:00 UTC
@@ -29,6 +31,7 @@ export class TeamOfTheWeekSchedulerService {
     await queryRunner.connect();
 
     let lockAdquirido = false;
+    const start = Date.now();
     try {
       const res = await queryRunner.query(
         `SELECT pg_try_advisory_lock($1) AS lock_acquired`,
@@ -60,11 +63,16 @@ export class TeamOfTheWeekSchedulerService {
         return { ejecutado: false };
       }
 
+      const duracionSegundos = (Date.now() - start) / 1000;
+      this.metricsService?.recordTotwGeneration('exito');
+      this.metricsService?.recordTotwDuration(duracionSegundos);
+
       this.logger.log(
         `Generación automática del Equipo de la Semana completada con éxito para la semana ${resultado.equipo.ano}-W${resultado.equipo.semanaIso}.`,
       );
       return { ejecutado: true, equipo: resultado.equipo };
     } catch (error) {
+      this.metricsService?.recordTotwGeneration('fallo');
       this.logger.error(
         `Error crítico durante la generación del Equipo de la Semana: ${(error as Error).message}`,
         (error as Error).stack,

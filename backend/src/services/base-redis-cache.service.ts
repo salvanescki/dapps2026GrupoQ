@@ -1,12 +1,20 @@
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
 
 export abstract class BaseRedisCacheService implements OnModuleDestroy {
   protected readonly logger: Logger;
   protected readonly redisClient: Redis | null = null;
+  protected readonly dominio: 'marketplace' | 'scraping';
 
-  protected constructor(loggerContext: string, injectedRedis?: Redis | null) {
+  protected constructor(
+    loggerContext: string,
+    injectedRedis?: Redis | null,
+    protected readonly metricsService?: AppMetricsService,
+  ) {
     this.logger = new Logger(loggerContext);
+    this.dominio = loggerContext.toLowerCase().includes('scraping') ? 'scraping' : 'marketplace';
+
     if (injectedRedis !== undefined) {
       this.redisClient = injectedRedis;
     } else {
@@ -56,10 +64,14 @@ export abstract class BaseRedisCacheService implements OnModuleDestroy {
     ttlSegundos: number,
     etiquetaError: string,
   ): Promise<void> {
-    if (!this.redisClient) return;
+    if (!this.redisClient) {
+      this.metricsService?.recordCacheFallback(this.dominio);
+      return;
+    }
     try {
       await this.redisClient.setex(key, ttlSegundos, JSON.stringify(datos));
     } catch (err) {
+      this.metricsService?.recordCacheFallback(this.dominio);
       this.logger.warn(
         `Degradación controlada: fallo al escribir ${etiquetaError} en caché (${key}): ${(err as Error).message}`,
       );
@@ -70,12 +82,20 @@ export abstract class BaseRedisCacheService implements OnModuleDestroy {
     key: string,
     etiquetaError: string,
   ): Promise<T | null> {
-    if (!this.redisClient) return null;
+    if (!this.redisClient) {
+      this.metricsService?.recordCacheFallback(this.dominio);
+      return null;
+    }
     try {
       const data = await this.redisClient.get(key);
-      if (!data) return null;
+      if (!data) {
+        this.metricsService?.recordCacheRequest(this.dominio, 'miss');
+        return null;
+      }
+      this.metricsService?.recordCacheRequest(this.dominio, 'hit');
       return JSON.parse(data) as T;
     } catch (err) {
+      this.metricsService?.recordCacheFallback(this.dominio);
       this.logger.warn(
         `Degradación controlada: fallo al leer ${etiquetaError} de caché (${key}): ${(err as Error).message}`,
       );
@@ -87,17 +107,20 @@ export abstract class BaseRedisCacheService implements OnModuleDestroy {
     patron: string,
     etiquetaError: string,
   ): Promise<void> {
-    if (!this.redisClient) return;
+    if (!this.redisClient) {
+      this.metricsService?.recordCacheFallback(this.dominio);
+      return;
+    }
     try {
       const keys = await this.redisClient.keys(patron);
       if (keys && keys.length > 0) {
         await this.redisClient.del(...keys);
       }
     } catch (err) {
+      this.metricsService?.recordCacheFallback(this.dominio);
       this.logger.warn(
         `Degradación controlada: fallo al invalidar ${etiquetaError} en caché: ${(err as Error).message}`,
       );
     }
   }
 }
-

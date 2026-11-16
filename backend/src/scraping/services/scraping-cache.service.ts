@@ -1,6 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import Redis from 'ioredis';
 import { BaseRedisCacheService } from '../../services/base-redis-cache.service';
+import { AppMetricsService } from '../../observability/services/app-metrics.service';
 import {
   EstructuraCompeticionWhoScored,
   EquipoWhoScoredDescubierto,
@@ -10,8 +11,11 @@ import {
 export class ScrapingCacheService extends BaseRedisCacheService {
   private readonly defaultTTL = 86400; // 24 horas en segundos
 
-  constructor(@Optional() injectedRedis?: Redis) {
-    super(ScrapingCacheService.name, injectedRedis);
+  constructor(
+    @Optional() injectedRedis?: Redis,
+    @Optional() metricsService?: AppMetricsService,
+  ) {
+    super(ScrapingCacheService.name, injectedRedis, metricsService);
   }
 
   public async guardarEstructuraCompeticion(
