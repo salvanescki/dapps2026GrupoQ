@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Football Player Token Marketplace - Observability, Metrics & Health Checks API
+  description: >
+    Especificación OpenAPI para los endpoints de observabilidad, métricas Prometheus
+    y sondas de salud (readiness y liveness) del backend del marketplace.
+  version: 1.0.0
+paths:
+  /metrics:
+    get:
+      tags:
+        - Observabilidad
+      summary: Obtener métricas en formato estándar de Prometheus
+      description: >
+        Expone todas las métricas estándar del runtime Node.js (CPU, memoria, event loop lag, descriptores de archivos)
+        y las métricas de negocio personalizadas del marketplace, cotizaciones, scraping, integraciones externas,
+        caché y autenticación.
+      responses:
+        '200':
+          description: Métricas en formato texto plano de Prometheus.
+          content:
+            text/plain; version=0.0.4; charset=utf-8:
+              schema:
+                type: string
+                example: |
+                  # HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+                  # TYPE process_cpu_user_seconds_total counter
+                  process_cpu_user_seconds_total 1.25
+                  # HELP marketplace_orders_total Cantidad total de órdenes procesadas por el OMS.
+                  # TYPE marketplace_orders_total counter
+                  marketplace_orders_total{tipo="compra",mercado="primario",estado="completada"} 12
+                  # HELP marketplace_transactions_total Cantidad total de transacciones liquidadas.
+                  # TYPE marketplace_transactions_total counter
+                  marketplace_transactions_total{mercado="primario",estrategia_version="GLOBAL_v1"} 12
+                  # HELP marketplace_volume_cents_total Volumen acumulado operado en centavos de crédito.
+                  # TYPE marketplace_volume_cents_total counter
+                  marketplace_volume_cents_total{mercado="primario"} 1200
+                  # HELP marketplace_active_sell_orders Cantidad actual de órdenes de venta activas en el mercado secundario.
+                  # TYPE marketplace_active_sell_orders gauge
+                  marketplace_active_sell_orders 3
+                  # HELP quotes_active_strategy Indicador de estrategia activa (1 para activa, 0 para inactiva).
+                  # TYPE quotes_active_strategy gauge
+                  quotes_active_strategy{estrategia="GLOBAL_v1"} 1
+                  quotes_active_strategy{estrategia="POSICIONAL_v1"} 0
+
+  /health/ready:
+    get:
+      tags:
+        - Observabilidad
+      summary: Sonda de preparación (Readiness Probe)
+      description: >
+        Verifica la disponibilidad operativa de todas las dependencias críticas requeridas para procesar tráfico:
+        base de datos PostgreSQL, caché Redis y la API externa Football-Data.org.
+      responses:
+        '200':
+          description: Todas las dependencias críticas están disponibles. La instancia está lista para recibir tráfico.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponseOk'
+              example:
+                status: "ok"
+                info:
+                  database:
+                    status: "up"
+                  redis:
+                    status: "up"
+                  footballData:
+                    status: "up"
+                error: {}
+                details:
+                  database:
+                    status: "up"
+                  redis:
+                    status: "up"
+                  footballData:
+                    status: "up"
+        '503':
+          description: Al menos una dependencia crítica no está disponible o excedió el tiempo límite de espera.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponseError'
+              example:
+                status: "error"
+                info:
+                  database:
+                    status: "up"
+                error:
+                  redis:
+                    status: "down"
+                    message: "Connection timeout after 2000ms"
+                details:
+                  database:
+                    status: "up"
+                  redis:
+                    status: "down"
+                    message: "Connection timeout after 2000ms"
+
+  /health/live:
+    get:
+      tags:
+        - Observabilidad
+      summary: Sonda de vivacidad (Liveness Probe)
+      description: >
+        Verifica si el proceso Node.js se encuentra en un estado saludable y recuperable,
+        evaluando que el consumo de memoria Heap no supere 300 MB y el RSS no supere 1 GB.
+      responses:
+        '200':
+          description: El proceso se encuentra saludable y dentro de los límites de memoria permitidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponseOk'
+              example:
+                status: "ok"
+                info:
+                  memory_heap:
+                    status: "up"
+                  memory_rss:
+                    status: "up"
+                error: {}
+                details:
+                  memory_heap:
+                    status: "up"
+                  memory_rss:
+                    status: "up"
+        '503':
+          description: El proceso ha superado los umbrales de memoria Heap o RSS y requiere reinicio por parte del orquestador.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponseError'
+              example:
+                status: "error"
+                info:
+                  memory_rss:
+                    status: "up"
+                error:
+                  memory_heap:
+                    status: "down"
+                    message: "Used heap memory of 320MB exceeds threshold of 300MB"
+                details:
+                  memory_heap:
+                    status: "down"
+                    message: "Used heap memory of 320MB exceeds threshold of 300MB"
+                  memory_rss:
+                    status: "up"
+
+components:
+  schemas:
+    ComponentHealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [up, down]
+          example: "up"
+        message:
+          type: string
+          example: "Connection timeout after 2000ms"
+
+    HealthCheckResponseOk:
+      type: object
+      required:
+        - status
+        - details
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          example: "ok"
+        info:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
+        error:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
+        details:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
+
+    HealthCheckResponseError:
+      type: object
+      required:
+        - status
+        - error
+        - details
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: "error"
+        info:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
+        error:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
+        details:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ComponentHealthStatus'
