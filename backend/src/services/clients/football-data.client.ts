@@ -76,8 +76,8 @@ export class FootballDataClient {
       });
 
       const rateLimitHeader =
-        response.headers.get('x-requests-available-minute') ||
-        response.headers.get('X-Requests-Available-Minute');
+        response.headers?.get?.('x-requests-available-minute') ||
+        response.headers?.get?.('X-Requests-Available-Minute');
       if (rateLimitHeader) {
         const remaining = Number.parseInt(rateLimitHeader, 10);
         if (!Number.isNaN(remaining)) {
