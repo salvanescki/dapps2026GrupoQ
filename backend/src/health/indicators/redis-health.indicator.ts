@@ -6,30 +6,33 @@ import Redis from 'ioredis';
 export class RedisHealthIndicator extends HealthIndicator {
   private readonly logger = new Logger(RedisHealthIndicator.name);
   private client: Redis | null = null;
+  private readonly isInjectedClient: boolean = false;
   private readonly timeoutMs: number = 2000;
 
   constructor(@Optional() @Inject('REDIS_CLIENT') injectedClient?: Redis) {
     super();
     if (injectedClient) {
       this.client = injectedClient;
+      this.isInjectedClient = true;
     }
   }
 
   private getClient(): Redis {
-    if (!this.client) {
+    if (!this.client || (!this.isInjectedClient && (this.client.status === 'end' || this.client.status === 'close'))) {
+      const commonOptions = {
+        lazyConnect: true,
+        connectTimeout: this.timeoutMs,
+        maxRetriesPerRequest: 1,
+        retryStrategy: () => null,
+      };
+
       if (process.env.REDIS_URL) {
-        this.client = new Redis(process.env.REDIS_URL, {
-          lazyConnect: true,
-          connectTimeout: this.timeoutMs,
-          maxRetriesPerRequest: 1,
-        });
+        this.client = new Redis(process.env.REDIS_URL, commonOptions);
       } else {
         this.client = new Redis({
           host: process.env.REDIS_HOST || '127.0.0.1',
           port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
-          lazyConnect: true,
-          connectTimeout: this.timeoutMs,
-          maxRetriesPerRequest: 1,
+          ...commonOptions,
         });
       }
       this.client.on('error', (err) => {
