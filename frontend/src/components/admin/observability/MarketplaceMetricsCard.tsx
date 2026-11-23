@@ -1,7 +1,7 @@
 import React from 'react';
 import { MetricaDeMarketplace } from '../../../types/observability.types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../../ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export interface MarketplaceMetricsCardProps {
   marketplace: MetricaDeMarketplace | null;
@@ -11,7 +11,7 @@ export interface MarketplaceMetricsCardProps {
 const chartConfig = {
   cantidad: {
     label: 'Órdenes',
-    color: '#3b82f6',
+    color: 'var(--color-emerald-500)',
   },
 };
 
@@ -76,18 +76,32 @@ export const MarketplaceMetricsCard: React.FC<MarketplaceMetricsCardProps> = ({
         </h3>
         {chartData.length > 0 ? (
           <ChartContainer config={chartConfig} altura={220}>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="etiqueta" tickLine={false} tickMargin={10} fontSize={12} />
-                <YAxis allowDecimals={false} fontSize={12} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="cantidad" fill="var(--color-cantidad, #3b82f6)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+              <XAxis
+                dataKey="etiqueta"
+                tickLine={false}
+                tickMargin={10}
+                fontSize={12}
+                stroke="var(--text-secondary)"
+                tick={{ fill: 'var(--text-secondary)' }}
+              />
+              <YAxis
+                allowDecimals={false}
+                fontSize={12}
+                stroke="var(--text-secondary)"
+                tick={{ fill: 'var(--text-secondary)' }}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="cantidad" fill="var(--color-emerald-500)" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ChartContainer>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
             No hay órdenes registradas en el período
           </div>
         )}

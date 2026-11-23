@@ -26,21 +26,21 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
       <div className="metric-stat-group">
         <div className="metric-stat-item">
           <div className="metric-stat-label">Ejecuciones Exitosas</div>
-          <div className="metric-stat-value" style={{ color: '#16a34a' }}>
+          <div className="metric-stat-value" style={{ color: 'var(--color-emerald-400)' }}>
             {ingestion?.ejecucionesExitosas || 0}
           </div>
         </div>
 
         <div className="metric-stat-item">
           <div className="metric-stat-label">Ejecuciones Fallidas</div>
-          <div className="metric-stat-value" style={{ color: '#dc2626' }}>
+          <div className="metric-stat-value" style={{ color: 'var(--color-red-400)' }}>
             {ingestion?.ejecucionesFallidas || 0}
           </div>
         </div>
 
         <div className="metric-stat-item">
           <div className="metric-stat-label">Recuperadas Atasco</div>
-          <div className="metric-stat-value" style={{ color: '#d97706' }}>
+          <div className="metric-stat-value" style={{ color: 'var(--color-amber-400)' }}>
             {ingestion?.ejecucionesRecuperadas || 0}
           </div>
         </div>
@@ -64,13 +64,21 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
               return (
                 <div key={liga} className="metric-stat-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600 }}>Liga {liga}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Liga {liga}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                       {duracion !== undefined ? `${duracion.toFixed(2)} s` : '-'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.875rem' }}>
-                    Match: <strong style={{ color: matchRate && matchRate >= 90 ? '#16a34a' : '#d97706' }}>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    Match:{' '}
+                    <strong
+                      style={{
+                        color:
+                          matchRate && matchRate >= 90
+                            ? 'var(--color-emerald-400)'
+                            : 'var(--color-amber-400)',
+                      }}
+                    >
                       {matchRate !== undefined ? `${matchRate.toFixed(2)}%` : '-'}
                     </strong>
                   </div>
@@ -79,7 +87,7 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
             })}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
+          <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             Sin telemetría de ligas en el período
           </div>
         )}

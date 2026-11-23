@@ -59,19 +59,19 @@ export const PricingMetricsCard: React.FC<PricingMetricsCardProps> = ({ cotizaci
         <div className="metric-stat-group">
           <div className="metric-stat-item">
             <div className="metric-stat-label">Con Estadísticas</div>
-            <div className="metric-stat-value" style={{ color: '#16a34a' }}>
+            <div className="metric-stat-value" style={{ color: 'var(--color-emerald-400)' }}>
               {cotizaciones?.jugadoresProcesados || 0}
             </div>
           </div>
           <div className="metric-stat-item">
             <div className="metric-stat-label">Sin Estadísticas</div>
-            <div className="metric-stat-value" style={{ color: '#d97706' }}>
+            <div className="metric-stat-value" style={{ color: 'var(--color-amber-400)' }}>
               {cotizaciones?.jugadoresSinEstadisticas || 0}
             </div>
           </div>
           <div className="metric-stat-item">
             <div className="metric-stat-label">Fallidos</div>
-            <div className="metric-stat-value" style={{ color: '#dc2626' }}>
+            <div className="metric-stat-value" style={{ color: 'var(--color-red-400)' }}>
               {cotizaciones?.jugadoresFallidos || 0}
             </div>
           </div>

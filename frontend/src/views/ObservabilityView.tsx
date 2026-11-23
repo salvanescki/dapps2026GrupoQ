@@ -29,67 +29,69 @@ export function ObservabilityView() {
   } = useObservability();
 
   return (
-    <div className="observability-container">
-      <header className="observability-header">
-        <div>
-          <h1 className="observability-title">Observabilidad y Métricas del Sistema</h1>
-          <p className="observability-subtitle">
-            Monitoreo en tiempo real de infraestructura, servicios críticos, cotizaciones y trading
-          </p>
-        </div>
-      </header>
+    <div className="observability-page">
+      <div className="observability-container">
+        <header className="observability-header">
+          <div>
+            <h1 className="observability-title">Observabilidad y Métricas del Sistema</h1>
+            <p className="observability-subtitle">
+              Monitoreo en tiempo real de infraestructura, servicios críticos, cotizaciones y trading
+            </p>
+          </div>
+        </header>
 
-      <ObservabilityToolbar
-        intervaloRefresco={intervaloRefresco}
-        onChangeIntervalo={setIntervaloRefresco}
-        onRefrescarManual={refrescar}
-        actualizando={actualizando}
-        ultimaSincronizacion={ultimaSincronizacion}
-        estadoConexion={estadoConexion}
-      />
+        <ObservabilityToolbar
+          intervaloRefresco={intervaloRefresco}
+          onChangeIntervalo={setIntervaloRefresco}
+          onRefrescarManual={refrescar}
+          actualizando={actualizando}
+          ultimaSincronizacion={ultimaSincronizacion}
+          estadoConexion={estadoConexion}
+        />
 
-      {error && <Alert tipo="error" mensaje={error} />}
+        {error && <Alert tipo="error" mensaje={error} />}
 
-      {cargando ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <Spinner />
-        </div>
-      ) : (
-        <main className="observability-grid">
-          {/* US2: Sondas de Salud e Infraestructura */}
-          <HealthStatusCard
-            readiness={readiness}
-            liveness={liveness}
-            error={errorReadiness || errorLiveness}
-          />
+        {cargando ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+            <Spinner />
+          </div>
+        ) : (
+          <main className="observability-grid">
+            {/* US2: Sondas de Salud e Infraestructura */}
+            <HealthStatusCard
+              readiness={readiness}
+              liveness={liveness}
+              error={errorReadiness || errorLiveness}
+            />
 
-          {/* US3: Métricas de Trading y Marketplace */}
-          <MarketplaceMetricsCard
-            marketplace={metricas?.marketplace || null}
-            error={errorMetrics}
-          />
-
-          {/* US4: Supervisión de Cotizaciones */}
-          <PricingMetricsCard
-            cotizaciones={metricas?.cotizaciones || null}
-            error={errorMetrics}
-          />
-
-          {/* US5: Ingestión / Scraping */}
-          <ScrapingMetricsCard
-            ingestion={metricas?.ingestion || null}
-            error={errorMetrics}
-          />
-
-          {/* US5: Integración externa, Caché y Auth */}
-          <div className="observability-grid-full">
-            <SystemIntegrationCard
-              integracion={metricas?.integracionYCache || null}
+            {/* US3: Métricas de Trading y Marketplace */}
+            <MarketplaceMetricsCard
+              marketplace={metricas?.marketplace || null}
               error={errorMetrics}
             />
-          </div>
-        </main>
-      )}
+
+            {/* US4: Supervisión de Cotizaciones */}
+            <PricingMetricsCard
+              cotizaciones={metricas?.cotizaciones || null}
+              error={errorMetrics}
+            />
+
+            {/* US5: Ingestión / Scraping */}
+            <ScrapingMetricsCard
+              ingestion={metricas?.ingestion || null}
+              error={errorMetrics}
+            />
+
+            {/* US5: Integración externa, Caché y Auth */}
+            <div className="observability-grid-full">
+              <SystemIntegrationCard
+                integracion={metricas?.integracionYCache || null}
+                error={errorMetrics}
+              />
+            </div>
+          </main>
+        )}
+      </div>
     </div>
   );
 }

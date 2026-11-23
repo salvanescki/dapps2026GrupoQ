@@ -29,25 +29,19 @@ export const ObservabilityToolbar: React.FC<ObservabilityToolbarProps> = ({
         <span className={`status-badge ${estadoConexion}`}>{estadoConexion.toUpperCase()}</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+      <div className="observability-toolbar-actions">
+        <span className="observability-sync-text">
           Última sincr.: <strong>{ultimaHora}</strong>
         </span>
 
-        <label htmlFor="selector-intervalo" style={{ fontSize: '0.875rem', color: '#475569' }}>
+        <label htmlFor="selector-intervalo" className="observability-label">
           Refresco:
         </label>
         <select
           id="selector-intervalo"
+          className="observability-select"
           value={intervaloRefresco}
           onChange={(e) => onChangeIntervalo(Number(e.target.value) as IntervaloRefresco)}
-          style={{
-            padding: '0.35rem 0.6rem',
-            borderRadius: '0.375rem',
-            border: '1px solid #cbd5e1',
-            fontSize: '0.875rem',
-            background: '#ffffff',
-          }}
         >
           <option value={0}>Pausado</option>
           <option value={5000}>Cada 5s</option>
@@ -57,19 +51,9 @@ export const ObservabilityToolbar: React.FC<ObservabilityToolbarProps> = ({
 
         <button
           type="button"
+          className="observability-refresh-button"
           onClick={onRefrescarManual}
           disabled={actualizando || estadoConexion === 'offline'}
-          style={{
-            padding: '0.4rem 0.85rem',
-            borderRadius: '0.375rem',
-            border: 'none',
-            backgroundColor: '#0284c7',
-            color: '#ffffff',
-            fontWeight: 500,
-            fontSize: '0.875rem',
-            cursor: actualizando || estadoConexion === 'offline' ? 'not-allowed' : 'pointer',
-            opacity: actualizando || estadoConexion === 'offline' ? 0.6 : 1,
-          }}
         >
           {actualizando ? 'Actualizando...' : 'Refrescar'}
         </button>

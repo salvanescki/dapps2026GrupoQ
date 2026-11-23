@@ -41,7 +41,7 @@ export const SystemIntegrationCard: React.FC<SystemIntegrationCardProps> = ({ in
             {integracion?.cacheHitRatio !== undefined ? `${integracion.cacheHitRatio.toFixed(2)}%` : '100.00%'}
           </div>
           {fallbacks > 0 && (
-            <small style={{ color: '#d97706', display: 'block', marginTop: '0.25rem' }}>
+            <small style={{ color: 'var(--color-amber-400)', display: 'block', marginTop: '0.25rem' }}>
               ⚠️ {fallbacks} fallbacks a DB
             </small>
           )}
@@ -50,7 +50,7 @@ export const SystemIntegrationCard: React.FC<SystemIntegrationCardProps> = ({ in
         <div className="metric-stat-item">
           <div className="metric-stat-label">Team of the Week</div>
           <div className="metric-stat-value">{integracion?.totwGeneraciones || 0} gen.</div>
-          <small style={{ color: '#64748b' }}>
+          <small style={{ color: 'var(--text-secondary)' }}>
             {integracion?.totwDuracionSegundos ? `${integracion.totwDuracionSegundos.toFixed(2)} s prom.` : '-'}
           </small>
         </div>
@@ -58,10 +58,10 @@ export const SystemIntegrationCard: React.FC<SystemIntegrationCardProps> = ({ in
         <div className="metric-stat-item">
           <div className="metric-stat-label">Autenticación (Logins)</div>
           <div className="metric-stat-value">
-            <span style={{ color: '#16a34a' }}>{integracion?.authIntentosExitosos || 0}</span> /{' '}
-            <span style={{ color: '#dc2626' }}>{integracion?.authIntentosFallidos || 0}</span>
+            <span style={{ color: 'var(--color-emerald-400)' }}>{integracion?.authIntentosExitosos || 0}</span> /{' '}
+            <span style={{ color: 'var(--color-red-400)' }}>{integracion?.authIntentosFallidos || 0}</span>
           </div>
-          <small style={{ color: '#64748b' }}>
+          <small style={{ color: 'var(--text-secondary)' }}>
             Bcrypt:{' '}
             {integracion?.authLatenciaHashingPromedio
               ? `${integracion.authLatenciaHashingPromedio.toFixed(4)} s`
