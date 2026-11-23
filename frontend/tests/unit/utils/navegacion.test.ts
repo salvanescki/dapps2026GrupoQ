@@ -20,13 +20,18 @@ describe('Utilidades de navegación global por rol (navegacion.ts)', () => {
     expect(itemsSinRol).toHaveLength(5);
   });
 
-  it('incluye Gobernanza (/admin, id="nav-admin") única y exclusivamente cuando rol === ADMIN', () => {
+  it('incluye Gobernanza y Observabilidad única y exclusivamente cuando rol === ADMIN', () => {
     const itemsAdmin = construirItemsNavegacion('ADMIN');
-    expect(itemsAdmin).toHaveLength(6);
+    expect(itemsAdmin).toHaveLength(7);
     expect(itemsAdmin[5]).toMatchObject({
       id: 'nav-admin',
       to: '/admin',
       label: 'Gobernanza',
+    });
+    expect(itemsAdmin[6]).toMatchObject({
+      id: 'nav-observability',
+      to: '/admin/observability',
+      label: 'Observabilidad',
     });
   });
 

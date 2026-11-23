@@ -29,8 +29,8 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 **Purpose**: Definición de tipos, contratos TypeScript y estilos compartidos para el panel de observabilidad.
 
-- [ ] T001 [P] Crear tipos e interfaces de observabilidad en frontend/src/types/observability.types.ts con validaciones exactas: intervaloRefresco "Debe ser uno de: 0, 5000, 10000, 30000", estadoConexion "'online' | 'offline'", umbralHeapBytes "Fijo a 300 MB (314,572,800 bytes)", umbralRssBytes "Fijo a 1 GB (1,073,741,824 bytes)", y estructuras para SondaReadinessData, SondaLivenessData, MetricaDeMarketplace, MetricaDeCotizaciones, MetricaDeIngestion y MetricaDeIntegracionYCache
-- [ ] T002 [P] Crear hoja de estilos CSS para layout responsive, tarjetas de telemetría y badges de estado en frontend/src/styles/observability.css
+- [X] T001 [P] Crear tipos e interfaces de observabilidad en frontend/src/types/observability.types.ts con validaciones exactas: intervaloRefresco "Debe ser uno de: 0, 5000, 10000, 30000", estadoConexion "'online' | 'offline'", umbralHeapBytes "Fijo a 300 MB (314,572,800 bytes)", umbralRssBytes "Fijo a 1 GB (1,073,741,824 bytes)", y estructuras para SondaReadinessData, SondaLivenessData, MetricaDeMarketplace, MetricaDeCotizaciones, MetricaDeIngestion y MetricaDeIntegracionYCache
+- [X] T002 [P] Crear hoja de estilos CSS para layout responsive, tarjetas de telemetría y badges de estado en frontend/src/styles/observability.css
 
 ---
 
@@ -40,12 +40,12 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 **⚠️ CRITICAL**: Ninguna historia de usuario visual puede implementarse hasta completar esta fase.
 
-- [ ] T003 [P] Crear suite de pruebas unitarias para el parser de Prometheus en frontend/tests/unit/utils/prometheus-parser.test.ts cubriendo contadores, gauges, histogramas (_bucket, _sum, _count), comentarios HELP/TYPE, labels con comillas y casos borde (texto vacío, sin samples, valores flotantes/científicos)
-- [ ] T004 Implementar parser determinista de texto Prometheus en frontend/src/utils/prometheus-parser.ts según contrato parsePrometheusText (satisfaciendo T003)
-- [ ] T005 [P] Crear suite de pruebas unitarias para helpers de cálculo y formateo en frontend/tests/unit/utils/formato-observabilidad.test.ts validando invariantes: división segura contra NaN e Infinity (tasaExitoRecalculos "0 a 100%. Si totales es 0, devuelve 100%", cacheHitRatio "0 a 100%. Si total es 0, 100%", latenciaLiquidacionPromedioSegundos "Si _count > 0 es _sum / _count, sino 0"), conversión de centavos a moneda dividiendo entre 100, y umbrales de alerta de memoria (>80% warning, >95% critical)
-- [ ] T006 Implementar helpers de cálculo y formateo de telemetría en frontend/src/utils/formato-observabilidad.ts (satisfaciendo T005)
-- [ ] T007 [P] Crear suite de pruebas unitarias para el cliente de API de observabilidad en frontend/tests/unit/api/observabilityApi.test.ts testeando llamadas a /metrics (text/plain), /health/ready (JSON 200 y 503 Terminus) y /health/live (JSON 200 y 503 Terminus) con dobles de red controlados
-- [ ] T008 Implementar cliente API de observabilidad en frontend/src/api/observabilityApi.ts implementando la interfaz ObservabilityApi para consumir /metrics, /health/ready y /health/live interpretando 200 y 503 como diagnósticos válidos (satisfaciendo T007)
+- [X] T003 [P] Crear suite de pruebas unitarias para el parser de Prometheus en frontend/tests/unit/utils/prometheus-parser.test.ts cubriendo contadores, gauges, histogramas (_bucket, _sum, _count), comentarios HELP/TYPE, labels con comillas y casos borde (texto vacío, sin samples, valores flotantes/científicos)
+- [X] T004 Implementar parser determinista de texto Prometheus en frontend/src/utils/prometheus-parser.ts según contrato parsePrometheusText (satisfaciendo T003)
+- [X] T005 [P] Crear suite de pruebas unitarias para helpers de cálculo y formateo en frontend/tests/unit/utils/formato-observabilidad.test.ts validando invariantes: división segura contra NaN e Infinity (tasaExitoRecalculos "0 a 100%. Si totales es 0, devuelve 100%", cacheHitRatio "0 a 100%. Si total es 0, 100%", latenciaLiquidacionPromedioSegundos "Si _count > 0 es _sum / _count, sino 0"), conversión de centavos a moneda dividiendo entre 100, y umbrales de alerta de memoria (>80% warning, >95% critical)
+- [X] T006 Implementar helpers de cálculo y formateo de telemetría en frontend/src/utils/formato-observabilidad.ts (satisfaciendo T005)
+- [X] T007 [P] Crear suite de pruebas unitarias para el cliente de API de observabilidad en frontend/tests/unit/api/observabilityApi.test.ts testeando llamadas a /metrics (text/plain), /health/ready (JSON 200 y 503 Terminus) y /health/live (JSON 200 y 503 Terminus) con dobles de red controlados
+- [X] T008 Implementar cliente API de observabilidad en frontend/src/api/observabilityApi.ts implementando la interfaz ObservabilityApi para consumir /metrics, /health/ready y /health/live interpretando 200 y 503 como diagnósticos válidos (satisfaciendo T007)
 
 **Checkpoint**: Base de telemetría y parsing lista - la implementación de historias de usuario puede comenzar.
 
@@ -59,15 +59,15 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T009 [P] [US1] Crear prueba unitaria para inclusión condicional de Observabilidad en frontend/tests/unit/utils/navegacion.rol.test.ts verificando que construirItemsNavegacion incluye el ítem 'Observabilidad' con ruta '/admin/observability' si y solo si rol === 'ADMIN'
-- [ ] T010 [P] [US1] Crear pruebas de integración para protección de ruta y redirección en frontend/tests/integration/ObservabilityAccess.test.tsx verificando redirección anónima a /login, bloqueo a rol 'USUARIO' con avisoSeguridad hacia /, y acceso concedido para rol 'ADMIN'
+- [X] T009 [P] [US1] Crear prueba unitaria para inclusión condicional de Observabilidad en frontend/tests/unit/utils/navegacion.rol.test.ts verificando que construirItemsNavegacion incluye el ítem 'Observabilidad' con ruta '/admin/observability' si y solo si rol === 'ADMIN'
+- [X] T010 [P] [US1] Crear pruebas de integración para protección de ruta y redirección en frontend/tests/integration/ObservabilityAccess.test.tsx verificando redirección anónima a /login, bloqueo a rol 'USUARIO' con avisoSeguridad hacia /, y acceso concedido para rol 'ADMIN'
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Actualizar AdminRoute para soportar mensajeSeguridad opcional con retrocompatibilidad en frontend/src/routes/AdminRoute.tsx
-- [ ] T012 [P] [US1] Actualizar construirItemsNavegacion en frontend/src/utils/navegacion.ts para incorporar el ítem de Observabilidad para rol 'ADMIN'
-- [ ] T013 [US1] Crear vista base preliminar de observabilidad en frontend/src/views/ObservabilityView.tsx con estructura de encabezado, título y contenedor principal
-- [ ] T014 [US1] Registrar la ruta protegida /admin/observability en frontend/src/routes/AppRoutes.tsx utilizando ProtectedRoute y AdminRoute envolviendo ObservabilityView
+- [X] T011 [P] [US1] Actualizar AdminRoute para soportar mensajeSeguridad opcional con retrocompatibilidad en frontend/src/routes/AdminRoute.tsx
+- [X] T012 [P] [US1] Actualizar construirItemsNavegacion en frontend/src/utils/navegacion.ts para incorporar el ítem de Observabilidad para rol 'ADMIN'
+- [X] T013 [US1] Crear vista base preliminar de observabilidad en frontend/src/views/ObservabilityView.tsx con estructura de encabezado, título y contenedor principal
+- [X] T014 [US1] Registrar la ruta protegida /admin/observability en frontend/src/routes/AppRoutes.tsx utilizando ProtectedRoute y AdminRoute envolviendo ObservabilityView
 
 **Checkpoint**: User Story 1 completa y verificable independientemente como MVP de acceso y navegación.
 
@@ -81,12 +81,12 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T015 [P] [US2] Crear prueba de integración para el componente HealthStatusCard en frontend/tests/integration/components/HealthStatusCard.test.tsx verificando tarjetas de preparación (PostgreSQL, Redis, FootballData) en estado nominal y degradado (HTTP 503), y barras de progreso de vivacidad (Heap contra 300 MB y RSS contra 1 GB) con clases de alerta visual
+- [X] T015 [P] [US2] Crear prueba de integración para el componente HealthStatusCard en frontend/tests/integration/components/HealthStatusCard.test.tsx verificando tarjetas de preparación (PostgreSQL, Redis, FootballData) en estado nominal y degradado (HTTP 503), y barras de progreso de vivacidad (Heap contra 300 MB y RSS contra 1 GB) con clases de alerta visual
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Implementar componente visual de tarjetas de salud y memoria en frontend/src/components/admin/observability/HealthStatusCard.tsx con badges de disponibilidad y barras de progreso con alertas (>80% advertencia, >95% crítico)
-- [ ] T017 [US2] Integrar HealthStatusCard en la vista principal en frontend/src/views/ObservabilityView.tsx
+- [X] T016 [US2] Implementar componente visual de tarjetas de salud y memoria en frontend/src/components/admin/observability/HealthStatusCard.tsx con badges de disponibilidad y barras de progreso con alertas (>80% advertencia, >95% crítico)
+- [X] T017 [US2] Integrar HealthStatusCard en la vista principal en frontend/src/views/ObservabilityView.tsx
 
 **Checkpoint**: Sondas de salud e infraestructura visualizadas y operativas independientemente.
 
@@ -100,12 +100,12 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T018 [P] [US3] Crear prueba de integración para el componente MarketplaceMetricsCard en frontend/tests/integration/components/MarketplaceMetricsCard.test.tsx verificando tarjetas de volumen monetario formateado, transacciones ejecutadas, órdenes de venta activas, rechazos por slippage, latencia promedio y renderizado del gráfico de barras de órdenes
+- [X] T018 [P] [US3] Crear prueba de integración para el componente MarketplaceMetricsCard en frontend/tests/integration/components/MarketplaceMetricsCard.test.tsx verificando tarjetas de volumen monetario formateado, transacciones ejecutadas, órdenes de venta activas, rechazos por slippage, latencia promedio y renderizado del gráfico de barras de órdenes
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Implementar componente MarketplaceMetricsCard en frontend/src/components/admin/observability/MarketplaceMetricsCard.tsx integrando ChartContainer y BarChart de frontend/src/components/ui/chart.tsx junto con tarjetas de resumen transaccional
-- [ ] T020 [US3] Integrar MarketplaceMetricsCard en la vista principal en frontend/src/views/ObservabilityView.tsx
+- [X] T019 [US3] Implementar componente MarketplaceMetricsCard en frontend/src/components/admin/observability/MarketplaceMetricsCard.tsx integrando ChartContainer y BarChart de frontend/src/components/ui/chart.tsx junto con tarjetas de resumen transaccional
+- [X] T020 [US3] Integrar MarketplaceMetricsCard en la vista principal en frontend/src/views/ObservabilityView.tsx
 
 **Checkpoint**: Panel de trading y métricas de mercado completamente operativo.
 
@@ -119,12 +119,12 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T021 [P] [US4] Crear prueba de integración para el componente PricingMetricsCard en frontend/tests/integration/components/PricingMetricsCard.test.tsx verificando visualización de estrategia activa, tasa porcentual de recálculos exitosos vs fallidos, duración promedio y desglose de jugadores procesados
+- [X] T021 [P] [US4] Crear prueba de integración para el componente PricingMetricsCard en frontend/tests/integration/components/PricingMetricsCard.test.tsx verificando visualización de estrategia activa, tasa porcentual de recálculos exitosos vs fallidos, duración promedio y desglose de jugadores procesados
 
 ### Implementation for User Story 4
 
-- [ ] T022 [US4] Implementar componente PricingMetricsCard en frontend/src/components/admin/observability/PricingMetricsCard.tsx destacando estrategia activa (ej. GLOBAL_v1), gráficos/tarjetas de recálculos y clasificación de futbolistas
-- [ ] T023 [US4] Integrar PricingMetricsCard en la vista principal en frontend/src/views/ObservabilityView.tsx
+- [X] T022 [US4] Implementar componente PricingMetricsCard en frontend/src/components/admin/observability/PricingMetricsCard.tsx destacando estrategia activa (ej. GLOBAL_v1), gráficos/tarjetas de recálculos y clasificación de futbolistas
+- [X] T023 [US4] Integrar PricingMetricsCard en la vista principal en frontend/src/views/ObservabilityView.tsx
 
 **Checkpoint**: Módulo de supervisión de cotizaciones operativo y testeable por separado.
 
@@ -138,14 +138,14 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T024 [P] [US5] Crear prueba de integración para ScrapingMetricsCard en frontend/tests/integration/components/ScrapingMetricsCard.test.tsx verificando desglose de ejecuciones por estado, duración por liga deportiva, tasa de match con catálogo e incidentes
-- [ ] T025 [P] [US5] Crear prueba de integración para SystemIntegrationCard en frontend/tests/integration/components/SystemIntegrationCard.test.tsx verificando medidor de rate limit restante con advertencia (<= 2), porcentaje de aciertos de caché Redis L1, alerta de fallback de caché (> 0) y tiempos de hashing de auth
+- [X] T024 [P] [US5] Crear prueba de integración para ScrapingMetricsCard en frontend/tests/integration/components/ScrapingMetricsCard.test.tsx verificando desglose de ejecuciones por estado, duración por liga deportiva, tasa de match con catálogo e incidentes
+- [X] T025 [P] [US5] Crear prueba de integración para SystemIntegrationCard en frontend/tests/integration/components/SystemIntegrationCard.test.tsx verificando medidor de rate limit restante con advertencia (<= 2), porcentaje de aciertos de caché Redis L1, alerta de fallback de caché (> 0) y tiempos de hashing de auth
 
 ### Implementation for User Story 5
 
-- [ ] T026 [P] [US5] Implementar componente ScrapingMetricsCard en frontend/src/components/admin/observability/ScrapingMetricsCard.tsx visualizando ejecuciones, duraciones por liga, tasa de match e incidentes
-- [ ] T027 [P] [US5] Implementar componente SystemIntegrationCard en frontend/src/components/admin/observability/SystemIntegrationCard.tsx visualizando cuota Football-Data, caché L1 Redis, TOTW y telemetría de autenticación
-- [ ] T028 [US5] Integrar ScrapingMetricsCard y SystemIntegrationCard en la vista principal en frontend/src/views/ObservabilityView.tsx
+- [X] T026 [P] [US5] Implementar componente ScrapingMetricsCard en frontend/src/components/admin/observability/ScrapingMetricsCard.tsx visualizando ejecuciones, duraciones por liga, tasa de match e incidentes
+- [X] T027 [P] [US5] Implementar componente SystemIntegrationCard en frontend/src/components/admin/observability/SystemIntegrationCard.tsx visualizando cuota Football-Data, caché L1 Redis, TOTW y telemetría de autenticación
+- [X] T028 [US5] Integrar ScrapingMetricsCard y SystemIntegrationCard en la vista principal en frontend/src/views/ObservabilityView.tsx
 
 **Checkpoint**: Monitoreo de scraping, integraciones externas y caché totalmente integrado.
 
@@ -159,14 +159,14 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T029 [P] [US6] Crear prueba de integración para el hook useObservability en frontend/tests/integration/hooks/useObservability.test.ts verificando auto-actualización por intervalos (0, 5000, 10000, 30000 ms), refresco manual, Promise.allSettled para aislamiento de fallos, eventos online/offline y limpieza de temporizadores
-- [ ] T030 [P] [US6] Crear prueba de integración de vista completa y barra de herramientas en frontend/tests/integration/ObservabilityView.test.tsx verificando toolbar, botón de refresco, selector de frecuencia, marca de última sincronización, visualización de errores parciales con botón de reintento y preservación de datos nominales
+- [X] T029 [P] [US6] Crear prueba de integración para el hook useObservability en frontend/tests/integration/hooks/useObservability.test.ts verificando auto-actualización por intervalos (0, 5000, 10000, 30000 ms), refresco manual, Promise.allSettled para aislamiento de fallos, eventos online/offline y limpieza de temporizadores
+- [X] T030 [P] [US6] Crear prueba de integración de vista completa y barra de herramientas en frontend/tests/integration/ObservabilityView.test.tsx verificando toolbar, botón de refresco, selector de frecuencia, marca de última sincronización, visualización de errores parciales con botón de reintento y preservación de datos nominales
 
 ### Implementation for User Story 6
 
-- [ ] T031 [P] [US6] Implementar barra de control en frontend/src/components/admin/observability/ObservabilityToolbar.tsx con selector de intervalo (Pausado [0], 5s, 10s, 30s), botón de refresco manual, estado de conexión (online/offline) y timestamp de última sincronización
-- [ ] T032 [US6] Implementar hook orquestador useObservability en frontend/src/hooks/useObservability.ts con temporizador configurable, Promise.allSettled hacia /metrics, /health/ready y /health/live, soporte de AbortController, escucha de eventos online/offline y manejo de expiración de sesión (401/403)
-- [ ] T033 [US6] Conectar useObservability y ObservabilityToolbar en frontend/src/views/ObservabilityView.tsx con manejo de estados de carga (skeletons/spinners), alertas de error aisladas por bloque y botón de reintento
+- [X] T031 [P] [US6] Implementar barra de control en frontend/src/components/admin/observability/ObservabilityToolbar.tsx con selector de intervalo (Pausado [0], 5s, 10s, 30s), botón de refresco manual, estado de conexión (online/offline) y timestamp de última sincronización
+- [X] T032 [US6] Implementar hook orquestador useObservability en frontend/src/hooks/useObservability.ts con temporizador configurable, Promise.allSettled hacia /metrics, /health/ready y /health/live, soporte de AbortController, escucha de eventos online/offline y manejo de expiración de sesión (401/403)
+- [X] T033 [US6] Conectar useObservability y ObservabilityToolbar en frontend/src/views/ObservabilityView.tsx con manejo de estados de carga (skeletons/spinners), alertas de error aisladas por bloque y botón de reintento
 
 **Checkpoint**: Panel de observabilidad completamente interactivo, auto-actualizable y resiliente ante fallas de red.
 
@@ -176,9 +176,9 @@ description: "Task list for feature implementation: Panel de Observabilidad y Mo
 
 **Purpose**: Verificación integral de calidad, cobertura de código (>= 80%), compilación y sincronización de contratos/Postman según la Constitución.
 
-- [ ] T034 [P] Ejecutar y validar suites de pruebas unitarias y de integración de frontend con reporte de cobertura garantizando umbral >= 80% en líneas y branches vía npm --prefix frontend run test:coverage
-- [ ] T035 [P] Ejecutar compilación de producción de frontend para asegurar cero errores de TypeScript y empaquetado vía npm --prefix frontend run build
-- [ ] T036 Verificar y documentar evidencia de sincronización de contratos y colección de Postman en postman/collection.json (carpeta Observabilidad, endpoints /metrics, /health/ready, /health/live) contra los contratos de API y OpenAPI/Swagger
+- [X] T034 [P] Ejecutar y validar suites de pruebas unitarias y de integración de frontend con reporte de cobertura garantizando umbral >= 80% en líneas y branches vía npm --prefix frontend run test:coverage
+- [X] T035 [P] Ejecutar compilación de producción de frontend para asegurar cero errores de TypeScript y empaquetado vía npm --prefix frontend run build
+- [X] T036 Verificar y documentar evidencia de sincronización de contratos y colección de Postman en postman/collection.json (carpeta Observabilidad, endpoints /metrics, /health/ready, /health/live) contra los contratos de API y OpenAPI/Swagger
 
 ---
 
