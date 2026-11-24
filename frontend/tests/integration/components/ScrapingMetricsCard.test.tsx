@@ -20,6 +20,11 @@ describe('ScrapingMetricsCard (US5 Integration)', () => {
       SA: 98.2,
     },
     incidentesTotales: 3,
+    incidentesPorLiga: {
+      PL: 1,
+      PD: 2,
+      SA: 0,
+    },
   };
 
   it('renderiza desglose de ejecuciones, duraciones por liga, tasa de asociación e incidentes', () => {
@@ -34,6 +39,7 @@ describe('ScrapingMetricsCard (US5 Integration)', () => {
     expect(screen.getByText('Liga PL')).toBeInTheDocument();
     expect(screen.getByText('45.20 s')).toBeInTheDocument();
     expect(screen.getByText('97.50%')).toBeInTheDocument();
+    expect(screen.getByText('1 inc.')).toBeInTheDocument();
   });
 
   it('muestra banner de error aislado si se pasa prop error', () => {

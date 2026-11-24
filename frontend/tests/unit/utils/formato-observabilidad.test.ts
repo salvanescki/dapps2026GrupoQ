@@ -183,6 +183,30 @@ auth_attempts_total{resultado="fallo"} 0
 # TYPE password_hashing_duration_seconds histogram
 password_hashing_duration_seconds_sum 0.095
 password_hashing_duration_seconds_count 1
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 302.64
+
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1795476518
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.007296
+
+# HELP nodejs_active_handles_total Total number of active handles.
+# TYPE nodejs_active_handles_total gauge
+nodejs_active_handles_total 12
+
+# HELP nodejs_active_resources_total Total number of active resources.
+# TYPE nodejs_active_resources_total gauge
+nodejs_active_resources_total 15
+
+# HELP nodejs_version_info Node.js version info.
+# TYPE nodejs_version_info gauge
+nodejs_version_info{version="v24.21.0",major="24",minor="21",patch="0"} 1
 `;
     const samples = parsePrometheusText(rawMetrics);
     const metricas = procesarMetricasPrometheus(samples);
@@ -208,5 +232,13 @@ password_hashing_duration_seconds_count 1
     expect(metricas.integracionYCache.authIntentosExitosos).toBe(1);
     expect(metricas.integracionYCache.authIntentosFallidos).toBe(0);
     expect(metricas.integracionYCache.authLatenciaHashingPromedio).toBe(0.095);
+
+    // Runtime de Node.js
+    expect(metricas.runtime?.cpuSegundosTotal).toBe(302.64);
+    expect(metricas.runtime?.eventLoopLagMs).toBe(7.3);
+    expect(metricas.runtime?.activeHandles).toBe(12);
+    expect(metricas.runtime?.activeResources).toBe(15);
+    expect(metricas.runtime?.versionNode).toBe('v24.21.0');
+    expect(metricas.ingestion.incidentesPorLiga?.['PL']).toBe(0);
   });
 });

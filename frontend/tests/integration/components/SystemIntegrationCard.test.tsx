@@ -24,6 +24,7 @@ describe('SystemIntegrationCard (US5 Integration)', () => {
 
     expect(screen.getByText('Integraciones, Caché L1 y Seguridad')).toBeInTheDocument();
     expect(screen.getByText('8 restantes')).toBeInTheDocument();
+    expect(screen.getByText('80 peticiones ejecutadas')).toBeInTheDocument();
     expect(screen.getByText('90.00%')).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
     expect(screen.getByText(/0\.0850 s/)).toBeInTheDocument();

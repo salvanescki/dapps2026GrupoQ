@@ -47,6 +47,18 @@ export const MarketplaceMetricsCard: React.FC<MarketplaceMetricsCardProps> = ({
         <div className="metric-stat-item">
           <div className="metric-stat-label">Transacciones</div>
           <div className="metric-stat-value">{marketplace?.transaccionesTotales || 0}</div>
+          {marketplace?.transaccionesDesglose && marketplace.transaccionesDesglose.length > 0 && (
+            <small
+              style={{
+                color: 'var(--text-secondary)',
+                display: 'block',
+                marginTop: '0.25rem',
+                fontSize: '0.75rem',
+              }}
+            >
+              {marketplace.transaccionesDesglose.map((t) => `${t.mercado}: ${t.cantidad}`).join(' · ')}
+            </small>
+          )}
         </div>
 
         <div className="metric-stat-item">

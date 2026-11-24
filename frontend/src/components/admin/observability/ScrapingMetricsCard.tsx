@@ -66,6 +66,7 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
             {ligas.map((liga) => {
               const duracion = ingestion?.duracionPorLiga[liga];
               const matchRate = ingestion?.tasaAsociacionPorLiga[liga];
+              const incidentes = ingestion?.incidentesPorLiga?.[liga];
               return (
                 <div key={liga} className="metric-stat-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
@@ -76,18 +77,30 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
                       {duracion !== undefined ? `${duracion.toFixed(2)} s` : '-'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    Match:{' '}
-                    <strong
-                      style={{
-                        color:
-                          matchRate !== undefined && matchRate >= 90
-                            ? 'var(--color-emerald-400)'
-                            : 'var(--color-amber-400)',
-                      }}
-                    >
-                      {matchRate !== undefined ? `${matchRate.toFixed(2)}%` : '-'}
-                    </strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                    <div>
+                      Match:{' '}
+                      <strong
+                        style={{
+                          color:
+                            matchRate !== undefined && matchRate >= 90
+                              ? 'var(--color-emerald-400)'
+                              : 'var(--color-amber-400)',
+                        }}
+                      >
+                        {matchRate !== undefined ? `${matchRate.toFixed(2)}%` : '-'}
+                      </strong>
+                    </div>
+                    {incidentes !== undefined && (
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          color: incidentes > 0 ? 'var(--color-red-400)' : 'var(--text-secondary)',
+                        }}
+                      >
+                        {incidentes} inc.
+                      </span>
+                    )}
                   </div>
                 </div>
               );

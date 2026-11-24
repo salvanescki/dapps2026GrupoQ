@@ -48,10 +48,17 @@ export interface DesgloseOrdenes {
   cantidad: number;
 }
 
+export interface DesgloseTransacciones {
+  mercado: 'primario' | 'secundario' | string;
+  estrategiaVersion: string;
+  cantidad: number;
+}
+
 export interface MetricaDeMarketplace {
   ordenesTotales: number;
   ordenesDesglose: DesgloseOrdenes[];
   transaccionesTotales: number;
+  transaccionesDesglose?: DesgloseTransacciones[];
   volumenCentavosTotal: number;
   volumenMonetarioFormateado: string;
   ordenesVentaActivas: number;
@@ -77,6 +84,16 @@ export interface MetricaDeIngestion {
   duracionPorLiga: Record<string, number>;
   tasaAsociacionPorLiga: Record<string, number>;
   incidentesTotales: number;
+  incidentesPorLiga?: Record<string, number>;
+}
+
+export interface MetricaDeRuntimeNode {
+  cpuSegundosTotal: number;
+  uptimeSegundos: number;
+  eventLoopLagMs: number;
+  activeHandles: number;
+  activeResources: number;
+  versionNode: string;
 }
 
 export interface MetricaDeIntegracionYCache {
@@ -98,6 +115,7 @@ export interface MetricasCompletas {
   cotizaciones: MetricaDeCotizaciones;
   ingestion: MetricaDeIngestion;
   integracionYCache: MetricaDeIntegracionYCache;
+  runtime?: MetricaDeRuntimeNode;
 }
 
 export interface PanelDeObservabilidadEstado {

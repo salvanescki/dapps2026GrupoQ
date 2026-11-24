@@ -1,10 +1,12 @@
 import {
   DesgloseOrdenes,
+  DesgloseTransacciones,
   MetricasCompletas,
   MetricaDeMarketplace,
   MetricaDeCotizaciones,
   MetricaDeIngestion,
   MetricaDeIntegracionYCache,
+  MetricaDeRuntimeNode,
 } from '../types/observability.types';
 import { PrometheusSample, extractSingleMetricValue, sumMetricValues } from './prometheus-parser';
 
@@ -85,6 +87,12 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
 
   const ordenesTotales = ordenesDesglose.reduce((acc, curr) => acc + curr.cantidad, 0);
   const transaccionesTotales = sumMetricValues(samples, 'marketplace_transactions_total');
+  const txSamples = samples.filter((s) => s.name === 'marketplace_transactions_total');
+  const transaccionesDesglose: DesgloseTransacciones[] = txSamples.map((s) => ({
+    mercado: (s.labels.mercado as any) || 'secundario',
+    estrategiaVersion: s.labels.estrategia_version || s.labels.estrategia || 'N/A',
+    cantidad: s.value,
+  }));
   const volumenCentavosTotal = sumMetricValues(samples, 'marketplace_volume_cents_total');
   const ordenesVentaActivas = extractSingleMetricValue(samples, 'marketplace_active_sell_orders');
   const rechazosSlippage = sumMetricValues(samples, 'marketplace_slippage_rejections_total');
@@ -103,6 +111,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     ordenesTotales,
     ordenesDesglose,
     transaccionesTotales,
+    transaccionesDesglose,
     volumenCentavosTotal,
     volumenMonetarioFormateado: convertirCentavosAMoneda(volumenCentavosTotal),
     ordenesVentaActivas,
@@ -193,6 +202,14 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   }
 
   const incidentesTotales = sumMetricValues(samples, 'scraping_incidents_total');
+  const incidentesPorLiga: Record<string, number> = {};
+  const incidentSamples = samples.filter((s) => s.name === 'scraping_incidents_total');
+  for (const incSample of incidentSamples) {
+    const liga = incSample.labels.league || incSample.labels.liga;
+    if (liga) {
+      incidentesPorLiga[liga] = incSample.value;
+    }
+  }
 
   const ingestion: MetricaDeIngestion = {
     ejecucionesExitosas,
@@ -201,6 +218,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     duracionPorLiga,
     tasaAsociacionPorLiga,
     incidentesTotales,
+    incidentesPorLiga,
   };
 
   // Integracion y Cache
@@ -256,10 +274,31 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     authLatenciaHashingPromedio,
   };
 
+  // Runtime Node.js
+  const cpuSegundosTotal = sumMetricValues(samples, 'process_cpu_seconds_total');
+  const startTime = extractSingleMetricValue(samples, 'process_start_time_seconds');
+  const uptimeSegundos = startTime > 0 ? Math.max(0, Math.floor(Date.now() / 1000 - startTime)) : 0;
+  const lagSeconds = extractSingleMetricValue(samples, 'nodejs_eventloop_lag_seconds');
+  const eventLoopLagMs = Number((lagSeconds * 1000).toFixed(2));
+  const activeHandles = extractSingleMetricValue(samples, 'nodejs_active_handles_total');
+  const activeResources = extractSingleMetricValue(samples, 'nodejs_active_resources_total');
+  const versionSample = samples.find((s) => s.name === 'nodejs_version_info');
+  const versionNode = versionSample?.labels.version || '';
+
+  const runtime: MetricaDeRuntimeNode = {
+    cpuSegundosTotal,
+    uptimeSegundos,
+    eventLoopLagMs,
+    activeHandles,
+    activeResources,
+    versionNode,
+  };
+
   return {
     marketplace,
     cotizaciones,
     ingestion,
     integracionYCache,
+    runtime,
   };
 }

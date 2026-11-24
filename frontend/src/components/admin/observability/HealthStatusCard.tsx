@@ -1,14 +1,24 @@
 import React from 'react';
-import { SondaReadinessData, SondaLivenessData } from '../../../types/observability.types';
+import {
+  SondaReadinessData,
+  SondaLivenessData,
+  MetricaDeRuntimeNode,
+} from '../../../types/observability.types';
 import { determinarEstadoAlertaMemoria } from '../../../utils/formato-observabilidad';
 
 export interface HealthStatusCardProps {
   readiness: SondaReadinessData | null;
   liveness: SondaLivenessData | null;
+  runtime?: MetricaDeRuntimeNode | null;
   error?: string | null;
 }
 
-export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({ readiness, liveness, error }) => {
+export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
+  readiness,
+  liveness,
+  runtime,
+  error,
+}) => {
   const heapAlert = liveness ? determinarEstadoAlertaMemoria(liveness.porcentajeHeap) : 'nominal';
   const rssAlert = liveness ? determinarEstadoAlertaMemoria(liveness.porcentajeRss) : 'nominal';
 
@@ -110,6 +120,45 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({ readiness, l
           </div>
         </div>
       </div>
+
+      {/* Sonda de Runtime y Recursos Node.js */}
+      {runtime && (
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <h3 className="metric-stat-label">Runtime y Recursos de Node.js</h3>
+          <div className="metric-stat-group" style={{ marginTop: '0.5rem' }}>
+            <div className="metric-stat-item">
+              <div className="metric-stat-label">Event Loop Delay</div>
+              <div className="metric-stat-value" style={{ fontSize: '1.1rem' }}>
+                {runtime.eventLoopLagMs.toFixed(2)} ms
+              </div>
+            </div>
+
+            <div className="metric-stat-item">
+              <div className="metric-stat-label">Tiempo CPU Total</div>
+              <div className="metric-stat-value" style={{ fontSize: '1.1rem' }}>
+                {runtime.cpuSegundosTotal.toFixed(1)} s
+              </div>
+            </div>
+
+            <div className="metric-stat-item">
+              <div className="metric-stat-label">Handles Activos</div>
+              <div className="metric-stat-value" style={{ fontSize: '1.1rem' }}>
+                {runtime.activeHandles}
+                <small style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.35rem' }}>
+                  ({runtime.activeResources} rec.)
+                </small>
+              </div>
+            </div>
+
+            <div className="metric-stat-item">
+              <div className="metric-stat-label">Versión Runtime</div>
+              <div className="metric-stat-value" style={{ fontSize: '1.1rem' }}>
+                {runtime.versionNode || 'Node.js'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

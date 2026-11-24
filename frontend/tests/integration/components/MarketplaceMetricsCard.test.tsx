@@ -52,6 +52,10 @@ describe('MarketplaceMetricsCard (US3 Integration)', () => {
       { tipo: 'venta', mercado: 'secundario', estado: 'creada', cantidad: 15 },
     ],
     transaccionesTotales: 18,
+    transaccionesDesglose: [
+      { mercado: 'primario', estrategiaVersion: 'GLOBAL_v1', cantidad: 10 },
+      { mercado: 'secundario', estrategiaVersion: 'GLOBAL_v1', cantidad: 8 },
+    ],
     volumenCentavosTotal: 250000,
     volumenMonetarioFormateado: '$ 2.500,00',
     ordenesVentaActivas: 7,
@@ -65,6 +69,7 @@ describe('MarketplaceMetricsCard (US3 Integration)', () => {
     expect(screen.getByText('Métricas de Trading y Marketplace')).toBeInTheDocument();
     expect(screen.getByText('$ 2.500,00')).toBeInTheDocument();
     expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText(/primario: 10/i)).toBeInTheDocument();
     expect(screen.getByText('7')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('0.1250 s')).toBeInTheDocument();

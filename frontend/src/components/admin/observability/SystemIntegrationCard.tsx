@@ -33,6 +33,9 @@ export const SystemIntegrationCard: React.FC<SystemIntegrationCardProps> = ({ in
               {rateLimitRestante} restantes
             </span>
           </div>
+          <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+            {integracion?.footballDataRequests || 0} peticiones ejecutadas
+          </small>
         </div>
 
         <div className="metric-stat-item">

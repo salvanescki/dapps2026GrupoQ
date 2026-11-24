@@ -61,6 +61,7 @@ export function ObservabilityView() {
             <HealthStatusCard
               readiness={readiness}
               liveness={liveness}
+              runtime={metricas?.runtime || null}
               error={errorReadiness || errorLiveness}
             />
 

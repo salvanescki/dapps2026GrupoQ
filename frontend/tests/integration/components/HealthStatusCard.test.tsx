@@ -76,4 +76,29 @@ describe('HealthStatusCard (US2 Integration)', () => {
     const rssBar = screen.getByTestId('rss-progress-bar');
     expect(rssBar).toHaveClass('critical');
   });
+
+  it('renderiza bloque de Runtime y Recursos de Node.js cuando se suministra prop runtime', () => {
+    const mockRuntime = {
+      cpuSegundosTotal: 120.5,
+      uptimeSegundos: 3600,
+      eventLoopLagMs: 4.25,
+      activeHandles: 8,
+      activeResources: 14,
+      versionNode: 'v24.21.0',
+    };
+
+    render(
+      <HealthStatusCard
+        readiness={readinessNominal}
+        liveness={livenessNominal}
+        runtime={mockRuntime}
+      />
+    );
+
+    expect(screen.getByText('Runtime y Recursos de Node.js')).toBeInTheDocument();
+    expect(screen.getByText('4.25 ms')).toBeInTheDocument();
+    expect(screen.getByText('120.5 s')).toBeInTheDocument();
+    expect(screen.getByText('v24.21.0')).toBeInTheDocument();
+    expect(screen.getByText(/14 rec\./i)).toBeInTheDocument();
+  });
 });
