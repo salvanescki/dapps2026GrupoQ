@@ -6,7 +6,7 @@ import {
   MetricaDeIngestion,
   MetricaDeIntegracionYCache,
 } from '../types/observability.types';
-import { PrometheusSample, extractSingleMetricValue } from './prometheus-parser';
+import { PrometheusSample, extractSingleMetricValue, sumMetricValues } from './prometheus-parser';
 
 /**
  * División segura contra NaN e Infinity
@@ -84,13 +84,19 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   }));
 
   const ordenesTotales = ordenesDesglose.reduce((acc, curr) => acc + curr.cantidad, 0);
-  const transaccionesTotales = extractSingleMetricValue(samples, 'marketplace_transactions_total');
-  const volumenCentavosTotal = extractSingleMetricValue(samples, 'marketplace_volume_cents_total');
+  const transaccionesTotales = sumMetricValues(samples, 'marketplace_transactions_total');
+  const volumenCentavosTotal = sumMetricValues(samples, 'marketplace_volume_cents_total');
   const ordenesVentaActivas = extractSingleMetricValue(samples, 'marketplace_active_sell_orders');
-  const rechazosSlippage = extractSingleMetricValue(samples, 'marketplace_slippage_rejections_total');
+  const rechazosSlippage = sumMetricValues(samples, 'marketplace_slippage_rejections_total');
 
-  const settlementSum = extractSingleMetricValue(samples, 'marketplace_settlement_duration_seconds_sum');
-  const settlementCount = extractSingleMetricValue(samples, 'marketplace_settlement_duration_seconds_count');
+  const settlementSum = sumMetricValues(samples, [
+    'marketplace_order_settlement_duration_seconds_sum',
+    'marketplace_settlement_duration_seconds_sum',
+  ]);
+  const settlementCount = sumMetricValues(samples, [
+    'marketplace_order_settlement_duration_seconds_count',
+    'marketplace_settlement_duration_seconds_count',
+  ]);
   const latenciaLiquidacionPromedioSegundos = calcularLatenciaPromedio(settlementSum, settlementCount);
 
   const marketplace: MetricaDeMarketplace = {
@@ -105,27 +111,27 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   };
 
   // Cotizaciones
-  const recalculosExitosos =
-    extractSingleMetricValue(samples, 'quotes_recalculations_total', { status: 'success' }) ||
-    extractSingleMetricValue(samples, 'quotes_recalculations_total', { estado: 'exito' });
-  const recalculosFallidos =
-    extractSingleMetricValue(samples, 'quotes_recalculations_total', { status: 'failure' }) ||
-    extractSingleMetricValue(samples, 'quotes_recalculations_total', { estado: 'fallo' });
+  const recalculosExitosos = sumMetricValues(samples, 'quotes_recalculations_total', (l) =>
+    ['exito', 'exitoso', 'success'].includes(l.estado || l.status)
+  );
+  const recalculosFallidos = sumMetricValues(samples, 'quotes_recalculations_total', (l) =>
+    ['fallo', 'fallido', 'failure'].includes(l.estado || l.status)
+  );
   const tasaExitoRecalculos = calcularTasaExito(recalculosExitosos, recalculosFallidos);
 
-  const recalculoSum = extractSingleMetricValue(samples, 'quotes_recalculation_duration_seconds_sum');
-  const recalculoCount = extractSingleMetricValue(samples, 'quotes_recalculation_duration_seconds_count');
+  const recalculoSum = sumMetricValues(samples, 'quotes_recalculation_duration_seconds_sum');
+  const recalculoCount = sumMetricValues(samples, 'quotes_recalculation_duration_seconds_count');
   const duracionPromedioSegundos = calcularLatenciaPromedio(recalculoSum, recalculoCount);
 
-  const jugadoresProcesados =
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { category: 'with_stats' }) ||
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { categoria: 'con_estadisticas' });
-  const jugadoresSinEstadisticas =
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { category: 'without_stats' }) ||
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { categoria: 'sin_estadisticas' });
-  const jugadoresFallidos =
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { category: 'failed' }) ||
-    extractSingleMetricValue(samples, 'quotes_players_evaluated_total', { categoria: 'fallidos' });
+  const jugadoresProcesados = sumMetricValues(samples, 'quotes_players_evaluated_total', (l) =>
+    ['procesados', 'con_estadisticas', 'with_stats', 'processed'].includes(l.categoria || l.category)
+  );
+  const jugadoresSinEstadisticas = sumMetricValues(samples, 'quotes_players_evaluated_total', (l) =>
+    ['sin_estadisticas', 'without_stats'].includes(l.categoria || l.category)
+  );
+  const jugadoresFallidos = sumMetricValues(samples, 'quotes_players_evaluated_total', (l) =>
+    ['fallidos', 'failed'].includes(l.categoria || l.category)
+  );
 
   // Estrategia activa
   const strategySamples = samples.filter((s) => s.name === 'quotes_active_strategy' && s.value === 1);
@@ -146,24 +152,33 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   };
 
   // Ingestion (Scraping)
-  const ejecucionesExitosas =
-    extractSingleMetricValue(samples, 'scraping_executions_total', { status: 'success' }) ||
-    extractSingleMetricValue(samples, 'scraping_executions_total', { estado: 'exito' });
-  const ejecucionesFallidas =
-    extractSingleMetricValue(samples, 'scraping_executions_total', { status: 'failure' }) ||
-    extractSingleMetricValue(samples, 'scraping_executions_total', { estado: 'fallo' });
-  const ejecucionesRecuperadas =
-    extractSingleMetricValue(samples, 'scraping_executions_total', { status: 'recovered' }) ||
-    extractSingleMetricValue(samples, 'scraping_executions_total', { estado: 'recuperado' });
+  const ejecucionesExitosas = sumMetricValues(samples, 'scraping_executions_total', (l) =>
+    ['exitoso', 'exito', 'success'].includes(l.estado || l.status)
+  );
+  const ejecucionesFallidas = sumMetricValues(samples, 'scraping_executions_total', (l) =>
+    ['fallido', 'fallo', 'failure'].includes(l.estado || l.status)
+  );
+  const ejecucionesRecuperadas = sumMetricValues(samples, 'scraping_executions_total', (l) =>
+    ['recuperada_atasco', 'recuperado', 'recovered'].includes(l.estado || l.status)
+  );
 
   const duracionPorLiga: Record<string, number> = {};
-  const durationSumSamples = samples.filter((s) => s.name === 'scraping_league_duration_seconds_sum');
+  const durationSumSamples = samples.filter(
+    (s) =>
+      s.name === 'scraping_execution_duration_seconds_sum' ||
+      s.name === 'scraping_league_duration_seconds_sum'
+  );
   for (const sumSample of durationSumSamples) {
     const liga = sumSample.labels.league || sumSample.labels.liga;
     if (liga) {
-      const count =
-        extractSingleMetricValue(samples, 'scraping_league_duration_seconds_count', { league: liga }) ||
-        extractSingleMetricValue(samples, 'scraping_league_duration_seconds_count', { liga });
+      const count = sumMetricValues(
+        samples,
+        [
+          'scraping_execution_duration_seconds_count',
+          'scraping_league_duration_seconds_count',
+        ],
+        (l) => (l.league || l.liga) === liga
+      );
       duracionPorLiga[liga] = count > 0 ? Number((sumSample.value / count).toFixed(2)) : sumSample.value;
     }
   }
@@ -177,7 +192,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     }
   }
 
-  const incidentesTotales = extractSingleMetricValue(samples, 'scraping_incidents_total');
+  const incidentesTotales = sumMetricValues(samples, 'scraping_incidents_total');
 
   const ingestion: MetricaDeIngestion = {
     ejecucionesExitosas,
@@ -189,32 +204,42 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   };
 
   // Integracion y Cache
-  const footballDataRequests = extractSingleMetricValue(samples, 'football_data_requests_total');
+  const footballDataRequests = sumMetricValues(samples, 'football_data_requests_total');
   const footballDataRateLimitRemaining = extractSingleMetricValue(samples, 'football_data_rate_limit_remaining', {}, 10);
 
-  const cacheHits =
-    extractSingleMetricValue(samples, 'cache_requests_total', { result: 'hit' }) ||
-    extractSingleMetricValue(samples, 'cache_requests_total', { resultado: 'hit' });
-  const cacheMisses =
-    extractSingleMetricValue(samples, 'cache_requests_total', { result: 'miss' }) ||
-    extractSingleMetricValue(samples, 'cache_requests_total', { resultado: 'miss' });
+  const cacheHits = sumMetricValues(samples, 'cache_requests_total', (l) =>
+    ['hit'].includes(l.resultado || l.result)
+  );
+  const cacheMisses = sumMetricValues(samples, 'cache_requests_total', (l) =>
+    ['miss'].includes(l.resultado || l.result)
+  );
   const cacheHitRatio = calcularCacheHitRatio(cacheHits, cacheMisses);
-  const cacheFallbacks = extractSingleMetricValue(samples, 'cache_fallback_total');
+  const cacheFallbacks = sumMetricValues(samples, 'cache_fallback_total');
 
-  const totwGeneraciones = extractSingleMetricValue(samples, 'totw_generation_executions_total');
-  const totwSum = extractSingleMetricValue(samples, 'totw_generation_duration_seconds_sum');
-  const totwCount = extractSingleMetricValue(samples, 'totw_generation_duration_seconds_count');
+  const totwGeneraciones = sumMetricValues(
+    samples,
+    ['totw_generations_total', 'totw_generation_executions_total'],
+    (l) => !l.estado && !l.status || ['exito', 'exitoso', 'success'].includes(l.estado || l.status)
+  );
+  const totwSum = sumMetricValues(samples, 'totw_generation_duration_seconds_sum');
+  const totwCount = sumMetricValues(samples, 'totw_generation_duration_seconds_count');
   const totwDuracionSegundos = calcularLatenciaPromedio(totwSum, totwCount);
 
-  const authIntentosExitosos =
-    extractSingleMetricValue(samples, 'auth_attempts_total', { status: 'success' }) ||
-    extractSingleMetricValue(samples, 'auth_attempts_total', { estado: 'exito' });
-  const authIntentosFallidos =
-    extractSingleMetricValue(samples, 'auth_attempts_total', { status: 'failure' }) ||
-    extractSingleMetricValue(samples, 'auth_attempts_total', { estado: 'fallo' });
+  const authIntentosExitosos = sumMetricValues(samples, 'auth_attempts_total', (l) =>
+    ['exito', 'exitoso', 'success'].includes(l.resultado || l.estado || l.status)
+  );
+  const authIntentosFallidos = sumMetricValues(samples, 'auth_attempts_total', (l) =>
+    ['fallo', 'fallido', 'failure'].includes(l.resultado || l.estado || l.status)
+  );
 
-  const authHashSum = extractSingleMetricValue(samples, 'auth_hashing_duration_seconds_sum');
-  const authHashCount = extractSingleMetricValue(samples, 'auth_hashing_duration_seconds_count');
+  const authHashSum = sumMetricValues(samples, [
+    'password_hashing_duration_seconds_sum',
+    'auth_hashing_duration_seconds_sum',
+  ]);
+  const authHashCount = sumMetricValues(samples, [
+    'password_hashing_duration_seconds_count',
+    'auth_hashing_duration_seconds_count',
+  ]);
   const authLatenciaHashingPromedio = calcularLatenciaPromedio(authHashSum, authHashCount);
 
   const integracionYCache: MetricaDeIntegracionYCache = {

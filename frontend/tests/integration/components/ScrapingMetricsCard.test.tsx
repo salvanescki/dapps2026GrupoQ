@@ -40,4 +40,37 @@ describe('ScrapingMetricsCard (US5 Integration)', () => {
     render(<ScrapingMetricsCard ingestion={mockIngestion} error="Error al consultar scraping" />);
     expect(screen.getByText('Error al consultar scraping')).toBeInTheDocument();
   });
+
+  it('renderiza ligas aunque solo existan tasas de asociación y filtra GLOBAL inactivo', () => {
+    const mockIngestionParcial: MetricaDeIngestion = {
+      ejecucionesExitosas: 1,
+      ejecucionesFallidas: 0,
+      ejecucionesRecuperadas: 0,
+      duracionPorLiga: {},
+      tasaAsociacionPorLiga: {
+        PL: 96.5,
+        GLOBAL: 0,
+      },
+      incidentesTotales: 0,
+    };
+    render(<ScrapingMetricsCard ingestion={mockIngestionParcial} />);
+
+    expect(screen.getByText('Liga PL')).toBeInTheDocument();
+    expect(screen.getByText('96.50%')).toBeInTheDocument();
+    expect(screen.queryByText('Liga GLOBAL')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sin telemetría de ligas en el período')).not.toBeInTheDocument();
+  });
+
+  it('muestra mensaje de sin telemetría cuando no hay ligas registradas', () => {
+    const mockVacio: MetricaDeIngestion = {
+      ejecucionesExitosas: 0,
+      ejecucionesFallidas: 0,
+      ejecucionesRecuperadas: 0,
+      duracionPorLiga: {},
+      tasaAsociacionPorLiga: {},
+      incidentesTotales: 0,
+    };
+    render(<ScrapingMetricsCard ingestion={mockVacio} />);
+    expect(screen.getByText('Sin telemetría de ligas en el período')).toBeInTheDocument();
+  });
 });

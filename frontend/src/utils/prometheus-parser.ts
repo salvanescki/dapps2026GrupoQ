@@ -84,17 +84,48 @@ export function parsePrometheusText(rawText: string): PrometheusSample[] {
   return samples;
 }
 
+export type LabelMatcher =
+  | Record<string, string | string[]>
+  | ((labels: Record<string, string>) => boolean);
+
+export function matchLabels(
+  sampleLabels: Record<string, string>,
+  matcher?: LabelMatcher
+): boolean {
+  if (!matcher) return true;
+  if (typeof matcher === 'function') {
+    return matcher(sampleLabels);
+  }
+  return Object.entries(matcher).every(([key, allowedVals]) => {
+    const sampleVal = sampleLabels[key];
+    if (Array.isArray(allowedVals)) {
+      return allowedVals.includes(sampleVal);
+    }
+    return sampleVal === allowedVals;
+  });
+}
+
 export function extractSingleMetricValue(
   samples: PrometheusSample[],
-  metricName: string,
-  matchingLabels?: Record<string, string>,
+  metricNameOrNames: string | string[],
+  matchingLabels?: LabelMatcher,
   defaultValue = 0
 ): number {
-  const match = samples.find((sample) => {
-    if (sample.name !== metricName) return false;
-    if (!matchingLabels) return true;
-    return Object.entries(matchingLabels).every(([key, val]) => sample.labels[key] === val);
-  });
+  const names = Array.isArray(metricNameOrNames) ? metricNameOrNames : [metricNameOrNames];
+  const match = samples.find(
+    (sample) => names.includes(sample.name) && matchLabels(sample.labels, matchingLabels)
+  );
 
   return match !== undefined ? match.value : defaultValue;
+}
+
+export function sumMetricValues(
+  samples: PrometheusSample[],
+  metricNameOrNames: string | string[],
+  matchingLabels?: LabelMatcher
+): number {
+  const names = Array.isArray(metricNameOrNames) ? metricNameOrNames : [metricNameOrNames];
+  return samples
+    .filter((sample) => names.includes(sample.name) && matchLabels(sample.labels, matchingLabels))
+    .reduce((acc, curr) => acc + curr.value, 0);
 }

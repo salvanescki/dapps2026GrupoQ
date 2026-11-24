@@ -7,7 +7,12 @@ export interface ScrapingMetricsCardProps {
 }
 
 export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingestion, error }) => {
-  const ligas = Object.keys(ingestion?.duracionPorLiga || {});
+  const ligas = Array.from(
+    new Set([
+      ...Object.keys(ingestion?.duracionPorLiga || {}),
+      ...Object.keys(ingestion?.tasaAsociacionPorLiga || {}),
+    ])
+  ).filter((liga) => liga !== 'GLOBAL' || (ingestion?.duracionPorLiga?.GLOBAL !== undefined && ingestion.duracionPorLiga.GLOBAL > 0));
 
   return (
     <div className="metric-card">
@@ -64,7 +69,9 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
               return (
                 <div key={liga} className="metric-stat-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Liga {liga}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {liga === 'GLOBAL' ? 'Global' : `Liga ${liga}`}
+                    </span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                       {duracion !== undefined ? `${duracion.toFixed(2)} s` : '-'}
                     </span>
@@ -74,7 +81,7 @@ export const ScrapingMetricsCard: React.FC<ScrapingMetricsCardProps> = ({ ingest
                     <strong
                       style={{
                         color:
-                          matchRate && matchRate >= 90
+                          matchRate !== undefined && matchRate >= 90
                             ? 'var(--color-emerald-400)'
                             : 'var(--color-amber-400)',
                       }}

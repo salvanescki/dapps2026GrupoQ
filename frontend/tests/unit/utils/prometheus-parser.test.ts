@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parsePrometheusText, extractSingleMetricValue } from '../../../src/utils/prometheus-parser';
+import {
+  parsePrometheusText,
+  extractSingleMetricValue,
+  sumMetricValues,
+} from '../../../src/utils/prometheus-parser';
 
 describe('prometheus-parser', () => {
   const samplePrometheusText = `
@@ -72,5 +76,25 @@ node_cpu_seconds{cpu="0"} 1.25e+02
 
     const compOrder = extractSingleMetricValue(parsed, 'marketplace_orders_total', { tipo: 'compra' });
     expect(compOrder).toBe(42);
+  });
+
+  it('debe sumar métricas con sumMetricValues usando nombres, arrays de nombres y matchers flexibles', () => {
+    const parsed = parsePrometheusText(samplePrometheusText);
+    const totalOrders = sumMetricValues(parsed, 'marketplace_orders_total');
+    expect(totalOrders).toBe(60);
+
+    const compras = sumMetricValues(parsed, 'marketplace_orders_total', { tipo: 'compra' });
+    expect(compras).toBe(42);
+
+    const estadosValidos = sumMetricValues(parsed, 'marketplace_orders_total', {
+      estado: ['completada', 'creada'],
+    });
+    expect(estadosValidos).toBe(60);
+
+    const conPredicado = sumMetricValues(parsed, 'marketplace_orders_total', (labels) => labels.mercado === 'secundario');
+    expect(conPredicado).toBe(18);
+
+    const multipleNames = sumMetricValues(parsed, ['marketplace_orders_total', 'node_memory_rss_bytes']);
+    expect(multipleNames).toBe(60 + 268435456);
   });
 });
