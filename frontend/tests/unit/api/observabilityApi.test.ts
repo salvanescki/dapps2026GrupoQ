@@ -102,4 +102,29 @@ describe('observabilityApi client', () => {
     expect(live.memoriaRssBytes).toBe(536870912);
     expect(live.porcentajeRss).toBeCloseTo(50, 0);
   });
+
+  it('mapearTerminusLiveness usa fallback de Prometheus cuando /health/live devuelve 200 sin bytes', () => {
+    const livenessTerminusNominal = {
+      status: 'ok',
+      info: {
+        memory_heap: { status: 'up' },
+        memory_rss: { status: 'up' },
+      },
+      details: {
+        memory_heap: { status: 'up' },
+        memory_rss: { status: 'up' },
+      },
+    };
+
+    const resultado = observabilityApiClient.mapearTerminusLiveness(livenessTerminusNominal, {
+      heapUsedBytes: 157286400,
+      rssBytes: 536870912,
+    });
+
+    expect(resultado.estadoGlobal).toBe('ok');
+    expect(resultado.memoriaHeapBytes).toBe(157286400);
+    expect(resultado.porcentajeHeap).toBeCloseTo(50, 0);
+    expect(resultado.memoriaRssBytes).toBe(536870912);
+    expect(resultado.porcentajeRss).toBeCloseTo(50, 0);
+  });
 });

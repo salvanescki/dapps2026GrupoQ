@@ -64,8 +64,24 @@ export class HealthController {
     const RSS_THRESHOLD_BYTES = 1024 * 1024 * 1024; // 1024 MB (1 GB)
 
     return this.health.check([
-      () => this.memory.checkHeap('memory_heap', HEAP_THRESHOLD_BYTES),
-      () => this.memory.checkRSS('memory_rss', RSS_THRESHOLD_BYTES),
+      async () => {
+        const result = await this.memory.checkHeap('memory_heap', HEAP_THRESHOLD_BYTES);
+        return {
+          memory_heap: {
+            ...result.memory_heap,
+            bytes: result.memory_heap?.bytes ?? process.memoryUsage().heapUsed,
+          },
+        };
+      },
+      async () => {
+        const result = await this.memory.checkRSS('memory_rss', RSS_THRESHOLD_BYTES);
+        return {
+          memory_rss: {
+            ...result.memory_rss,
+            bytes: result.memory_rss?.bytes ?? process.memoryUsage().rss,
+          },
+        };
+      },
     ]);
   }
 }

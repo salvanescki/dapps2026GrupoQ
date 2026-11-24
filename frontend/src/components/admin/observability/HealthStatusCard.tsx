@@ -19,8 +19,21 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
   runtime,
   error,
 }) => {
-  const heapAlert = liveness ? determinarEstadoAlertaMemoria(liveness.porcentajeHeap) : 'nominal';
-  const rssAlert = liveness ? determinarEstadoAlertaMemoria(liveness.porcentajeRss) : 'nominal';
+  const heapBytes = liveness?.memoriaHeapBytes || runtime?.heapUsedBytes || 0;
+  const rssBytes = liveness?.memoriaRssBytes || runtime?.rssBytes || 0;
+  const umbralHeap = liveness?.umbralHeapBytes || 300 * 1024 * 1024;
+  const umbralRss = liveness?.umbralRssBytes || 1024 * 1024 * 1024;
+  const porcentajeHeap =
+    liveness?.memoriaHeapBytes && liveness.memoriaHeapBytes > 0
+      ? liveness.porcentajeHeap
+      : Number(((heapBytes / umbralHeap) * 100).toFixed(2));
+  const porcentajeRss =
+    liveness?.memoriaRssBytes && liveness.memoriaRssBytes > 0
+      ? liveness.porcentajeRss
+      : Number(((rssBytes / umbralRss) * 100).toFixed(2));
+
+  const heapAlert = determinarEstadoAlertaMemoria(porcentajeHeap);
+  const rssAlert = determinarEstadoAlertaMemoria(porcentajeRss);
 
   return (
     <div className="metric-card">
@@ -93,28 +106,28 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
-              <span>Heap: {((liveness?.memoriaHeapBytes || 0) / (1024 * 1024)).toFixed(1)} MB / 300 MB</span>
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{(liveness?.porcentajeHeap || 0).toFixed(2)}%</span>
+              <span>Heap: {(heapBytes / (1024 * 1024)).toFixed(1)} MB / 300 MB</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{porcentajeHeap.toFixed(2)}%</span>
             </div>
             <div className="progress-container">
               <div
                 data-testid="heap-progress-bar"
                 className={`progress-bar ${heapAlert}`}
-                style={{ width: `${Math.min(liveness?.porcentajeHeap || 0, 100)}%` }}
+                style={{ width: `${Math.min(porcentajeHeap, 100)}%` }}
               />
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
-              <span>RSS: {((liveness?.memoriaRssBytes || 0) / (1024 * 1024)).toFixed(1)} MB / 1024 MB</span>
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{(liveness?.porcentajeRss || 0).toFixed(2)}%</span>
+              <span>RSS: {(rssBytes / (1024 * 1024)).toFixed(1)} MB / 1024 MB</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{porcentajeRss.toFixed(2)}%</span>
             </div>
             <div className="progress-container">
               <div
                 data-testid="rss-progress-bar"
                 className={`progress-bar ${rssAlert}`}
-                style={{ width: `${Math.min(liveness?.porcentajeRss || 0, 100)}%` }}
+                style={{ width: `${Math.min(porcentajeRss, 100)}%` }}
               />
             </div>
           </div>

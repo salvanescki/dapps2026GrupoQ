@@ -101,4 +101,40 @@ describe('HealthStatusCard (US2 Integration)', () => {
     expect(screen.getByText('v24.21.0')).toBeInTheDocument();
     expect(screen.getByText(/14 rec\./i)).toBeInTheDocument();
   });
+
+  it('usa fallback de runtime cuando liveness contiene 0 MB', () => {
+    const livenessVacio: SondaLivenessData = {
+      estadoGlobal: 'ok',
+      memoriaHeapBytes: 0,
+      umbralHeapBytes: 314572800,
+      porcentajeHeap: 0,
+      memoriaRssBytes: 0,
+      umbralRssBytes: 1073741824,
+      porcentajeRss: 0,
+    };
+
+    const runtimeConMemoria = {
+      cpuSegundosTotal: 10,
+      uptimeSegundos: 100,
+      eventLoopLagMs: 2,
+      activeHandles: 5,
+      activeResources: 5,
+      versionNode: 'v24.21.0',
+      heapUsedBytes: 157286400, // 150 MB (50%)
+      rssBytes: 536870912, // 512 MB (50%)
+    };
+
+    render(
+      <HealthStatusCard
+        readiness={readinessNominal}
+        liveness={livenessVacio}
+        runtime={runtimeConMemoria}
+      />
+    );
+
+    expect(screen.getByText(/Heap: 150\.0 MB \/ 300 MB/i)).toBeInTheDocument();
+    expect(screen.getByText(/RSS: 512\.0 MB \/ 1024 MB/i)).toBeInTheDocument();
+    const percentages = screen.getAllByText(/50\.00%/i);
+    expect(percentages.length).toBe(2);
+  });
 });

@@ -207,6 +207,14 @@ nodejs_active_resources_total 15
 # HELP nodejs_version_info Node.js version info.
 # TYPE nodejs_version_info gauge
 nodejs_version_info{version="v24.21.0",major="24",minor="21",patch="0"} 1
+
+# HELP nodejs_heap_size_used_bytes Process heap size used from Node.js in bytes.
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes 104857600
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 209715200
 `;
     const samples = parsePrometheusText(rawMetrics);
     const metricas = procesarMetricasPrometheus(samples);
@@ -239,6 +247,8 @@ nodejs_version_info{version="v24.21.0",major="24",minor="21",patch="0"} 1
     expect(metricas.runtime?.activeHandles).toBe(12);
     expect(metricas.runtime?.activeResources).toBe(15);
     expect(metricas.runtime?.versionNode).toBe('v24.21.0');
+    expect(metricas.runtime?.heapUsedBytes).toBe(104857600);
+    expect(metricas.runtime?.rssBytes).toBe(209715200);
     expect(metricas.ingestion.incidentesPorLiga?.['PL']).toBe(0);
   });
 });

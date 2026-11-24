@@ -40,7 +40,9 @@ describe('HealthController GET /health/live (Integration)', () => {
     expect(response.body.info).toHaveProperty('memory_heap');
     expect(response.body.info).toHaveProperty('memory_rss');
     expect(response.body.details.memory_heap.status).toBe('up');
+    expect(response.body.details.memory_heap.bytes).toBeGreaterThan(0);
     expect(response.body.details.memory_rss.status).toBe('up');
+    expect(response.body.details.memory_rss.bytes).toBeGreaterThan(0);
   });
 
   it('debe responder HTTP 503 con status "error" si el Heap de memoria excede el umbral de 300 MB', async () => {

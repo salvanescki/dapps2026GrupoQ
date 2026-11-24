@@ -101,4 +101,32 @@ describe('useObservability (US6 Hook Integration)', () => {
     });
     expect(mockApi.obtenerMetrics).toHaveBeenCalledTimes(2);
   });
+
+  it('aplica fallback de Prometheus a liveness cuando /health/live no reporta bytes (0 MB)', async () => {
+    mockApi.obtenerHealthLive = vi.fn().mockResolvedValue({
+      estadoGlobal: 'ok',
+      memoriaHeapBytes: 0,
+      umbralHeapBytes: 314572800,
+      porcentajeHeap: 0,
+      memoriaRssBytes: 0,
+      umbralRssBytes: 1073741824,
+      porcentajeRss: 0,
+    });
+    mockApi.obtenerMetrics = vi.fn().mockResolvedValue(
+      '# HELP nodejs_heap_size_used_bytes Heap used\n# TYPE nodejs_heap_size_used_bytes gauge\nnodejs_heap_size_used_bytes 157286400\n# HELP process_resident_memory_bytes RSS\n# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 536870912\n'
+    );
+
+    const { result } = renderHook(() =>
+      useObservability({ apiClient: mockApi, intervaloInicial: 0 })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.liveness?.memoriaHeapBytes).toBe(157286400);
+    expect(result.current.liveness?.porcentajeHeap).toBeCloseTo(50, 0);
+    expect(result.current.liveness?.memoriaRssBytes).toBe(536870912);
+    expect(result.current.liveness?.porcentajeRss).toBeCloseTo(50, 0);
+  });
 });

@@ -94,6 +94,8 @@ export interface MetricaDeRuntimeNode {
   activeHandles: number;
   activeResources: number;
   versionNode: string;
+  heapUsedBytes?: number;
+  rssBytes?: number;
 }
 
 export interface MetricaDeIntegracionYCache {

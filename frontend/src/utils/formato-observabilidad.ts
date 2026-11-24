@@ -284,6 +284,8 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   const activeResources = extractSingleMetricValue(samples, 'nodejs_active_resources_total');
   const versionSample = samples.find((s) => s.name === 'nodejs_version_info');
   const versionNode = versionSample?.labels.version || '';
+  const heapUsedBytes = extractSingleMetricValue(samples, 'nodejs_heap_size_used_bytes');
+  const rssBytes = extractSingleMetricValue(samples, 'process_resident_memory_bytes');
 
   const runtime: MetricaDeRuntimeNode = {
     cpuSegundosTotal,
@@ -292,6 +294,8 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     activeHandles,
     activeResources,
     versionNode,
+    heapUsedBytes: heapUsedBytes > 0 ? heapUsedBytes : undefined,
+    rssBytes: rssBytes > 0 ? rssBytes : undefined,
   };
 
   return {

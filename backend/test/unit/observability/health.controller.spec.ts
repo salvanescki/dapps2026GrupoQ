@@ -49,10 +49,12 @@ describe('HealthController (Unit Tests)', () => {
     expect(mockFootballData.isHealthy).toHaveBeenCalledWith('footballData');
   });
 
-  it('debe ejecutar checkLiveness() evaluando umbrales de memoria Heap (300MB) y RSS (1GB)', async () => {
+  it('debe ejecutar checkLiveness() evaluando umbrales de memoria Heap (300MB) y RSS (1GB) e incluyendo bytes', async () => {
     const res = await controller.checkLiveness();
     expect(res.status).toBe('ok');
     expect(mockMemory.checkHeap).toHaveBeenCalledWith('memory_heap', 300 * 1024 * 1024);
     expect(mockMemory.checkRSS).toHaveBeenCalledWith('memory_rss', 1024 * 1024 * 1024);
+    expect(res.details.memory_heap.bytes).toBeGreaterThan(0);
+    expect(res.details.memory_rss.bytes).toBeGreaterThan(0);
   });
 });

@@ -119,7 +119,10 @@ export class ObservabilityApiClient implements ObservabilityApi {
     };
   }
 
-  mapearTerminusLiveness(data: any): SondaLivenessData {
+  mapearTerminusLiveness(
+    data: any,
+    fallbackMetrics?: { heapUsedBytes?: number; rssBytes?: number }
+  ): SondaLivenessData {
     const details =
       data?.details && Object.keys(data.details).length > 0
         ? data.details
@@ -127,13 +130,16 @@ export class ObservabilityApiClient implements ObservabilityApi {
     const heapInfo = details.memory_heap || {};
     const rssInfo = details.memory_rss || {};
 
-    // Extrae bytes directos o parsea mensaje como "Used heap (320 MB) exceeds threshold (300 MB)"
+    // Extrae bytes directos, parsea mensaje o usa fallback de Prometheus si viene en 0
     let memoriaHeapBytes = heapInfo.bytes || 0;
     if (!memoriaHeapBytes && typeof heapInfo.message === 'string') {
       const match = heapInfo.message.match(/(\d+(?:\.\d+)?)\s*MB/i);
       if (match) {
         memoriaHeapBytes = Math.round(parseFloat(match[1]) * 1024 * 1024);
       }
+    }
+    if (!memoriaHeapBytes && fallbackMetrics?.heapUsedBytes) {
+      memoriaHeapBytes = fallbackMetrics.heapUsedBytes;
     }
 
     let memoriaRssBytes = rssInfo.bytes || 0;
@@ -144,6 +150,9 @@ export class ObservabilityApiClient implements ObservabilityApi {
         const unit = match[2].toUpperCase();
         memoriaRssBytes = Math.round(val * (unit === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024));
       }
+    }
+    if (!memoriaRssBytes && fallbackMetrics?.rssBytes) {
+      memoriaRssBytes = fallbackMetrics.rssBytes;
     }
 
     const porcentajeHeap = Number(((memoriaHeapBytes / UMBRAL_HEAP_BYTES) * 100).toFixed(2));

@@ -98,6 +98,32 @@ export function useObservability(options?: UseObservabilityOptions) {
         errorMetrics = metricsResult.reason?.message || 'Error al consultar /metrics';
       }
 
+      // Fallback resiliente: si /health/live no reporta bytes (0 MB) pero /metrics proveyó métricas de Node.js
+      if (liveness && metricas?.runtime) {
+        let heapBytes = liveness.memoriaHeapBytes;
+        let rssBytes = liveness.memoriaRssBytes;
+        let recalcular = false;
+
+        if ((!heapBytes || heapBytes === 0) && metricas.runtime.heapUsedBytes) {
+          heapBytes = metricas.runtime.heapUsedBytes;
+          recalcular = true;
+        }
+        if ((!rssBytes || rssBytes === 0) && metricas.runtime.rssBytes) {
+          rssBytes = metricas.runtime.rssBytes;
+          recalcular = true;
+        }
+
+        if (recalcular) {
+          liveness = {
+            ...liveness,
+            memoriaHeapBytes: heapBytes,
+            porcentajeHeap: Number(((heapBytes / liveness.umbralHeapBytes) * 100).toFixed(2)),
+            memoriaRssBytes: rssBytes,
+            porcentajeRss: Number(((rssBytes / liveness.umbralRssBytes) * 100).toFixed(2)),
+          };
+        }
+      }
+
       const fallaronTodas =
         readyResult.status === 'rejected' &&
         liveResult.status === 'rejected' &&
