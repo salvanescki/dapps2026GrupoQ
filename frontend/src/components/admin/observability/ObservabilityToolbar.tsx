@@ -19,7 +19,12 @@ export const ObservabilityToolbar: React.FC<ObservabilityToolbarProps> = ({
   estadoConexion,
 }) => {
   const ultimaHora = ultimaSincronizacion
-    ? ultimaSincronizacion.toLocaleTimeString('es-AR')
+    ? ultimaSincronizacion.toLocaleTimeString('es-AR', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
     : 'Nunca';
 
   return (
