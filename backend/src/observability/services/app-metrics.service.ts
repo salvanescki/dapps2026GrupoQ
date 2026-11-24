@@ -194,7 +194,7 @@ export class AppMetricsService implements OnModuleInit {
 
     this.totwGenerationsTotal = this.getOrCreateCounter({
       name: METRIC_NAMES.TOTW_GENERATIONS_TOTAL,
-      help: 'Cantidad total de ejecuciones del scheduler de Equipo de la Semana',
+      help: 'Cantidad total de generaciones de Equipo de la Semana',
       labelNames: ['estado'],
     });
 

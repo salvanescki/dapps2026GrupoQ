@@ -10,6 +10,7 @@ import { ROLES_KEY } from '../../../src/common/decorators/roles.decorator';
 describe('TeamOfTheWeekController (Integration & Contract Tests)', () => {
   let controller: TeamOfTheWeekController;
   let mockService: any;
+  let mockMetricsService: any;
 
   const crearEquipoMock = (ano = 2026, semanaIso = 44): EquipoSemanal => {
     const miembros: MiembroEquipoSemanal[] = [];
@@ -63,7 +64,15 @@ describe('TeamOfTheWeekController (Integration & Contract Tests)', () => {
       generarEquipoSemanaActual: jest.fn(),
     };
 
-    controller = new TeamOfTheWeekController(mockService as EquipoSemanalService);
+    mockMetricsService = {
+      recordTotwGeneration: jest.fn(),
+      recordTotwDuration: jest.fn(),
+    };
+
+    controller = new TeamOfTheWeekController(
+      mockService as EquipoSemanalService,
+      mockMetricsService as any,
+    );
   });
 
   describe('US1: GET /team-of-the-week (obtenerEquipoVigente)', () => {
@@ -154,12 +163,16 @@ describe('TeamOfTheWeekController (Integration & Contract Tests)', () => {
       expect(roles).toEqual(['ADMIN']);
     });
 
-    it('con usuario ADMIN y jugadores elegibles → 200 con ResumenGeneracionEquipoDto', async () => {
+    it('con usuario ADMIN y jugadores elegibles → 200 con ResumenGeneracionEquipoDto y registra métricas', async () => {
       mockService.generarEquipoSemanaActual.mockResolvedValue(crearEquipoMock());
 
       const res = await controller.generarManualmente();
       expect(res.mensaje).toBe('Equipo de la Semana generado exitosamente.');
       expect(res.equipo.miembros).toHaveLength(11);
+      expect(mockMetricsService.recordTotwGeneration).toHaveBeenCalledWith('exito');
+      expect(mockMetricsService.recordTotwDuration).toHaveBeenCalledWith(
+        expect.any(Number),
+      );
     });
 
     it('segunda ejecución en la misma semana → sobrescribe y retorna éxito', async () => {
@@ -169,9 +182,10 @@ describe('TeamOfTheWeekController (Integration & Contract Tests)', () => {
       await controller.generarManualmente();
 
       expect(mockService.generarEquipoSemanaActual).toHaveBeenCalledTimes(2);
+      expect(mockMetricsService.recordTotwGeneration).toHaveBeenCalledTimes(2);
     });
 
-    it('con cupo insuficiente → propaga ReglaDeNegocioException con mensaje en español', async () => {
+    it('con cupo insuficiente → propaga ReglaDeNegocioException con mensaje en español y registra fallo en métricas', async () => {
       mockService.generarEquipoSemanaActual.mockRejectedValue(
         new ReglaDeNegocioException(
           'No hay suficientes jugadores elegibles en la posición Portero para conformar el Equipo de la Semana.',
@@ -181,6 +195,17 @@ describe('TeamOfTheWeekController (Integration & Contract Tests)', () => {
       await expect(controller.generarManualmente()).rejects.toThrow(
         'No hay suficientes jugadores elegibles en la posición Portero',
       );
+      expect(mockMetricsService.recordTotwGeneration).toHaveBeenCalledWith('fallo');
+    });
+
+    it('funciona correctamente sin metricsService inyectado (@Optional)', async () => {
+      const controllerSinMetricas = new TeamOfTheWeekController(
+        mockService as EquipoSemanalService,
+      );
+      mockService.generarEquipoSemanaActual.mockResolvedValue(crearEquipoMock());
+
+      const res = await controllerSinMetricas.generarManualmente();
+      expect(res.mensaje).toBe('Equipo de la Semana generado exitosamente.');
     });
   });
 });
