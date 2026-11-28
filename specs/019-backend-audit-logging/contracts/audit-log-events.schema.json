@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://football-tokens.grupoq.local/schemas/audit-log-events.schema.json",
+  "title": "Football Player Token Marketplace - Structured Audit Log Events",
+  "description": "Contrato formal JSON de los registros de auditoría emitidos por el backend a stdout mediante nestjs-pino (HTTP_AUDIT y BUSINESS_AUDIT).",
+  "oneOf": [
+    { "$ref": "#/$defs/HttpAuditLogEvent" },
+    { "$ref": "#/$defs/BusinessAuditLogEvent" }
+  ],
+  "$defs": {
+    "IsoTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Marca temporal UTC en formato ISO-8601."
+    },
+    "HttpAuditLogEvent": {
+      "type": "object",
+      "required": [
+        "level",
+        "timestamp",
+        "servicio",
+        "entorno",
+        "tipoEvento",
+        "requestId",
+        "usuario",
+        "operacion",
+        "parametros",
+        "codigoEstado",
+        "tiempoEjecucion",
+        "msg"
+      ],
+      "properties": {
+        "level": {
+          "type": "integer",
+          "enum": [10, 20, 30, 40, 50, 60]
+        },
+        "timestamp": { "$ref": "#/$defs/IsoTimestamp" },
+        "servicio": { "type": "string", "const": "football-tokens-backend" },
+        "entorno": { "type": "string" },
+        "tipoEvento": { "type": "string", "const": "HTTP_AUDIT" },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "usuario": {
+          "type": "object",
+          "required": ["autenticado", "id", "email", "rol"],
+          "properties": {
+            "autenticado": { "type": "boolean" },
+            "tipo": { "type": "string", "enum": ["ANONIMO"] },
+            "id": { "type": ["string", "null"] },
+            "email": { "type": ["string", "null"] },
+            "rol": { "type": ["string", "null"] }
+          }
+        },
+        "operacion": {
+          "type": "object",
+          "required": ["metodo", "ruta", "controlador"],
+          "properties": {
+            "metodo": { "type": "string" },
+            "ruta": { "type": "string" },
+            "controlador": { "type": ["string", "null"] }
+          }
+        },
+        "parametros": {
+          "type": "object",
+          "required": ["ruta", "consulta", "cuerpo"],
+          "properties": {
+            "ruta": { "type": "object" },
+            "consulta": { "type": "object" },
+            "cuerpo": { "type": ["object", "null"] }
+          }
+        },
+        "codigoEstado": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "tiempoEjecucion": {
+          "type": "number",
+          "minimum": 0
+        },
+        "error": {
+          "type": "object",
+          "required": ["codigoEstado", "mensaje"],
+          "properties": {
+            "codigoEstado": { "type": "integer" },
+            "mensaje": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ]
+            }
+          }
+        },
+        "msg": { "type": "string" }
+      }
+    },
+    "BusinessAuditLogEvent": {
+      "type": "object",
+      "required": [
+        "level",
+        "timestamp",
+        "servicio",
+        "entorno",
+        "tipoEvento",
+        "evento",
+        "requestId",
+        "origen",
+        "usuarioId",
+        "resultado",
+        "motivo",
+        "tiempoEjecucion",
+        "datos",
+        "msg"
+      ],
+      "properties": {
+        "level": {
+          "type": "integer",
+          "enum": [30, 40, 50]
+        },
+        "timestamp": { "$ref": "#/$defs/IsoTimestamp" },
+        "servicio": { "type": "string", "const": "football-tokens-backend" },
+        "entorno": { "type": "string" },
+        "tipoEvento": { "type": "string", "const": "BUSINESS_AUDIT" },
+        "evento": {
+          "type": "string",
+          "enum": [
+            "TRANSACCION_TOKENS",
+            "ORDEN_MERCADO_SECUNDARIO",
+            "CALCULO_COTIZACIONES",
+            "CAMBIO_ESTRATEGIA_COTIZACION",
+            "CALCULO_TEAM_OF_THE_WEEK",
+            "SCRAPING_ESTADISTICAS",
+            "SCRAPING_LIGA"
+          ]
+        },
+        "requestId": { "type": ["string", "null"] },
+        "origen": {
+          "type": "string",
+          "enum": [
+            "HTTP",
+            "MANUAL",
+            "PROGRAMADO",
+            "PROGRAMADO_TOTW",
+            "STANDALONE",
+            "SISTEMA"
+          ]
+        },
+        "usuarioId": { "type": ["string", "null"] },
+        "resultado": {
+          "type": "string",
+          "enum": ["EXITO", "RECHAZADO", "OMITIDO", "FALLIDO"]
+        },
+        "motivo": { "type": ["string", "null"] },
+        "tiempoEjecucion": {
+          "type": "number",
+          "minimum": 0
+        },
+        "datos": { "type": "object" },
+        "msg": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "evento": { "const": "TRANSACCION_TOKENS" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "mercado",
+                  "operacion",
+                  "compradorId",
+                  "vendedorId",
+                  "transaccionId",
+                  "ordenId",
+                  "jugadorId",
+                  "cantidad",
+                  "precioUnitario",
+                  "montoTotal"
+                ],
+                "properties": {
+                  "mercado": { "type": "string", "enum": ["PRIMARIO", "SECUNDARIO"] },
+                  "operacion": { "type": "string", "const": "COMPRA" },
+                  "compradorId": { "type": "string" },
+                  "vendedorId": { "type": ["string", "null"] },
+                  "transaccionId": { "type": ["string", "null"] },
+                  "ordenId": { "type": ["string", "null"] },
+                  "jugadorId": { "type": ["string", "null"] },
+                  "cantidad": { "type": "integer", "minimum": 1 },
+                  "precioUnitario": { "type": ["number", "null"] },
+                  "montoTotal": { "type": ["number", "null"] },
+                  "estrategiaCotizacion": { "type": ["string", "null"] }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "ORDEN_MERCADO_SECUNDARIO" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "mercado",
+                  "accion",
+                  "vendedorId",
+                  "ordenId",
+                  "jugadorId",
+                  "cantidad",
+                  "precioUnitario",
+                  "estadoOrden"
+                ],
+                "properties": {
+                  "mercado": { "type": "string", "const": "SECUNDARIO" },
+                  "accion": { "type": "string", "enum": ["CREAR_VENTA", "CANCELAR_VENTA"] },
+                  "vendedorId": { "type": "string" },
+                  "ordenId": { "type": ["string", "null"] },
+                  "jugadorId": { "type": ["string", "null"] },
+                  "cantidad": { "type": ["integer", "null"], "minimum": 1 },
+                  "precioUnitario": { "type": ["number", "null"] },
+                  "estadoOrden": {
+                    "type": ["string", "null"],
+                    "enum": ["PENDIENTE", "CANCELADA", null]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "CALCULO_COTIZACIONES" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "estrategiaId",
+                  "estrategiaVersion",
+                  "procesados",
+                  "sinEstadisticas",
+                  "fallidos"
+                ],
+                "properties": {
+                  "estrategiaId": { "type": ["string", "null"] },
+                  "estrategiaVersion": { "type": ["string", "null"] },
+                  "procesados": { "type": "integer", "minimum": 0 },
+                  "sinEstadisticas": { "type": "integer", "minimum": 0 },
+                  "fallidos": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "CAMBIO_ESTRATEGIA_COTIZACION" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": ["estrategiaAnterior", "estrategiaNueva", "versionNueva"],
+                "properties": {
+                  "estrategiaAnterior": { "type": ["string", "null"] },
+                  "estrategiaNueva": { "type": "string" },
+                  "versionNueva": { "type": ["string", "null"] }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "CALCULO_TEAM_OF_THE_WEEK" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": ["ano", "semanaIso", "cantidadMiembros"],
+                "properties": {
+                  "ano": { "type": "integer" },
+                  "semanaIso": { "type": "integer", "minimum": 1, "maximum": 53 },
+                  "estrategiaId": { "type": ["string", "null"] },
+                  "estrategiaVersion": { "type": ["string", "null"] },
+                  "cantidadMiembros": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "SCRAPING_ESTADISTICAS" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "subtipo",
+                  "ejecucionId",
+                  "disparador",
+                  "ligasProcesadas",
+                  "tasaAsociacion",
+                  "conteoIncidencias",
+                  "jugadoresProcesados",
+                  "errores",
+                  "estadoFinal"
+                ],
+                "properties": {
+                  "subtipo": {
+                    "type": "string",
+                    "enum": [
+                      "EJECUCION_COMPLETA",
+                      "RECUPERACION_HUERFANA",
+                      "RECUPERACION_ATASCADA",
+                      "RECHAZO_CONCURRENCIA"
+                    ]
+                  },
+                  "ejecucionId": { "type": ["string", "null"] },
+                  "disparador": { "type": "string" },
+                  "ligasProcesadas": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "tasaAsociacion": { "type": ["number", "null"] },
+                  "conteoIncidencias": { "type": "integer", "minimum": 0 },
+                  "jugadoresProcesados": { "type": "integer", "minimum": 0 },
+                  "errores": { "type": "integer", "minimum": 0 },
+                  "estadoFinal": {
+                    "type": "string",
+                    "enum": ["EXITOSO", "FALLIDO", "RECHAZADO", "EN_PROGRESO"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "SCRAPING_LIGA" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "ejecucionId",
+                  "liga",
+                  "descubiertos",
+                  "deduplicados",
+                  "asociados",
+                  "descartados",
+                  "tasaAsociacion",
+                  "conteoIncidencias",
+                  "rechazadaPorCobertura"
+                ],
+                "properties": {
+                  "ejecucionId": { "type": "string" },
+                  "liga": { "type": "string" },
+                  "descubiertos": { "type": "integer", "minimum": 0 },
+                  "deduplicados": { "type": "integer", "minimum": 0 },
+                  "asociados": { "type": "integer", "minimum": 0 },
+                  "descartados": { "type": "integer", "minimum": 0 },
+                  "tasaAsociacion": { "type": "number", "minimum": 0, "maximum": 100 },
+                  "conteoIncidencias": { "type": "integer", "minimum": 0 },
+                  "rechazadaPorCobertura": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

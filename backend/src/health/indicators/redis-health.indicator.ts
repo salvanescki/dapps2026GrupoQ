@@ -1,6 +1,7 @@
 import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
 import Redis from 'ioredis';
+import { esRedisHabilitado } from '../../observability/utils/redis-policy.util';
 
 @Injectable()
 export class RedisHealthIndicator extends HealthIndicator {
@@ -43,6 +44,10 @@ export class RedisHealthIndicator extends HealthIndicator {
   }
 
   async isHealthy(key: string = 'redis'): Promise<HealthIndicatorResult> {
+    if (!this.isInjectedClient && !esRedisHabilitado()) {
+      return this.getStatus(key, true, { mode: 'disabled' });
+    }
+
     try {
       const client = this.getClient();
       const pingPromise = client.ping();

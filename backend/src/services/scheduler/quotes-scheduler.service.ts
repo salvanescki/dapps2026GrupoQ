@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 import { QuotesService } from '../quotes.service';
 import { AppMetricsService } from '../../observability/services/app-metrics.service';
+import { AuditarOperacion } from '../../observability/aspects/auditar-operacion.decorator';
 
 @Injectable()
 export class QuotesSchedulerService {
@@ -15,6 +16,29 @@ export class QuotesSchedulerService {
     @Optional() private readonly metricsService?: AppMetricsService,
   ) {}
 
+  @AuditarOperacion({
+    evento: 'CALCULO_COTIZACIONES',
+    origen: 'PROGRAMADO',
+    debeEmitir: (res) => !res?.ejecutado,
+    extraerResultadoExito: () => ({
+      resultado: 'OMITIDO',
+      motivo: 'Otra instancia posee el advisory lock del recalculo semanal',
+      datos: {
+        estrategiaId: null,
+        estrategiaVersion: null,
+        procesados: 0,
+        sinEstadisticas: 0,
+        fallidos: 0,
+      },
+    }),
+    extraerDatosError: () => ({
+      estrategiaId: null,
+      estrategiaVersion: null,
+      procesados: 0,
+      sinEstadisticas: 0,
+      fallidos: 0,
+    }),
+  })
   @Cron('0 0 * * 0') // Cada domingo a las 00:00
   public async ejecutarRecalculoSemanal(): Promise<{
     ejecutado: boolean;
@@ -44,7 +68,10 @@ export class QuotesSchedulerService {
       }
 
       this.logger.log('Lock adquirido. Iniciando recálculo masivo semanal...');
-      const resultado = await this.quotesService.recalcularCotizacionesActivas();
+      const resultado = await this.quotesService.recalcularCotizacionesActivas({
+        origen: 'PROGRAMADO',
+        usuarioId: null,
+      });
       const duracionSegundos = (Date.now() - start) / 1000;
       this.metricsService?.recordRecalculationDuration('GLOBAL_v1', duracionSegundos);
       this.logger.log(

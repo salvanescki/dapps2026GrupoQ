@@ -1,11 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   app.enableCors();
 
@@ -35,8 +38,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Backend de Tokens de Fútbol ejecutándose en: http://localhost:${port}`);
-  console.log(`Documentación Swagger disponible en: http://localhost:${port}/api/docs`);
+  logger.log(`Backend de Tokens de Fútbol ejecutándose en: http://localhost:${port}`);
+  logger.log(`Documentación Swagger disponible en: http://localhost:${port}/api/docs`);
 }
 
 void bootstrap();
