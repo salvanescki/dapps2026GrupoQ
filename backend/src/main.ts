@@ -26,6 +26,7 @@ async function bootstrap() {
     )
     .setVersion('1.0.0')
     .addBearerAuth()
+    .addTag('Observabilidad', 'Endpoints de métricas Prometheus y sondas de salud (readiness y liveness)')
     .addTag('scraping', 'Gestión del proceso de scraping de estadísticas WhoScored')
     .build();
 

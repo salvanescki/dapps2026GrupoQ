@@ -7,6 +7,7 @@ import { MarketplaceView } from '../views/MarketplaceView';
 import { PortfolioView } from '../views/PortfolioView';
 import { TeamOfTheWeekView } from '../views/TeamOfTheWeekView';
 import { AdminGovernanceView } from '../views/AdminGovernanceView';
+import { ObservabilityView } from '../views/ObservabilityView';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AdminRoute } from './AdminRoute';
 import { PublicRoute } from './PublicRoute';
@@ -84,6 +85,18 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AdminRoute>
               <AdminGovernanceView />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/observability"
+        element={
+          <ProtectedRoute>
+            <AdminRoute
+              mensajeSeguridad="Acceso restringido: el Panel de Observabilidad es exclusivo para cuentas Administradoras."
+            >
+              <ObservabilityView />
             </AdminRoute>
           </ProtectedRoute>
         }

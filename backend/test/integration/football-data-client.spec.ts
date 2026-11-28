@@ -27,6 +27,7 @@ describe('FootballDataClient', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      headers: new Headers(),
       json: jest.fn().mockResolvedValue(mockData),
     });
 
@@ -48,6 +49,7 @@ describe('FootballDataClient', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 404,
+      headers: new Headers(),
       text: jest.fn().mockResolvedValue('Resource not found'),
     });
 
@@ -60,6 +62,7 @@ describe('FootballDataClient', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
+      headers: new Headers(),
       text: jest.fn().mockResolvedValue('Internal server error'),
     });
 
@@ -74,5 +77,21 @@ describe('FootballDataClient', () => {
     await expect(client.obtenerEquiposYJugadoresPorLiga('PL')).rejects.toThrow(
       'Network connection timeout'
     );
+  });
+
+  it('debe tolerar respuestas sin headers definidos sin lanzar TypeError', async () => {
+    const mockData = {
+      competition: { id: 2021, name: 'Premier League', code: 'PL' },
+      teams: [],
+    };
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue(mockData),
+    });
+
+    const resultado = await client.obtenerEquiposYJugadoresPorLiga('PL');
+    expect(resultado).toEqual(mockData);
   });
 });

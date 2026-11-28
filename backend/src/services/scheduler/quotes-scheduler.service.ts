@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 import { QuotesService } from '../quotes.service';
+import { AppMetricsService } from '../../observability/services/app-metrics.service';
 
 @Injectable()
 export class QuotesSchedulerService {
@@ -11,6 +12,7 @@ export class QuotesSchedulerService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly quotesService: QuotesService,
+    @Optional() private readonly metricsService?: AppMetricsService,
   ) {}
 
   @Cron('0 0 * * 0') // Cada domingo a las 00:00
@@ -26,6 +28,7 @@ export class QuotesSchedulerService {
     await queryRunner.connect();
 
     let lockAdquirido = false;
+    const start = Date.now();
     try {
       const res = await queryRunner.query(
         `SELECT pg_try_advisory_lock($1) AS lock_acquired`,
@@ -42,11 +45,14 @@ export class QuotesSchedulerService {
 
       this.logger.log('Lock adquirido. Iniciando recálculo masivo semanal...');
       const resultado = await this.quotesService.recalcularCotizacionesActivas();
+      const duracionSegundos = (Date.now() - start) / 1000;
+      this.metricsService?.recordRecalculationDuration('GLOBAL_v1', duracionSegundos);
       this.logger.log(
         `Recálculo semanal finalizado exitosamente. Procesados: ${resultado.procesados}, Fallidos: ${resultado.fallidos}, Duración: ${resultado.duracionMs} ms`,
       );
       return { ejecutado: true, ...resultado };
     } catch (error) {
+      this.metricsService?.recordRecalculation('GLOBAL_v1', 'fallo');
       this.logger.error(
         `Error crítico durante el recálculo semanal de cotizaciones: ${(error as Error).message}`,
         (error as Error).stack,

@@ -3,6 +3,7 @@ import {
   Inject,
   UnauthorizedException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -17,6 +18,7 @@ import {
   PerfilUsuarioDto,
   RespuestaAutenticacionDto,
 } from '../controllers/dto/respuesta-autenticacion.dto';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,7 @@ export class AuthService {
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepository: UsuarioRepository,
     private readonly jwtService: JwtService,
+    @Optional() private readonly metricsService?: AppMetricsService,
   ) {}
 
   async registrar(dto: RegistroUsuarioDto): Promise<RespuestaAutenticacionDto> {
@@ -39,7 +42,9 @@ export class AuthService {
     }
 
     const saltRounds = 10;
+    const startHash = Date.now();
     const contrasenaHash = await bcrypt.hash(dto.contrasena, saltRounds);
+    this.metricsService?.recordPasswordHashingDuration((Date.now() - startHash) / 1000);
 
     const nuevoUsuario = Usuario.crear({
       nombre: dto.nombre,
@@ -62,17 +67,23 @@ export class AuthService {
     const usuario = await this.usuarioRepository.buscarPorCorreo(dto.correo);
 
     if (!usuario) {
+      this.metricsService?.recordAuthAttempt('fallo');
       throw new UnauthorizedException('Credenciales inválidas.');
     }
 
+    const startHash = Date.now();
     const passwordValida = await usuario.verificarContrasena(
       dto.contrasena,
       bcrypt.compare,
     );
+    this.metricsService?.recordPasswordHashingDuration((Date.now() - startHash) / 1000);
 
     if (!passwordValida) {
+      this.metricsService?.recordAuthAttempt('fallo');
       throw new UnauthorizedException('Credenciales inválidas.');
     }
+
+    this.metricsService?.recordAuthAttempt('exito');
 
     const tokenDeAcceso = this.generarToken(usuario);
 

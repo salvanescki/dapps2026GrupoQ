@@ -1,0 +1,316 @@
+@import './tokens.css';
+
+/* ============================================================
+   Estilos para el Panel de Observabilidad y Monitoreo en Tiempo Real
+   Diseño Dark Fintech & Glassmorphism unificado con tokens.css
+   ============================================================ */
+
+.observability-page {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.observability-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+}
+
+.observability-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .observability-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.observability-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.observability-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* Toolbar de Controles */
+.observability-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.observability-toolbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.observability-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.observability-sync-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.observability-sync-text strong {
+  color: var(--text-primary);
+}
+
+.observability-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.observability-select {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.observability-select:focus {
+  border-color: var(--border-focus);
+}
+
+.observability-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, var(--color-emerald-600), var(--color-emerald-700));
+  color: #ffffff;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.observability-refresh-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-emerald-500), var(--color-emerald-600));
+  box-shadow: var(--shadow-glow-emerald);
+}
+
+.observability-refresh-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Badges de Estado tipo Neon / Fintech */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-fast);
+}
+
+.status-badge.online,
+.status-badge.ok,
+.status-badge.up {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--color-emerald-300);
+}
+
+.status-badge.offline,
+.status-badge.error,
+.status-badge.down {
+  background: var(--bg-error);
+  border: 1px solid var(--border-error);
+  color: var(--color-red-400);
+}
+
+.status-badge.warning,
+.status-badge.degradado {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--color-amber-300);
+}
+
+/* Grid layout for dashboard cards */
+.observability-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 1024px) {
+  .observability-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .observability-grid-full {
+    grid-column: span 2;
+  }
+}
+
+/* Glassmorphism Metric Cards */
+.metric-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.metric-card:hover {
+  border-color: var(--border-default);
+}
+
+.metric-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-3);
+}
+
+.metric-card-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.metric-value-large {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-stat-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
+}
+
+.metric-stat-item {
+  background-color: var(--bg-input);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  transition: border-color var(--transition-fast);
+}
+
+.metric-stat-item:hover {
+  border-color: var(--border-default);
+}
+
+.metric-stat-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.metric-stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sondas de Memoria (Progress bar) */
+.progress-container {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  height: 0.65rem;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.progress-bar.nominal {
+  background-color: var(--color-emerald-500);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.progress-bar.warning {
+  background-color: var(--color-amber-500);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.progress-bar.critical {
+  background-color: var(--color-red-500);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* Error banner inside cards */
+.card-error-banner {
+  background-color: var(--bg-error);
+  border: 1px solid var(--border-error);
+  color: var(--color-red-400);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
