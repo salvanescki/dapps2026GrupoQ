@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Optional,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -179,11 +180,18 @@ export class TeamOfTheWeekController {
     status: 403,
     description: 'Acceso denegado: se requiere rol de administrador.',
   })
-  public async generarManualmente(): Promise<ResumenGeneracionEquipoDto> {
+  public async generarManualmente(
+    @Req() req?: any,
+  ): Promise<ResumenGeneracionEquipoDto> {
     const start = Date.now();
     try {
-      const resultado =
-        await this.equipoSemanalService.generarEquipoSemanaActual();
+      const adminId = req?.user?.id || req?.user?.sub;
+      const resultado = adminId
+        ? await this.equipoSemanalService.generarEquipoSemanaActual(
+            undefined,
+            adminId,
+          )
+        : await this.equipoSemanalService.generarEquipoSemanaActual();
       const duracionSegundos = (Date.now() - start) / 1000;
       this.metricsService?.recordTotwGeneration(EstadoTotwMetrica.EXITO);
       this.metricsService?.recordTotwDuration(duracionSegundos);

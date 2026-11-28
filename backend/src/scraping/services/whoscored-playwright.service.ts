@@ -27,6 +27,10 @@ import {
   getScrapingConfig,
 } from '../../config/scraping.config';
 import { MetricasEstadisticasJugador } from '../domain/estadistica-jugador.entity';
+import {
+  sanitizarTexto,
+  sanitizarUrlProxy,
+} from '../../observability/utils/audit-sanitizer.util';
 
 export interface EquipoWhoScoredDescubierto {
   whoScoredTeamId: string;
@@ -416,7 +420,9 @@ export class WhoScoredPlaywrightService
       }
       const proxy = this.obtenerProxyConfig();
       if (proxy) {
-        this.logger.log(`Chromium configurado con proxy: ${proxy.server}`);
+        this.logger.log(
+          `Chromium configurado con proxy: ${sanitizarUrlProxy(proxy.server)}`,
+        );
       }
       this.browser = await chromium.launch({
         headless: true,
@@ -436,7 +442,9 @@ export class WhoScoredPlaywrightService
       try {
         await this.browser.close();
       } catch (err) {
-        this.logger.warn(`Error cerrando navegador: ${(err as Error).message}`);
+        this.logger.warn(
+          `Error cerrando navegador: ${sanitizarTexto((err as Error).message)}`,
+        );
       } finally {
         this.browser = null;
       }
@@ -716,7 +724,7 @@ export class WhoScoredPlaywrightService
         await this.extraerFilasTabla(page, pestana.nombre, acumulador);
       } catch (tabErr) {
         this.logger.warn(
-          `Error en fallback DOM pestaña ${pestana.nombre} para equipo ${equipo.nombre}: ${(tabErr as Error).message}`,
+          `Error en fallback DOM pestaña ${pestana.nombre} para equipo ${equipo.nombre}: ${sanitizarTexto((tabErr as Error).message)}`,
         );
       }
     }, Promise.resolve());
@@ -831,14 +839,15 @@ export class WhoScoredPlaywrightService
         jugadores.set(s.whoScoredId, s);
       }
     } catch (domErr: any) {
+      const mensajeSanitizado = sanitizarTexto(String(domErr?.message ?? domErr));
       this.logger.error(
-        `Fallo de extracción en equipo ${equipo.nombre} (${equipo.whoScoredTeamId}) tanto en feed como en DOM: ${domErr.message}`,
+        `Fallo de extracción en equipo ${equipo.nombre} (${equipo.whoScoredTeamId}) tanto en feed como en DOM: ${mensajeSanitizado}`,
       );
       incidencias.push({
         tipo: 'EQUIPO_FALLIDO_AISLADO',
         equipoId: equipo.whoScoredTeamId,
         equipoNombre: equipo.nombre,
-        detalle: `Aislamiento de falla: ${domErr.message}`,
+        detalle: `Aislamiento de falla: ${mensajeSanitizado}`,
       });
     }
   }
@@ -953,14 +962,15 @@ export class WhoScoredPlaywrightService
         );
 
         if (!items) {
+          const errorSanitizado = ultimoError ? sanitizarTexto(ultimoError) : null;
           this.logger.warn(
-            `Feed complementario '${feed.clave}' no disponible para equipo ${equipo.nombre} (${equipo.whoScoredTeamId}): ${ultimoError}`,
+            `Feed complementario '${feed.clave}' no disponible para equipo ${equipo.nombre} (${equipo.whoScoredTeamId}): ${errorSanitizado}`,
           );
           incidencias.push({
             tipo: 'FEED_COMPLEMENTARIO_FALLIDO',
             equipoId: equipo.whoScoredTeamId,
             equipoNombre: equipo.nombre,
-            detalle: `Feed '${feed.clave}' (${feed.category}/${feed.subcategory}) no disponible: ${ultimoError}`,
+            detalle: `Feed '${feed.clave}' (${feed.category}/${feed.subcategory}) no disponible: ${errorSanitizado}`,
           });
           return;
         }
@@ -1041,7 +1051,7 @@ export class WhoScoredPlaywrightService
           await this.extraerFilasTabla(page, pestana.nombre, resultado);
         } catch (tabErr) {
           this.logger.warn(
-            `Error al procesar pestaña ${pestana.nombre} en liga ${config.liga}: ${(tabErr as Error).message}`,
+            `Error al procesar pestaña ${pestana.nombre} en liga ${config.liga}: ${sanitizarTexto((tabErr as Error).message)}`,
           );
         }
       }, Promise.resolve());

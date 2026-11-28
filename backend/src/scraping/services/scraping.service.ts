@@ -36,6 +36,32 @@ import {
   LigaScrapingConfig,
 } from '../../config/scraping.config';
 import { AppMetricsService } from '../../observability/services/app-metrics.service';
+import { AuditAspectRegistry } from '../../observability/aspects/audit-aspect.registry';
+import { AuditarOperacion } from '../../observability/aspects/auditar-operacion.decorator';
+import { OrigenEventoNegocio } from '../../observability/types/audit-log.types';
+import { sanitizarTexto } from '../../observability/utils/audit-sanitizer.util';
+
+interface ResumenAuditoriaScraping {
+  ejecucionId: string | null;
+  ligasProcesadas: string[];
+  tasasAsociacion: number[];
+  conteoIncidencias: number;
+  jugadoresProcesados: number;
+  errores: number;
+}
+
+function mapearOrigenScraping(trigger?: string): OrigenEventoNegocio {
+  if (trigger === 'manual') return 'MANUAL';
+  if (trigger === 'programado') return 'PROGRAMADO';
+  if (trigger === 'standalone') return 'STANDALONE';
+  return 'SISTEMA';
+}
+
+function calcularPromedioTasas(tasas: number[]): number | null {
+  if (!tasas || tasas.length === 0) return null;
+  const suma = tasas.reduce((acc, v) => acc + v, 0);
+  return Number((suma / tasas.length).toFixed(2));
+}
 
 export interface ResultadoAsociacionLocal {
   asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }>;
@@ -87,6 +113,25 @@ export class ScrapingService implements OnModuleInit {
     await this.recuperarEjecucionesAtascadas();
   }
 
+  @AuditarOperacion({
+    evento: 'SCRAPING_ESTADISTICAS',
+    origen: 'SISTEMA',
+    debeEmitir: (_res, _args, meta) => Boolean(meta.recuperada),
+    extraerResultadoExito: (_res, _args, meta) => ({
+      resultado: 'EXITO',
+      datos: {
+        subtipo: 'RECUPERACION_HUERFANA',
+        ejecucionId: (meta.ejecucionId as string) ?? null,
+        disparador: 'SISTEMA',
+        ligasProcesadas: [],
+        tasaAsociacion: null,
+        conteoIncidencias: 1,
+        jugadoresProcesados: (meta.jugadoresProcesados as number) ?? 0,
+        errores: (meta.errores as number) ?? 1,
+        estadoFinal: 'FALLIDO',
+      },
+    }),
+  })
   public async recuperarEjecucionesAtascadas(): Promise<void> {
     try {
       const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
@@ -100,12 +145,18 @@ export class ScrapingService implements OnModuleInit {
           timestamp: new Date(),
         });
         await this.ejecucionRepo.guardar(enProgreso);
+        AuditAspectRegistry.getContext()?.registrarMetadatos({
+          recuperada: true,
+          ejecucionId: enProgreso.id,
+          jugadoresProcesados: enProgreso.jugadoresProcesados,
+          errores: enProgreso.errores,
+        });
         this.metricsService?.recordScrapingExecution('recuperada_atasco');
         this.logger.log(`Ejecución huérfana ${enProgreso.id} marcada como fallida.`);
       }
     } catch (err) {
       this.logger.error(
-        `Error al recuperar ejecuciones atascadas: ${(err as Error).message}`,
+        `Error al recuperar ejecuciones atascadas: ${sanitizarTexto((err as Error).message)}`,
       );
     }
   }
@@ -364,6 +415,26 @@ export class ScrapingService implements OnModuleInit {
     return jugadores;
   }
 
+  @AuditarOperacion({
+    evento: 'SCRAPING_ESTADISTICAS',
+    origen: 'SISTEMA',
+    debeEmitir: (_res, _args, meta) => Boolean(meta.recuperada),
+    debeEmitirError: () => false,
+    extraerResultadoExito: (_res, _args, meta) => ({
+      resultado: 'EXITO',
+      datos: {
+        subtipo: 'RECUPERACION_ATASCADA',
+        ejecucionId: (meta.ejecucionId as string) ?? null,
+        disparador: 'SISTEMA',
+        ligasProcesadas: [],
+        tasaAsociacion: null,
+        conteoIncidencias: 1,
+        jugadoresProcesados: (meta.jugadoresProcesados as number) ?? 0,
+        errores: (meta.errores as number) ?? 1,
+        estadoFinal: 'FALLIDO',
+      },
+    }),
+  })
   private async resolverEjecucionEnProgreso(): Promise<void> {
     const enProgreso = await this.ejecucionRepo.buscarEnProgreso();
     if (!enProgreso) return;
@@ -386,6 +457,12 @@ export class ScrapingService implements OnModuleInit {
       timestamp: new Date(),
     });
     await this.ejecucionRepo.guardar(enProgreso);
+    AuditAspectRegistry.getContext()?.registrarMetadatos({
+      recuperada: true,
+      ejecucionId: enProgreso.id,
+      jugadoresProcesados: enProgreso.jugadoresProcesados,
+      errores: enProgreso.errores,
+    });
     this.metricsService?.recordScrapingExecution('recuperada_atasco');
   }
 
@@ -536,9 +613,42 @@ export class ScrapingService implements OnModuleInit {
     return estadisticasMap;
   }
 
+  @AuditarOperacion({
+    evento: 'SCRAPING_LIGA',
+    origen: 'SISTEMA',
+    extraerResultadoExito: (_res, [leagueConfig, ejecucion], meta) => ({
+      resultado: meta.rechazadaPorCobertura ? 'RECHAZADO' : 'EXITO',
+      motivo: meta.rechazadaPorCobertura
+        ? 'Liga rechazada por cobertura insuficiente'
+        : null,
+      datos: {
+        ejecucionId: ejecucion?.id ?? '',
+        liga: leagueConfig?.liga ?? '',
+        descubiertos: (meta.descubiertos as number) ?? 0,
+        deduplicados: (meta.deduplicados as number) ?? 0,
+        asociados: (meta.asociados as number) ?? 0,
+        descartados: (meta.descartados as number) ?? 0,
+        tasaAsociacion: (meta.tasaAsociacion as number) ?? 0,
+        conteoIncidencias: (meta.conteoIncidencias as number) ?? 0,
+        rechazadaPorCobertura: Boolean(meta.rechazadaPorCobertura),
+      },
+    }),
+    extraerDatosError: (_err, [leagueConfig, ejecucion], meta) => ({
+      ejecucionId: ejecucion?.id ?? '',
+      liga: leagueConfig?.liga ?? '',
+      descubiertos: (meta.descubiertos as number) ?? 0,
+      deduplicados: (meta.deduplicados as number) ?? 0,
+      asociados: (meta.asociados as number) ?? 0,
+      descartados: (meta.descartados as number) ?? 0,
+      tasaAsociacion: (meta.tasaAsociacion as number) ?? 0,
+      conteoIncidencias: (meta.conteoIncidencias as number) ?? 1,
+      rechazadaPorCobertura: false,
+    }),
+  })
   private async procesarLiga(
     leagueConfig: LigaScrapingConfig,
     ejecucion: EjecucionScraping,
+    resumenAuditoria?: ResumenAuditoriaScraping,
   ): Promise<void> {
     const startLiga = Date.now();
     this.logger.log(`Procesando liga ${leagueConfig.liga}...`);
@@ -546,11 +656,23 @@ export class ScrapingService implements OnModuleInit {
     const jugadoresLocales = await this.cargarJugadoresLocales(leagueConfig.liga);
     const rawStatsMap = await this.extraerEstadisticasDeLiga(leagueConfig);
 
-    const { deduplicados } = this.deduplicarYConsolidarJugadores(
-      Array.from(rawStatsMap.values()),
-    );
+    const { deduplicados, incidencias: incidenciasDedup } =
+      this.deduplicarYConsolidarJugadores(Array.from(rawStatsMap.values()));
 
     if (this.ligaRechazadaPorCobertura(leagueConfig, deduplicados, ejecucion)) {
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        descubiertos: rawStatsMap.size,
+        deduplicados: deduplicados.length,
+        asociados: 0,
+        descartados: deduplicados.length,
+        tasaAsociacion: 0,
+        conteoIncidencias: incidenciasDedup.length + 1,
+        rechazadaPorCobertura: true,
+      });
+      if (resumenAuditoria) {
+        resumenAuditoria.ligasProcesadas.push(leagueConfig.liga);
+        resumenAuditoria.conteoIncidencias += incidenciasDedup.length + 1;
+      }
       return;
     }
 
@@ -566,6 +688,9 @@ export class ScrapingService implements OnModuleInit {
       jugadoresEnriquecidos,
       ejecucion,
     );
+
+    const incidenciasLiga =
+      incidenciasDedup.length + (asociacion.valida ? 0 : 1);
 
     if (!asociacion.valida) {
       this.metricsService?.recordScrapingIncident(leagueConfig.liga);
@@ -588,6 +713,28 @@ export class ScrapingService implements OnModuleInit {
       await this.publicarLigaTransaccional(estadisticasAGuardar, enriquecidosUnicos);
     }
 
+    const tasaRedondeada = Number(asociacion.tasaAsociacion.toFixed(2));
+    const descartadosFinal = Math.max(
+      0,
+      deduplicados.length - estadisticasAGuardar.length,
+    );
+
+    AuditAspectRegistry.getContext()?.registrarMetadatos({
+      descubiertos: rawStatsMap.size,
+      deduplicados: deduplicados.length,
+      asociados: estadisticasAGuardar.length,
+      descartados: descartadosFinal,
+      tasaAsociacion: tasaRedondeada,
+      conteoIncidencias: incidenciasLiga,
+      rechazadaPorCobertura: false,
+    });
+
+    if (resumenAuditoria) {
+      resumenAuditoria.ligasProcesadas.push(leagueConfig.liga);
+      resumenAuditoria.tasasAsociacion.push(tasaRedondeada);
+      resumenAuditoria.conteoIncidencias += incidenciasLiga;
+    }
+
     if (this.config.minJugadoresPorLiga && this.config.minJugadoresPorLiga > 10) {
       ejecucion.registrarDetalle({
         liga: leagueConfig.liga,
@@ -600,10 +747,65 @@ export class ScrapingService implements OnModuleInit {
     }
   }
 
-  public async ejecutarPipeline(trigger = 'manual'): Promise<EjecucionScraping> {
+  @AuditarOperacion({
+    evento: 'SCRAPING_ESTADISTICAS',
+    origen: ([trigger]) => mapearOrigenScraping(trigger),
+    extraerUsuarioId: ([, usuarioId]) => usuarioId ?? null,
+    extraerResultadoExito: (res: EjecucionScraping, [trigger], meta) => {
+      const resumen = meta.resumenAuditoria as
+        | ResumenAuditoriaScraping
+        | undefined;
+      return {
+        resultado: 'EXITO',
+        datos: {
+          subtipo: 'EJECUCION_COMPLETA',
+          ejecucionId: res?.id ?? resumen?.ejecucionId ?? null,
+          disparador: trigger ?? 'manual',
+          ligasProcesadas: resumen?.ligasProcesadas ?? [],
+          tasaAsociacion: calcularPromedioTasas(resumen?.tasasAsociacion ?? []),
+          conteoIncidencias: resumen?.conteoIncidencias ?? 0,
+          jugadoresProcesados: res?.jugadoresProcesados ?? 0,
+          errores: res?.errores ?? 0,
+          estadoFinal: 'EXITOSO',
+        },
+      };
+    },
+    extraerDatosError: (err, [trigger], meta) => {
+      const resumen = meta.resumenAuditoria as
+        | ResumenAuditoriaScraping
+        | undefined;
+      const esConcurrencia = err instanceof ConflictException;
+      return {
+        subtipo: esConcurrencia ? 'RECHAZO_CONCURRENCIA' : 'EJECUCION_COMPLETA',
+        ejecucionId: resumen?.ejecucionId ?? null,
+        disparador: trigger ?? 'manual',
+        ligasProcesadas: resumen?.ligasProcesadas ?? [],
+        tasaAsociacion: calcularPromedioTasas(resumen?.tasasAsociacion ?? []),
+        conteoIncidencias: (resumen?.conteoIncidencias ?? 0) + (esConcurrencia ? 0 : 1),
+        jugadoresProcesados: resumen?.jugadoresProcesados ?? 0,
+        errores: resumen?.errores ?? (esConcurrencia ? 0 : 1),
+        estadoFinal: esConcurrencia ? 'RECHAZADO' : 'FALLIDO',
+      };
+    },
+  })
+  public async ejecutarPipeline(
+    trigger = 'manual',
+    _usuarioId?: string | null,
+  ): Promise<EjecucionScraping> {
+    const resumenAuditoria: ResumenAuditoriaScraping = {
+      ejecucionId: null,
+      ligasProcesadas: [],
+      tasasAsociacion: [],
+      conteoIncidencias: 0,
+      jugadoresProcesados: 0,
+      errores: 0,
+    };
+    AuditAspectRegistry.getContext()?.registrarMetadatos({ resumenAuditoria });
+
     await this.resolverEjecucionEnProgreso();
 
     const ejecucion = EjecucionScraping.iniciar();
+    resumenAuditoria.ejecucionId = ejecucion.id;
     await this.ejecucionRepo.guardar(ejecucion);
     this.logger.log(`Iniciando corrida de scraping (${trigger}): ${ejecucion.id}`);
 
@@ -611,25 +813,30 @@ export class ScrapingService implements OnModuleInit {
       await this.config.leagueConfigs.reduce<Promise<void>>(
         async (prev, leagueConfig) => {
           await prev;
-          await this.procesarLiga(leagueConfig, ejecucion);
+          await this.procesarLiga(leagueConfig, ejecucion, resumenAuditoria);
         },
         Promise.resolve(),
       );
 
       ejecucion.finalizarExitoso();
+      resumenAuditoria.jugadoresProcesados = ejecucion.jugadoresProcesados;
+      resumenAuditoria.errores = ejecucion.errores;
       await this.ejecucionRepo.guardar(ejecucion);
       this.metricsService?.recordScrapingExecution('exitoso');
       this.logger.log(`Scraping finalizado exitosamente. Procesados: ${ejecucion.jugadoresProcesados}, Errores: ${ejecucion.errores}`);
       return ejecucion;
     } catch (error) {
+      const mensajeSanitizado = sanitizarTexto((error as Error).message);
       this.metricsService?.recordScrapingExecution('fallido');
       this.metricsService?.recordScrapingIncident('GLOBAL');
-      this.logger.error(`Fallo crítico en pipeline de scraping: ${(error as Error).message}`);
+      this.logger.error(`Fallo crítico en pipeline de scraping: ${mensajeSanitizado}`);
       ejecucion.finalizarFallido({
         liga: 'GLOBAL',
-        mensaje: (error as Error).message,
+        mensaje: mensajeSanitizado,
         timestamp: new Date(),
       });
+      resumenAuditoria.jugadoresProcesados = ejecucion.jugadoresProcesados;
+      resumenAuditoria.errores = ejecucion.errores;
       await this.ejecucionRepo.guardar(ejecucion);
       throw error;
     }

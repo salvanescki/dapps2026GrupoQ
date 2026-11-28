@@ -10,6 +10,7 @@ import {
   HttpStatus,
   NotFoundException,
   Inject,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -77,15 +78,18 @@ export class ScrapingController {
     status: 409,
     description: 'Ya existe una ejecución en progreso.',
   })
-  async ejecutarScraping(): Promise<{
+  async ejecutarScraping(@Req() req?: any): Promise<{
     ejecucionId: string;
     mensaje: string;
     inicio: Date;
   }> {
     // Iniciar ejecución en segundo plano y responder inmediatamente con 202
     const inicio = new Date();
+    const usuarioId = req?.user?.id || req?.user?.sub;
     // Lanzamos la promesa de fondo sin bloquear el retorno HTTP
-    const ejecucionPromise = this.scrapingService.ejecutarPipeline('manual');
+    const ejecucionPromise = usuarioId
+      ? this.scrapingService.ejecutarPipeline('manual', usuarioId)
+      : this.scrapingService.ejecutarPipeline('manual');
 
     // Para obtener el ejecucionId inmediato, comprobamos si ya se creó en la primera llamada de ejecucionRepo
     const enProgreso = await this.ejecucionRepo.buscarEnProgreso();

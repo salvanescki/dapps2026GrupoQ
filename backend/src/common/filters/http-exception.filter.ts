@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ReglaDeNegocioException } from '../../domain/exceptions/regla-de-negocio.exception';
+import { sanitizarTexto } from '../../observability/utils/audit-sanitizer.util';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -35,6 +36,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       mensaje = exception.message;
     } else if (exception instanceof Error) {
       mensaje = exception.message;
+    }
+
+    if (response?.locals) {
+      response.locals.auditError = {
+        codigoEstado: status,
+        mensaje: Array.isArray(mensaje)
+          ? mensaje.map((item) => sanitizarTexto(String(item)))
+          : sanitizarTexto(String(mensaje)),
+      };
     }
 
     response.status(status).json({

@@ -104,7 +104,12 @@ export class QuotesController {
     status: 403,
     description: 'Acceso denegado. Requiere rol ADMIN.',
   })
-  public async recalcularManualmente(): Promise<ResumenRecalculoDto> {
-    return this.quotesService.recalcularCotizacionesManual();
+  public async recalcularManualmente(
+    @Req() req?: any,
+  ): Promise<ResumenRecalculoDto> {
+    const adminId = req?.user?.id || req?.user?.sub;
+    return adminId
+      ? this.quotesService.recalcularCotizacionesManual(adminId)
+      : this.quotesService.recalcularCotizacionesManual();
   }
 }
