@@ -22,7 +22,7 @@ Instalar en `backend/package.json`:
 ### Alternatives Considered
 - **`nestjs-pino@5.x` + `pino@10` + `pino-http@11`**: Descartado por requerir Node `>= 22.12.0` mientras CI y GitHub Actions están fijados en Node 20.
 - **`winston` / `nest-winston`**: Descartado porque la especificación solicita explícitamente `nestjs-pino` y porque Winston introduce mayor overhead de CPU/RAM en la serialización JSON por solicitud.
-- **Interceptor puro de NestJS con `Logger` nativo**: Descartado porque el logger nativo de NestJS no emite JSON estructurado nativo, no incluye `pino-http` ni propagación basada en `AsyncLocalStorage`, y un interceptor por sí solo no captura errores previos al ciclo de NestJS (404 de rutas inexistentes, 400 de `body-parser`, 401/403 en `Guards`).
+- **Interceptor puro de NestJS con `Logger` nativo**: Descartado porque el logger nativo de NestJS no emite JSON estructurado nativo, no incluye `pino-http` ni propagación basada en `AsyncLocalStorage`, y un interceptor por sí solo no captura errores previos al ciclo de NestJS (404 de rutas inexistentes y 401/403 en `Guards`).
 
 ---
 
@@ -87,15 +87,15 @@ Implementar la auditoría como una **capa transversal basada en Aspect-Oriented 
      - *After Returning (`tap`)*: calcula `tiempoEjecucion`, resuelve `usuario` (autenticado o `ANONIMO`) y `codigoEstado`, emite exactamente 1 registro `HTTP_AUDIT` vía `AuditLoggerService` y marca `req.__httpAuditLogged = true`.
      - *After Throwing (`catchError`)*: calcula `tiempoEjecucion`, determina `codigoEstado` y resumen sanitizado del error, emite el registro `HTTP_AUDIT` con severidad `warn` (4xx) o `error` (5xx), marca `req.__httpAuditLogged = true` y re-lanza la excepción intacta hacia `HttpExceptionFilter`.
    - **Red de seguridad para errores pre-Interceptor (`pino-http` fallback)**:
-     - Solicitudes que fallan antes de entrar al ciclo de Interceptors (401 en `JwtAuthGuard`, 403 en `RolesGuard`, 404 ruta inexistente, 400 de `body-parser`) no pasan por `AuditLoggingInterceptor`.
+     - Solicitudes que fallan antes de entrar al ciclo de Interceptors (401 en `JwtAuthGuard`, 403 en `RolesGuard`, 404 ruta inexistente) no pasan por `AuditLoggingInterceptor`. (Nota: los errores `400` de `ValidationPipe` sí atraviesan `AuditLoggingInterceptor`; el parsing JSON crudo de `express.json()` se ejecuta previo al middleware de módulos NestJS salvo que se deshabilite `bodyParser`).
      - `pino-http` verifica `if (req.__httpAuditLogged) return true` dentro de `autoLogging.ignore` (o nivel `silent`), emitiendo `HTTP_AUDIT` **únicamente** cuando el interceptor AOP no se ejecutó. Esto garantiza **exactamente 1 registro `HTTP_AUDIT`** en el 100% de los casos (**SC-001**), sin duplicados.
 
 2. **Aspecto de Negocio (`@AuditarOperacion(...)` — TypeScript Method Decorator, *Around Advice*)**:
    - Decorador declarativo reutilizable aplicado sobre los métodos críticos de negocio (`OmsService`, `QuotesService`, `QuotesSchedulerService`, `EquipoSemanalService`, `TeamOfTheWeekSchedulerService`, `ScrapingService`).
    - **Around Advice centralizado**:
-     - *Before*: abre un alcance efímero de metadatos por ejecución en `AuditContextService` (`AsyncLocalStorage`), inicia cronómetro (`Date.now()`) y ejecuta `extraerPreContexto?(args, instance)` si se declaró.
-     - *After Returning*: calcula `tiempoEjecucion`, evalúa `debeEmitir?(result, args, preContexto)` (por defecto `true`), combina los metadatos de `extraerDatosExito(result, args, preContexto)` con cualquier dato contextual enriquecido durante la ejecución (ej. `vendedorId` o resumen de ligas, sin modificar DTOs de retorno) y delega la emisión a `AuditLoggerService`.
-     - *After Throwing*: calcula `tiempoEjecucion`, clasifica automáticamente el resultado (`RECHAZADO` ante `HttpException` 4xx / `ReglaDeNegocioException`; `FALLIDO` ante 5xx o errores inesperados), extrae y sanitiza `motivo`, invoca `extraerDatosError?(error, args, preContexto)`, emite el evento de forma fail-safe (`try/catch`) y re-lanza el error original sin alterarlo.
+     - *Before*: abre un alcance efímero de metadatos por ejecución en `AuditContextService` (`AsyncLocalStorage`) e inicia cronómetro (`Date.now()`).
+     - *After Returning*: calcula `tiempoEjecucion`, evalúa `debeEmitir?(resultado, args, metadatos)` (por defecto `true`), combina los metadatos de `extraerResultadoExito(resultado, args, metadatos)` con cualquier dato contextual enriquecido durante la ejecución (ej. `vendedorId` o resumen de ligas, sin modificar DTOs de retorno) y delega la emisión a `AuditLoggerService`.
+     - *After Throwing*: calcula `tiempoEjecucion`, verifica `debeEmitirError?(error, args, metadatos)` y deduplica automáticamente errores ya auditados por un aspecto interno con el mismo `evento` (evitando duplicados entre schedulers y servicios delegados), clasifica automáticamente el resultado (`RECHAZADO` ante `HttpException` 4xx / `ReglaDeNegocioException`; `FALLIDO` ante 5xx o errores inesperados), extrae y sanitiza `motivo`, invoca `extraerDatosError?(error, args, metadatos)`, emite el evento de forma fail-safe (`try/catch`) y re-lanza el error original sin alterarlo.
    - **Preservación estricta de metadatos `Reflect`**:
      - Al envolver `descriptor.value`, el decorador copia todas las claves de metadatos existentes (`Reflect.getMetadataKeys(originalMethod)` → `Reflect.defineMetadata(...)`) hacia la función wrapper, garantizando total compatibilidad con decoradores de NestJS como `@Cron(...)` en `QuotesSchedulerService` y `TeamOfTheWeekSchedulerService`.
    - **Resolución desacoplada del logger (`AuditAspectRegistry`)**:
@@ -113,7 +113,7 @@ Implementar la auditoría como una **capa transversal basada en Aspect-Oriented 
 
 ### Alternatives Considered
 - **Instrumentación imperativa manual en cada servicio (`try/catch` + `Date.now()` + `auditLogger.emit()` repetido)**: Descartado por alta duplicación de código transversal en los servicios de aplicación y mayor riesgo de inconsistencia en cálculo de `tiempoEjecucion` o manejo de rechazos.
-- **Solo `NestInterceptor` HTTP sin fallback `pino-http`**: Descartado porque los errores 401/403 (Guards), 404 (ruta no encontrada) y 400 de `body-parser` ocurren fuera del ciclo del Interceptor y quedarían sin auditar (violando el Edge Case de la especificación).
+- **Solo `NestInterceptor` HTTP sin fallback `pino-http`**: Descartado porque los errores 401/403 (Guards) y 404 (ruta no encontrada) ocurren fuera del ciclo del Interceptor y quedarían sin auditar (violando el Edge Case de la especificación).
 - **Usar `Scope.REQUEST` de NestJS para correlación**: Descartado por degradación de rendimiento y por ser incompatible con `@Cron` schedulers y `OnModuleInit`. `AsyncLocalStorage` mantiene todos los servicios como singletons con overhead despreciable.
 
 ---

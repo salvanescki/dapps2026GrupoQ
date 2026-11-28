@@ -31,8 +31,8 @@ Aunque esta funcionalidad **no modifica ningún endpoint, ruta, método, payload
 
 - **Transporte**: `stdout` exclusivo (NDJSON: 1 objeto JSON por línea en producción y test; formato legible opcional con `pino-pretty` solo en desarrollo local).
 - **Aspecto HTTP (`AuditLoggingInterceptor` + Fallback `pino-http`) — Garantía de Cardinalidad (SC-001)**:
-  - `AuditLoggingInterceptor` (AOP `NestInterceptor`) audita todas las invocaciones que alcanzan un handler NestJS y marca `req.__httpAuditLogged = true`.
-  - `pino-http` suprime su log automático cuando `req.__httpAuditLogged === true` y actúa exclusivamente como red de seguridad para fallos previos al interceptor (`400`, `401`, `403`, `404`), garantizando **exactamente 1** registro `tipoEvento: "HTTP_AUDIT"` por solicitud funcional.
+  - `AuditLoggingInterceptor` (AOP `NestInterceptor`) audita todas las invocaciones que alcanzan un handler NestJS (incluidos errores `400` de `ValidationPipe`) y marca `req.__httpAuditLogged = true`.
+  - `pino-http` suprime su log automático cuando `req.__httpAuditLogged === true` y actúa exclusivamente como red de seguridad para fallos previos al interceptor (`401`, `403`, `404`), garantizando **exactamente 1** registro `tipoEvento: "HTTP_AUDIT"` por solicitud funcional.
 - **Aspecto de Negocio (`@AuditarOperacion`) — Reutilización y Transparencia**:
   - Todo el cronometraje (`tiempoEjecucion`), correlación (`requestId`), clasificación de errores (`RECHAZADO` vs `FALLIDO`), sanitización y protección fail-safe se centraliza en el decorador AOP `@AuditarOperacion`.
   - Preserva íntegramente los metadatos `Reflect` del método decorado (compatibilidad con `@Cron` y demás decoradores NestJS), nunca altera el valor de retorno ni suprime excepciones de negocio, y hace no-op silencioso en tests unitarios aislados sin `ObservabilityModule`.

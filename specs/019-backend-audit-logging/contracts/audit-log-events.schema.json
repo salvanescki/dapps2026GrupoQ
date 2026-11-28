@@ -173,6 +173,7 @@
                   "ordenId",
                   "jugadorId",
                   "cantidad",
+                  "precioUnitario",
                   "montoTotal"
                 ],
                 "properties": {
@@ -187,6 +188,39 @@
                   "precioUnitario": { "type": ["number", "null"] },
                   "montoTotal": { "type": ["number", "null"] },
                   "estrategiaCotizacion": { "type": ["string", "null"] }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "ORDEN_MERCADO_SECUNDARIO" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "mercado",
+                  "accion",
+                  "vendedorId",
+                  "ordenId",
+                  "jugadorId",
+                  "cantidad",
+                  "precioUnitario",
+                  "estadoOrden"
+                ],
+                "properties": {
+                  "mercado": { "type": "string", "const": "SECUNDARIO" },
+                  "accion": { "type": "string", "enum": ["CREAR_VENTA", "CANCELAR_VENTA"] },
+                  "vendedorId": { "type": "string" },
+                  "ordenId": { "type": ["string", "null"] },
+                  "jugadorId": { "type": ["string", "null"] },
+                  "cantidad": { "type": ["integer", "null"], "minimum": 1 },
+                  "precioUnitario": { "type": ["number", "null"] },
+                  "estadoOrden": {
+                    "type": ["string", "null"],
+                    "enum": ["PENDIENTE", "CANCELADA", null]
+                  }
                 }
               }
             }
@@ -291,6 +325,38 @@
                     "type": "string",
                     "enum": ["EXITOSO", "FALLIDO", "RECHAZADO", "EN_PROGRESO"]
                   }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evento": { "const": "SCRAPING_LIGA" } } },
+          "then": {
+            "properties": {
+              "datos": {
+                "type": "object",
+                "required": [
+                  "ejecucionId",
+                  "liga",
+                  "descubiertos",
+                  "deduplicados",
+                  "asociados",
+                  "descartados",
+                  "tasaAsociacion",
+                  "conteoIncidencias",
+                  "rechazadaPorCobertura"
+                ],
+                "properties": {
+                  "ejecucionId": { "type": "string" },
+                  "liga": { "type": "string" },
+                  "descubiertos": { "type": "integer", "minimum": 0 },
+                  "deduplicados": { "type": "integer", "minimum": 0 },
+                  "asociados": { "type": "integer", "minimum": 0 },
+                  "descartados": { "type": "integer", "minimum": 0 },
+                  "tasaAsociacion": { "type": "number", "minimum": 0, "maximum": 100 },
+                  "conteoIncidencias": { "type": "integer", "minimum": 0 },
+                  "rechazadaPorCobertura": { "type": "boolean" }
                 }
               }
             }

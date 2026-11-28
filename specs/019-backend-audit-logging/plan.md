@@ -139,7 +139,7 @@ backend/
 │   │       └── redis-health.indicator.ts                      # [MOD] Usar esRedisHabilitado() cuando no hay cliente inyectado para evitar warnings en producción sin Redis
 │   ├── services/
 │   │   ├── base-redis-cache.service.ts                        # [MOD] Usar esRedisHabilitado() para suprimir conexión y warnings en producción sin Redis
-│   │   ├── oms.service.ts                                     # [MOD] Aplicar @AuditarOperacion en comprarTokens (primaria/secundaria), crearOrdenVenta y cancelarOrdenVenta
+│   │   ├── oms.service.ts                                     # [MOD] Aplicar @AuditarOperacion en ejecutarCompraPrimaria, ejecutarCompraSecundaria, crearOrdenVenta y cancelarOrdenVenta
 │   │   ├── quotes.service.ts                                  # [MOD] Aplicar @AuditarOperacion en recalcularCotizacionesActivas y cambiarEstrategiaActiva
 │   │   ├── equipo-semanal.service.ts                          # [MOD] Aplicar @AuditarOperacion en generarEquipoSemanaActual y generarAutomatico
 │   │   └── scheduler/
@@ -152,7 +152,7 @@ backend/
 │       ├── controllers/
 │       │   └── scraping.controller.ts                         # [MOD] Pasar usuarioId opcional desde @Req() req? a ejecutarPipeline('manual', usuarioId)
 │       └── services/
-│           ├── scraping.service.ts                            # [MOD] Aplicar @AuditarOperacion en ejecutarPipeline, procesarLiga y recuperarEjecucionesAtascadas
+│           ├── scraping.service.ts                            # [MOD] Aplicar @AuditarOperacion en ejecutarPipeline, procesarLiga, recuperarEjecucionesAtascadas y resolverEjecucionEnProgreso (RECUPERACION_ATASCADA)
 │           └── whoscored-playwright.service.ts                # [MOD] Sanitizar URL de proxy y mensajes de error antes de loggear
 └── test/
     ├── unit/

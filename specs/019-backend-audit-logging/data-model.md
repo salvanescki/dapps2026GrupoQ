@@ -8,7 +8,7 @@
 
 ## 1. Entidad: `RegistroAuditoriaHttp` (Web-Service Audit Record)
 
-Representa el rastro estructurado único emitido por `pino-http` al finalizar cada solicitud HTTP dirigida a un endpoint funcional del backend.
+Representa el rastro estructurado único emitido por `AuditLoggingInterceptor` (aspecto AOP HTTP) al finalizar cada solicitud HTTP dirigida a un endpoint funcional del backend, o por el fallback coordinado de `pino-http` cuando la solicitud falla antes de alcanzar el ciclo de interceptores (401/403/404).
 
 ### Campos
 
@@ -157,9 +157,9 @@ Emitido en cada generación manual o automática del Equipo de la Semana (genera
 #### F. `SCRAPING_ESTADISTICAS` y `SCRAPING_LIGA` (FR-007 / US4 — `ScrapingService`)
 Emitido para cada corrida del scraper (API administrativa, cron o standalone), cada liga procesada, recuperación de ejecuciones huérfanas/atascadas y rechazos por concurrencia.
 - **Campos en `datos` (`SCRAPING_ESTADISTICAS`)**:
-  - `subtipo`: `'EJECUCION_COMPLETA' | 'RECUPERACION_HUERFANA' | 'RECUPERACION_ATASCADA' | 'RECHAZO_CONCURRENCIA'`
+  - `subtipo`: `'EJECUCION_COMPLETA' | 'RECUPERACION_HUERFANA' | 'RECUPERACION_ATASCADA' | 'RECHAZO_CONCURRENCIA'` (`RECUPERACION_HUERFANA` en `recuperarEjecucionesAtascadas()` al arrancar el módulo; `RECUPERACION_ATASCADA` en `resolverEjecucionEnProgreso()` cuando una ejecución previa excedió `STALE_TIMEOUT_MS`)
   - `ejecucionId`: `string | null`
-  - `disparador`: `string` (`'manual'`, `'programado'`, `'SISTEMA'`)
+  - `disparador`: `string` (`'manual'`, `'programado'`, `'standalone'`, `'SISTEMA'`). Mapeo determinista a `origen`: `'manual'` → `'MANUAL'`, `'programado'` → `'PROGRAMADO'` (usado también por `run-scraper.ts` para preservar retrocompatibilidad con `run-scraper.spec.ts`, con `requestId: null`), `'standalone'` → `'STANDALONE'`, y recuperaciones automáticas → `'SISTEMA'`.
   - `ligasProcesadas`: `string[]` (códigos de liga, ej. `['PL', 'PD', 'SA', 'BL1', 'FL1']`)
   - `tasaAsociacion`: `number | null` (porcentaje promedio `0`–`100`)
   - `conteoIncidencias`: `number`
@@ -198,7 +198,7 @@ Coincidencia case-insensitive sobre nombres de propiedad (normalizando guiones y
 - Longitud máxima de string individual: `512` caracteres (sufijo `'...[TRUNCATED]'`).
 - Máximo de elementos por array: `25` ítems (elemento resumen `'[+N items]'`).
 - Máximo de propiedades por objeto: `30` claves (propiedad resumen `_truncatedKeys: N`).
-- Presupuesto máximo por objeto `parametros` serializado: `4096` bytes (si lo excede, se reemplaza por `{ _truncated: true, bytesOriginales: N }`).
+- Presupuesto máximo por objeto `parametros` serializado: `4096` bytes (si lo excede, se reemplaza conservando las 3 claves obligatorias del contrato JSON Schema: `{ ruta: {}, consulta: {}, cuerpo: { _truncated: true, bytesOriginales: N } }`).
 
 ### 3.4 Rutas Técnicas Excluidas de Auditoría HTTP Estándar (FR-002)
 - `/health` y cualquier subruta `/health/*` (`/health/live`, `/health/ready`)
@@ -210,7 +210,7 @@ Coincidencia case-insensitive sobre nombres de propiedad (normalizando guiones y
 | Entorno (`NODE_ENV`) | Nivel por defecto (`LOG_LEVEL`) | Formato de salida | Rutas técnicas (`/health/*`, `/metrics`, `/api/docs*`) | Política Redis sin configurar |
 |---|---|---|---|---|
 | `production` | `info` | JSON NDJSON crudo en `stdout` (sin `pino-pretty`) | Excluidas (solo si `LOG_LEVEL=debug`) | Deshabilitado silenciosamente (`0` warnings) si no hay `REDIS_URL`/`REDIS_HOST` |
-| `development` | `debug` (o `info` configurable) | `pino-pretty` en `stdout` (desactivable con `LOG_PRETTY=false`) | Excluidas salvo `LOG_LEVEL=debug` | Habilitado por defecto (`127.0.0.1:6379`) salvo `REDIS_ENABLED=false` |
+| `development` | `info` (configurable vía `LOG_LEVEL`) | `pino-pretty` en `stdout` (desactivable con `LOG_PRETTY=false`) | Excluidas salvo `LOG_LEVEL=debug` | Habilitado por defecto (`127.0.0.1:6379`) salvo `REDIS_ENABLED=false` |
 | `test` | `silent` (o `info` si `LOG_LEVEL` explícito) | JSON NDJSON (inyectable en stream de prueba) | Excluidas salvo `LOG_LEVEL=debug` | Habilitado por defecto (retrocompatible con tests existentes) |
 
 ---
@@ -224,7 +224,8 @@ Coincidencia case-insensitive sobre nombres de propiedad (normalizando guiones y
 | `evento` | `NombreEventoNegocio` | Sí | Evento de auditoría que emitirá el *around advice*. |
 | `origen` | `OrigenEventoNegocio \| ((args, metadatos) => OrigenEventoNegocio)` | Sí | Origen fijo o resuelto dinámicamente a partir de los argumentos/contexto. |
 | `extraerUsuarioId` | `(args, metadatos) => string \| null` | No | Resuelve el identificador del actor responsable (`null` por defecto). |
-| `debeEmitir` | `(resultado, args, metadatos) => boolean` | No | Condición opcional para omitir la emisión en ciertos caminos (ej. sin huérfanas recuperadas o evento ya emitido por servicio delegado). |
+| `debeEmitir` | `(resultado, args, metadatos) => boolean` | No | Condición opcional para omitir la emisión en caminos exitosos (ej. sin huérfanas recuperadas o evento ya emitido por servicio delegado). |
+| `debeEmitirError` | `(error, args, metadatos) => boolean` | No | Condición opcional para omitir la emisión ante excepciones. Adicionalmente, el aspecto deduplica automáticamente errores propagados desde un método interno decorado con el mismo `evento` (marcando el error o alcance como ya auditado para ese `evento`), evitando duplicados entre schedulers y servicios delegados. |
 | `extraerResultadoExito` | `(resultado, args, metadatos) => { resultado: ResultadoAuditoriaNegocio; motivo?: string \| null; datos: Record<string, unknown> }` | Sí | Proyecta el retorno del método y metadatos contextuales al payload `datos` (sin alterar el retorno original). |
 | `extraerDatosError` | `(error, args, metadatos) => Record<string, unknown>` | No | Proyecta metadatos adicionales ante excepciones; el aspecto clasifica automáticamente `RECHAZADO` (4xx / `ReglaDeNegocioException`) vs `FALLIDO` (5xx / inesperado) y sanitiza `motivo`. |
 
@@ -235,10 +236,12 @@ Solicitud HTTP entrante (x-request-id opcional)
    │
    ├──► AuditContextMiddleware (AsyncLocalStorage: { requestId })
    │       │
-   │       ├──► [Si falla antes del Controller: 400 body-parser / 401 / 403 / 404]
+   │       ├──► [Si falla antes del Controller: 401 / 403 / 404]
    │       │        └──► pino-http fallback emite [1] RegistroAuditoriaHttp (HTTP_AUDIT)
+   │       │             (Nota: los errores 400 de ValidationPipe pasan por AuditLoggingInterceptor;
+   │       │              el parsing JSON crudo de express.json() corre previo al middleware de módulo)
    │       │
-   │       └──► [Si alcanza Controller funcional]
+   │       └──► [Si alcanza Controller funcional (incl. 400 ValidationPipe)]
    │                └──► AuditLoggingInterceptor (AOP NestInterceptor — Around Advice)
    │                         ├──► Invoca Controller -> Service
    │                         │        └──► @AuditarOperacion (AOP Method Decorator — Around Advice)

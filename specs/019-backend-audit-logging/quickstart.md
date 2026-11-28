@@ -44,7 +44,7 @@ LOG_PRETTY=false npm run start:dev
 ```bash
 cd backend
 npm run build
-NODE_ENV=production LOG_LEVEL=info unset REDIS_URL REDIS_HOST
+unset REDIS_URL REDIS_HOST
 NODE_ENV=production LOG_LEVEL=info node dist/main.js
 ```
 **Resultado esperado**:
@@ -112,6 +112,27 @@ NODE_ENV=production LOG_LEVEL=info node dist/main.js
 2. **Resultado esperado en `stdout`**:
    - Eventos `SCRAPING_LIGA` y `SCRAPING_ESTADISTICAS` con `ejecucionId`, `disparador`, `ligasProcesadas`, `tasaAsociacion`, `conteoIncidencias`, `estadoFinal` y `tiempoEjecucion`.
    - En toda la salida emitida: **0 ocurrencias** de `demoUser` o `demoPass` (cualquier URL de proxy aparece como `http://[REDACTED]@proxy.example.com:8080` o sin credenciales).
+
+---
+
+### Escenario E — Verificación de Overhead de Latencia (`< 5 ms`, SC-004)
+1. Medir el tiempo de respuesta promedio sobre 100 solicitudes consecutivas (tras 10 de warm-up) contra un endpoint funcional liviano (ej. `GET /players?pagina=1&limite=5`) en dos corridas comparables:
+   - **Baseline (`LOG_LEVEL=silent`)**: levantar con `NODE_ENV=production LOG_LEVEL=silent node dist/main.js` y ejecutar:
+     ```bash
+     node -e '
+     (async () => {
+       const url = "http://localhost:3000/players?pagina=1&limite=5";
+       for (let i = 0; i < 10; i++) await fetch(url);
+       const t0 = performance.now();
+       for (let i = 0; i < 100; i++) await fetch(url);
+       console.log("Promedio ms:", ((performance.now() - t0) / 100).toFixed(2));
+     })();
+     '
+     ```
+   - **Auditado (`LOG_LEVEL=info`)**: repetir la misma medición con `NODE_ENV=production LOG_LEVEL=info node dist/main.js`.
+2. **Resultado esperado**:
+   - La diferencia `promedio(LOG_LEVEL=info) - promedio(LOG_LEVEL=silent)` es **`< 5 ms`** (SC-004).
+   - El consumo de memoria RSS del proceso Node.js permanece estable y muy por debajo del límite de 512 MB de Render.
 
 ---
 
