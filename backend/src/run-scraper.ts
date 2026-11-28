@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger as PinoNestLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ScrapingService } from './scraping/services/scraping.service';
 import { Logger } from '@nestjs/common';
@@ -9,8 +10,20 @@ export async function bootstrapScraper(exitProcess = true): Promise<number> {
 
   try {
     const app = await NestFactory.createApplicationContext(AppModule, {
+      bufferLogs: true,
       logger: ['log', 'error', 'warn'],
     });
+
+    if (typeof app.useLogger === 'function') {
+      try {
+        const pinoLogger = app.get(PinoNestLogger, { strict: false });
+        if (pinoLogger) {
+          app.useLogger(pinoLogger);
+        }
+      } catch {
+        // Fallback silencioso si LoggerModule no esta registrado
+      }
+    }
 
     const scrapingService = app.get(ScrapingService);
     await scrapingService.ejecutarPipeline('programado');

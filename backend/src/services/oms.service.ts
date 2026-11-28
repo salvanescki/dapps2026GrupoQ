@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { AppMetricsService } from '../observability/services/app-metrics.service';
+import { AuditAspectRegistry } from '../observability/aspects/audit-aspect.registry';
+import { AuditarOperacion } from '../observability/aspects/auditar-operacion.decorator';
 import { Orden } from '../domain/orden.entity';
 import { IOrdenRepository, ORDEN_REPOSITORY } from '../domain/orden.repository.interface';
 import { Transaccion } from '../domain/transaccion.entity';
@@ -80,6 +82,45 @@ export class OmsService {
     }
   }
 
+  @AuditarOperacion({
+    evento: 'TRANSACCION_TOKENS',
+    origen: 'HTTP',
+    extraerUsuarioId: ([compradorId]) => compradorId ?? null,
+    extraerResultadoExito: (res: ResultadoCompraDto, [compradorId, dto], meta) => ({
+      resultado: 'EXITO',
+      datos: {
+        mercado: 'PRIMARIO',
+        operacion: 'COMPRA',
+        compradorId,
+        vendedorId: (meta.vendedorId as string) ?? null,
+        transaccionId: res.transaccionId ?? null,
+        ordenId: res.ordenId ?? null,
+        jugadorId: res.jugadorId ?? dto?.jugadorId ?? null,
+        cantidad: res.cantidadTokensComprados ?? dto?.cantidad ?? 1,
+        precioUnitario:
+          res.precioUnitarioPagado ?? (meta.precioUnitario as number) ?? null,
+        montoTotal:
+          res.montoTotalDebitado ?? (meta.montoTotal as number) ?? null,
+        estrategiaCotizacion:
+          res.estrategiaCotizacion ??
+          (meta.estrategiaCotizacion as string) ??
+          null,
+      },
+    }),
+    extraerDatosError: (_err, [compradorId, dto], meta) => ({
+      mercado: 'PRIMARIO',
+      operacion: 'COMPRA',
+      compradorId,
+      vendedorId: (meta.vendedorId as string) ?? null,
+      transaccionId: null,
+      ordenId: null,
+      jugadorId: dto?.jugadorId ?? null,
+      cantidad: dto?.cantidad ?? 1,
+      precioUnitario: (meta.precioUnitario as number) ?? null,
+      montoTotal: (meta.montoTotal as number) ?? null,
+      estrategiaCotizacion: (meta.estrategiaCotizacion as string) ?? null,
+    }),
+  })
   private ejecutarCompraPrimaria(
     compradorId: string,
     dto: CrearOrdenCompraDto,
@@ -111,6 +152,11 @@ export class OmsService {
       }
 
       const precioUnitario = Dinero.desdeMonto(Number(cotizacionOrm.valor));
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        precioUnitario: precioUnitario.aNumero(),
+        estrategiaCotizacion:
+          cotizacionOrm.estrategiaVersion || `${cotizacionOrm.estrategiaId}_v1`,
+      });
 
       // 3. Validar precioMaximoUnitario si fue especificado
       if (precioMaximoUnitario !== undefined) {
@@ -132,6 +178,9 @@ export class OmsService {
         throw new BadRequestException('No existe una cuenta de superusuario ADMIN emisora configurada.');
       }
       const adminId = adminOrmRaw.id;
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        vendedorId: adminId,
+      });
 
       // Prohibir que el ADMIN se compre a sí mismo
       if (compradorId === adminId) {
@@ -200,6 +249,9 @@ export class OmsService {
       }
 
       const montoTotal = precioUnitario.multiplicarPorEntero(cantidad);
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        montoTotal: montoTotal.aNumero(),
+      });
       if (comprador.saldo.centavos < montoTotal.centavos) {
         throw new BadRequestException(
           `Saldo monetario insuficiente. Requerido: ${montoTotal.aNumero()}, Disponible: ${comprador.saldo.aNumero()}.`,
@@ -269,6 +321,47 @@ export class OmsService {
   }
 
   // Placeholder para la rama secundaria (se completará exhaustivamente en Phase 7 / US5)
+  @AuditarOperacion({
+    evento: 'TRANSACCION_TOKENS',
+    origen: 'HTTP',
+    extraerUsuarioId: ([compradorId]) => compradorId ?? null,
+    extraerResultadoExito: (res: ResultadoCompraDto, [compradorId, dto], meta) => ({
+      resultado: 'EXITO',
+      datos: {
+        mercado: 'SECUNDARIO',
+        operacion: 'COMPRA',
+        compradorId,
+        vendedorId: (meta.vendedorId as string) ?? null,
+        transaccionId: res.transaccionId ?? null,
+        ordenId:
+          (meta.ordenId as string) ?? dto?.ordenVentaId ?? res.ordenId ?? null,
+        jugadorId:
+          res.jugadorId ?? (meta.jugadorId as string) ?? dto?.jugadorId ?? null,
+        cantidad: res.cantidadTokensComprados ?? dto?.cantidad ?? 1,
+        precioUnitario:
+          res.precioUnitarioPagado ?? (meta.precioUnitario as number) ?? null,
+        montoTotal:
+          res.montoTotalDebitado ?? (meta.montoTotal as number) ?? null,
+        estrategiaCotizacion:
+          res.estrategiaCotizacion ??
+          (meta.estrategiaCotizacion as string) ??
+          null,
+      },
+    }),
+    extraerDatosError: (_err, [compradorId, dto], meta) => ({
+      mercado: 'SECUNDARIO',
+      operacion: 'COMPRA',
+      compradorId,
+      vendedorId: (meta.vendedorId as string) ?? null,
+      transaccionId: null,
+      ordenId: (meta.ordenId as string) ?? dto?.ordenVentaId ?? null,
+      jugadorId: (meta.jugadorId as string) ?? dto?.jugadorId ?? null,
+      cantidad: dto?.cantidad ?? 1,
+      precioUnitario: (meta.precioUnitario as number) ?? null,
+      montoTotal: (meta.montoTotal as number) ?? null,
+      estrategiaCotizacion: (meta.estrategiaCotizacion as string) ?? null,
+    }),
+  })
   private ejecutarCompraSecundaria(
     compradorId: string,
     dto: CrearOrdenCompraDto,
@@ -296,6 +389,12 @@ export class OmsService {
       const ordenVenta = OrdenMapper.toDomain(ordenOrm);
       const vendedorId = ordenVenta.usuarioId;
       const jugadorId = ordenVenta.jugadorId;
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        ordenId: ordenVenta.id,
+        vendedorId,
+        jugadorId,
+        precioUnitario: ordenVenta.precioUnitario.aNumero(),
+      });
 
       if (compradorId === vendedorId) {
         this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
@@ -336,6 +435,9 @@ export class OmsService {
       const estrategiaCotizacion = cotizacionOrm
         ? cotizacionOrm.estrategiaVersion || `${cotizacionOrm.estrategiaId}_v1`
         : 'GLOBAL_v1';
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        estrategiaCotizacion,
+      });
 
       // Bloqueo pesimista en orden determinista de usuarios
       const userIds = [compradorId, vendedorId].sort((a, b) => a.localeCompare(b));
@@ -350,6 +452,9 @@ export class OmsService {
       const vendedor = UsuarioMapper.toDomain(lockedUsers.find((u) => u.id === vendedorId)!);
 
       const montoTotal = precioUnitario.multiplicarPorEntero(cantidad);
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        montoTotal: montoTotal.aNumero(),
+      });
       if (comprador.saldo.centavos < montoTotal.centavos) {
         throw new BadRequestException(
           `Saldo monetario insuficiente. Requerido: ${montoTotal.aNumero()}, Disponible: ${comprador.saldo.aNumero()}.`,
@@ -447,6 +552,37 @@ export class OmsService {
     });
   }
 
+  @AuditarOperacion({
+    evento: 'ORDEN_MERCADO_SECUNDARIO',
+    origen: 'HTTP',
+    extraerUsuarioId: ([vendedorId]) => vendedorId ?? null,
+    extraerResultadoExito: (
+      res: OrdenVentaRespuestaDto,
+      [vendedorId, dto],
+    ) => ({
+      resultado: 'EXITO',
+      datos: {
+        mercado: 'SECUNDARIO',
+        accion: 'CREAR_VENTA',
+        vendedorId: res.vendedorId ?? vendedorId,
+        ordenId: res.ordenId ?? null,
+        jugadorId: res.jugadorId ?? dto?.jugadorId ?? null,
+        cantidad: res.cantidad ?? dto?.cantidad ?? null,
+        precioUnitario: res.precioUnitario ?? dto?.precioUnitario ?? null,
+        estadoOrden: 'PENDIENTE',
+      },
+    }),
+    extraerDatosError: (_err, [vendedorId, dto]) => ({
+      mercado: 'SECUNDARIO',
+      accion: 'CREAR_VENTA',
+      vendedorId,
+      ordenId: null,
+      jugadorId: dto?.jugadorId ?? null,
+      cantidad: dto?.cantidad ?? null,
+      precioUnitario: dto?.precioUnitario ?? null,
+      estadoOrden: null,
+    }),
+  })
   public crearOrdenVenta(
     vendedorId: string,
     dto: CrearOrdenVentaDto,
@@ -530,6 +666,39 @@ export class OmsService {
     }));
   }
 
+  @AuditarOperacion({
+    evento: 'ORDEN_MERCADO_SECUNDARIO',
+    origen: 'HTTP',
+    extraerUsuarioId: ([usuarioId]) => usuarioId ?? null,
+    extraerResultadoExito: (
+      res: OrdenVentaRespuestaDto,
+      [usuarioId, ordenId],
+      meta,
+    ) => ({
+      resultado: 'EXITO',
+      datos: {
+        mercado: 'SECUNDARIO',
+        accion: 'CANCELAR_VENTA',
+        vendedorId: res.vendedorId ?? usuarioId,
+        ordenId: res.ordenId ?? ordenId ?? null,
+        jugadorId: res.jugadorId ?? (meta.jugadorId as string) ?? null,
+        cantidad: res.cantidad ?? (meta.cantidad as number) ?? null,
+        precioUnitario:
+          res.precioUnitario ?? (meta.precioUnitario as number) ?? null,
+        estadoOrden: 'CANCELADA',
+      },
+    }),
+    extraerDatosError: (_err, [usuarioId, ordenId], meta) => ({
+      mercado: 'SECUNDARIO',
+      accion: 'CANCELAR_VENTA',
+      vendedorId: usuarioId,
+      ordenId: ordenId ?? null,
+      jugadorId: (meta.jugadorId as string) ?? null,
+      cantidad: (meta.cantidad as number) ?? null,
+      precioUnitario: (meta.precioUnitario as number) ?? null,
+      estadoOrden: null,
+    }),
+  })
   public cancelarOrdenVenta(
     usuarioId: string,
     ordenId: string,
@@ -545,6 +714,12 @@ export class OmsService {
       if (!ordenOrm) {
         throw new NotFoundException(`Orden de venta ${ordenId} no encontrada.`);
       }
+
+      AuditAspectRegistry.getContext()?.registrarMetadatos({
+        jugadorId: ordenOrm.jugadorId,
+        cantidad: ordenOrm.cantidad,
+        precioUnitario: Number(ordenOrm.precioUnitario),
+      });
 
       if (ordenOrm.tipo !== 'VENTA') {
         throw new BadRequestException('Solo las órdenes de venta pueden cancelarse.');

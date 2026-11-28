@@ -1,6 +1,9 @@
 import { Injectable, Inject, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AppMetricsService } from '../observability/services/app-metrics.service';
+import { AuditAspectRegistry } from '../observability/aspects/audit-aspect.registry';
+import { AuditarOperacion } from '../observability/aspects/auditar-operacion.decorator';
+import { OrigenEventoNegocio } from '../observability/types/audit-log.types';
 import {
   ICotizacionRepository,
   COTIZACION_REPOSITORY,
@@ -97,6 +100,29 @@ export class QuotesService {
     };
   }
 
+  @AuditarOperacion({
+    evento: 'CAMBIO_ESTRATEGIA_COTIZACION',
+    origen: 'HTTP',
+    extraerUsuarioId: ([, adminId]) => adminId ?? null,
+    extraerResultadoExito: (
+      res: ConfiguracionEstrategiaRespuestaDto,
+      [estrategiaId],
+      meta,
+    ) => ({
+      resultado: 'EXITO',
+      datos: {
+        estrategiaAnterior: (meta.estrategiaAnterior as string) ?? null,
+        estrategiaNueva: res?.estrategiaActivaId ?? estrategiaId,
+        versionNueva:
+          res?.estrategiaActivaVersion ?? (meta.versionNueva as string) ?? null,
+      },
+    }),
+    extraerDatosError: (_err, [estrategiaId], meta) => ({
+      estrategiaAnterior: (meta.estrategiaAnterior as string) ?? null,
+      estrategiaNueva: String(estrategiaId ?? ''),
+      versionNueva: (meta.versionNueva as string) ?? null,
+    }),
+  })
   public async cambiarEstrategiaActiva(
     estrategiaId: EstrategiaId,
     adminId: string,
@@ -109,6 +135,10 @@ export class QuotesService {
     }
 
     const config = await this.configRepo.obtenerConfiguracion();
+    AuditAspectRegistry.getContext()?.registrarMetadatos({
+      estrategiaAnterior: config.estrategiaActivaId,
+      versionNueva: estrategia.version,
+    });
     config.cambiarEstrategia(estrategiaId, estrategia.version, adminId);
     await this.configRepo.guardar(config);
 
@@ -120,12 +150,17 @@ export class QuotesService {
     return this.obtenerConfiguracionEstrategia();
   }
 
-  public async recalcularCotizacionesManual(): Promise<ResumenRecalculoDto> {
+  public async recalcularCotizacionesManual(
+    adminId?: string,
+  ): Promise<ResumenRecalculoDto> {
     const config = await this.configRepo.obtenerConfiguracion();
     const estrategia = this.estrategiasMap.get(config.estrategiaActivaId);
     const versionEstrategia = estrategia ? estrategia.version : `${config.estrategiaActivaId}_v1`;
 
-    const resultado = await this.recalcularCotizacionesActivas();
+    const resultado = await this.recalcularCotizacionesActivas({
+      origen: 'MANUAL',
+      usuarioId: adminId ?? null,
+    });
 
     return {
       mensaje: 'Recálculo de cotizaciones finalizado exitosamente.',
@@ -274,7 +309,32 @@ export class QuotesService {
     return resultado;
   }
 
-  public async recalcularCotizacionesActivas(): Promise<{
+  @AuditarOperacion({
+    evento: 'CALCULO_COTIZACIONES',
+    origen: ([contexto]) => contexto?.origen ?? 'SISTEMA',
+    extraerUsuarioId: ([contexto]) => contexto?.usuarioId ?? null,
+    extraerResultadoExito: (res, _args, meta) => ({
+      resultado: 'EXITO',
+      datos: {
+        estrategiaId: (meta.estrategiaId as string) ?? null,
+        estrategiaVersion: (meta.estrategiaVersion as string) ?? null,
+        procesados: res?.procesados ?? 0,
+        sinEstadisticas: res?.sinEstadisticas ?? 0,
+        fallidos: res?.fallidos ?? 0,
+      },
+    }),
+    extraerDatosError: (_err, _args, meta) => ({
+      estrategiaId: (meta.estrategiaId as string) ?? null,
+      estrategiaVersion: (meta.estrategiaVersion as string) ?? null,
+      procesados: 0,
+      sinEstadisticas: 0,
+      fallidos: 0,
+    }),
+  })
+  public async recalcularCotizacionesActivas(contexto?: {
+    origen?: OrigenEventoNegocio;
+    usuarioId?: string | null;
+  }): Promise<{
     procesados: number;
     fallidos: number;
     sinEstadisticas: number;
@@ -292,6 +352,11 @@ export class QuotesService {
     // 2. Obtener estrategia activa
     const configuracion = await this.configRepo.obtenerConfiguracion();
     const estrategia = this.estrategiasMap.get(configuracion.estrategiaActivaId);
+    AuditAspectRegistry.getContext()?.registrarMetadatos({
+      estrategiaId: configuracion.estrategiaActivaId,
+      estrategiaVersion:
+        estrategia?.version ?? configuracion.estrategiaActivaVersion ?? null,
+    });
     if (!estrategia) {
       throw new ReglaDeNegocioException(
         `Estrategia activa no soportada: ${configuracion.estrategiaActivaId}`,

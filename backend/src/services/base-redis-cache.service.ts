@@ -1,6 +1,7 @@
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { AppMetricsService } from '../observability/services/app-metrics.service';
+import { esRedisHabilitado } from '../observability/utils/redis-policy.util';
 
 export abstract class BaseRedisCacheService implements OnModuleDestroy {
   protected readonly logger: Logger;
@@ -17,6 +18,8 @@ export abstract class BaseRedisCacheService implements OnModuleDestroy {
 
     if (injectedRedis !== undefined) {
       this.redisClient = injectedRedis;
+    } else if (!esRedisHabilitado()) {
+      this.redisClient = null;
     } else {
       try {
         this.redisClient = this.crearInstanciaRedis(process.env.REDIS_URL);

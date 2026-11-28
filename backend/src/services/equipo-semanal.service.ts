@@ -27,6 +27,8 @@ import {
 } from '../domain/equipo-semanal.entity';
 import { ReglaDeNegocioException } from '../domain/exceptions/regla-de-negocio.exception';
 import { MiembroEquipoSemanal } from '../domain/miembro-equipo-semanal.entity';
+import { AuditAspectRegistry } from '../observability/aspects/audit-aspect.registry';
+import { AuditarOperacion } from '../observability/aspects/auditar-operacion.decorator';
 
 export { obtenerAnoYSemanaIso as calcularAnoYSemanaIso } from '../domain/equipo-semanal.entity';
 
@@ -54,10 +56,39 @@ export class EquipoSemanalService {
     private readonly cacheService: MarketplaceCacheService,
   ) {}
 
+  @AuditarOperacion({
+    evento: 'CALCULO_TEAM_OF_THE_WEEK',
+    origen: 'MANUAL',
+    extraerUsuarioId: ([, usuarioId]) => usuarioId ?? null,
+    extraerResultadoExito: (equipo: EquipoSemanal) => ({
+      resultado: 'EXITO',
+      datos: {
+        ano: equipo.ano,
+        semanaIso: equipo.semanaIso,
+        estrategiaId: equipo.estrategiaId ?? null,
+        estrategiaVersion: equipo.estrategiaVersion ?? null,
+        cantidadMiembros: equipo.miembros?.length ?? 11,
+      },
+    }),
+    extraerDatosError: (_err, [ahora], meta) => {
+      const periodo = obtenerAnoYSemanaIso(
+        ahora instanceof Date ? ahora : new Date(),
+      );
+      return {
+        ano: (meta.ano as number) ?? periodo.ano,
+        semanaIso: (meta.semanaIso as number) ?? periodo.semanaIso,
+        estrategiaId: (meta.estrategiaId as string) ?? null,
+        estrategiaVersion: (meta.estrategiaVersion as string) ?? null,
+        cantidadMiembros: 0,
+      };
+    },
+  })
   public async generarEquipoSemanaActual(
     ahora: Date = new Date(),
+    _usuarioId?: string | null,
   ): Promise<EquipoSemanal> {
     const { ano, semanaIso } = obtenerAnoYSemanaIso(ahora);
+    AuditAspectRegistry.getContext()?.registrarMetadatos({ ano, semanaIso });
     const existente = await this.equipoSemanalRepo.obtenerPorSemana(
       ano,
       semanaIso,
@@ -77,10 +108,59 @@ export class EquipoSemanalService {
     return existente !== null && existente !== undefined;
   }
 
+  @AuditarOperacion({
+    evento: 'CALCULO_TEAM_OF_THE_WEEK',
+    origen: 'PROGRAMADO',
+    extraerResultadoExito: (
+      res: ResultadoGeneracionAutomatica,
+      [ahora],
+      meta,
+    ) => {
+      const periodo = obtenerAnoYSemanaIso(
+        ahora instanceof Date ? ahora : new Date(),
+      );
+      if (res?.generado && res.equipo) {
+        return {
+          resultado: 'EXITO',
+          datos: {
+            ano: res.equipo.ano,
+            semanaIso: res.equipo.semanaIso,
+            estrategiaId: res.equipo.estrategiaId ?? null,
+            estrategiaVersion: res.equipo.estrategiaVersion ?? null,
+            cantidadMiembros: res.equipo.miembros?.length ?? 11,
+          },
+        };
+      }
+      return {
+        resultado: meta.rechazadoReglaNegocio ? 'RECHAZADO' : 'OMITIDO',
+        motivo: res?.motivo ?? 'Generacion automatica omitida',
+        datos: {
+          ano: (meta.ano as number) ?? periodo.ano,
+          semanaIso: (meta.semanaIso as number) ?? periodo.semanaIso,
+          estrategiaId: (meta.estrategiaId as string) ?? null,
+          estrategiaVersion: (meta.estrategiaVersion as string) ?? null,
+          cantidadMiembros: 0,
+        },
+      };
+    },
+    extraerDatosError: (_err, [ahora], meta) => {
+      const periodo = obtenerAnoYSemanaIso(
+        ahora instanceof Date ? ahora : new Date(),
+      );
+      return {
+        ano: (meta.ano as number) ?? periodo.ano,
+        semanaIso: (meta.semanaIso as number) ?? periodo.semanaIso,
+        estrategiaId: (meta.estrategiaId as string) ?? null,
+        estrategiaVersion: (meta.estrategiaVersion as string) ?? null,
+        cantidadMiembros: 0,
+      };
+    },
+  })
   public async generarAutomatico(
     ahora: Date = new Date(),
   ): Promise<ResultadoGeneracionAutomatica> {
     const { ano, semanaIso } = obtenerAnoYSemanaIso(ahora);
+    AuditAspectRegistry.getContext()?.registrarMetadatos({ ano, semanaIso });
 
     if (await this.existeEquipoSemanaActual(ahora)) {
       const motivo = `Ya existe un Equipo de la Semana para ${ano}-W${semanaIso}. Se omite la generación automática.`;
@@ -93,6 +173,9 @@ export class EquipoSemanalService {
       return { generado: true, equipo };
     } catch (error) {
       if (error instanceof ReglaDeNegocioException) {
+        AuditAspectRegistry.getContext()?.registrarMetadatos({
+          rechazadoReglaNegocio: true,
+        });
         this.logger.warn(
           `No se generó el Equipo de la Semana ${ano}-W${semanaIso}: ${error.message}`,
         );
@@ -112,6 +195,12 @@ export class EquipoSemanalService {
     );
 
     const config = await this.configRepo.obtenerConfiguracion();
+    AuditAspectRegistry.getContext()?.registrarMetadatos({
+      ano,
+      semanaIso,
+      estrategiaId: config.estrategiaActivaId,
+      estrategiaVersion: config.estrategiaActivaVersion,
+    });
     const jugadoresActivos = await this.jugadorRepo.listarActivos();
     const jugadorIds = jugadoresActivos.map((j) => j.id);
     const cotizacionesPorJugador =

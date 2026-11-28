@@ -45,4 +45,7 @@ Aunque esta funcionalidad **no modifica ningún endpoint, ruta, método, payload
 ## 4. Impacto en OpenAPI (Swagger) y Colección de Postman (DoD #3)
 
 - **Cambios en endpoints REST**: **Ninguno**. No se agregan, eliminan ni renombran endpoints, códigos de estado, DTOs de entrada ni DTOs de respuesta.
-- **Colección de Postman**: No requiere modificación de requests ni scripts funcionales. Durante la fase de implementación se ejecutará la verificación formal contra la especificación OpenAPI generada por Swagger y la colección versionada en `postman/`, dejando constancia explícita del resultado en cumplimiento de la Constitución (DoD #3).
+- **Colección de Postman**: No requiere modificación de requests ni scripts funcionales.
+- **Evidencia de verificación (2026-11-28)**:
+  - Ejecutado `npx jest test/integration/marketplace/postman-swagger-parity.spec.ts --runInBand` sobre `backend/` tras completar la implementación.
+  - Resultado: **24/24 pruebas aprobadas** verificando paridad 100% entre la especificación OpenAPI generada por Swagger, los contratos REST versionados y `postman/collection.json`, confirmando cero alteraciones en endpoints, payloads, códigos de estado o respuestas.
