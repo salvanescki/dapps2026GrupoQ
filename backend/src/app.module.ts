@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { PlayersModule } from './players/players.module';
 import { ScrapingModule } from './scraping/scraping.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
+import { ObservabilityModule } from './observability/observability.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
       useFactory: () => getDatabaseConfig(),
     }),
     ScheduleModule.forRoot(),
+    ObservabilityModule,
+    HealthModule,
     AuthModule,
     PlayersModule,
     ScrapingModule,

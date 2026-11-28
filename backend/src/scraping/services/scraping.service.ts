@@ -35,6 +35,7 @@ import {
   ScrapingConfig,
   LigaScrapingConfig,
 } from '../../config/scraping.config';
+import { AppMetricsService } from '../../observability/services/app-metrics.service';
 
 export interface ResultadoAsociacionLocal {
   asociados: Array<{ jugador: Jugador; stats: RawWhoScoredPlayerStats }>;
@@ -76,6 +77,8 @@ export class ScrapingService implements OnModuleInit {
     @Optional()
     @InjectDataSource()
     private readonly dataSource?: DataSource,
+    @Optional()
+    private readonly metricsService?: AppMetricsService,
   ) {
     this.config = getScrapingConfig();
   }
@@ -97,6 +100,7 @@ export class ScrapingService implements OnModuleInit {
           timestamp: new Date(),
         });
         await this.ejecucionRepo.guardar(enProgreso);
+        this.metricsService?.recordScrapingExecution('recuperada_atasco');
         this.logger.log(`Ejecución huérfana ${enProgreso.id} marcada como fallida.`);
       }
     } catch (err) {
@@ -382,6 +386,7 @@ export class ScrapingService implements OnModuleInit {
       timestamp: new Date(),
     });
     await this.ejecucionRepo.guardar(enProgreso);
+    this.metricsService?.recordScrapingExecution('recuperada_atasco');
   }
 
   private async extraerEstadisticasDeLiga(
@@ -535,6 +540,7 @@ export class ScrapingService implements OnModuleInit {
     leagueConfig: LigaScrapingConfig,
     ejecucion: EjecucionScraping,
   ): Promise<void> {
+    const startLiga = Date.now();
     this.logger.log(`Procesando liga ${leagueConfig.liga}...`);
 
     const jugadoresLocales = await this.cargarJugadoresLocales(leagueConfig.liga);
@@ -562,10 +568,15 @@ export class ScrapingService implements OnModuleInit {
     );
 
     if (!asociacion.valida) {
+      this.metricsService?.recordScrapingIncident(leagueConfig.liga);
       this.logger.warn(
         `Liga ${leagueConfig.liga}: tasa de asociación exacta baja (${asociacion.tasaAsociacion.toFixed(1)}%)`,
       );
     }
+
+    this.metricsService?.setPlayerMatchRate(leagueConfig.liga, asociacion.tasaAsociacion);
+    const durationSeconds = (Date.now() - startLiga) / 1000;
+    this.metricsService?.recordScrapingDuration(leagueConfig.liga, durationSeconds);
 
     const estadisticasMap = this.construirEstadisticas(asociados, leagueConfig, ejecucion);
     const estadisticasAGuardar = Array.from(estadisticasMap.values());
@@ -607,9 +618,12 @@ export class ScrapingService implements OnModuleInit {
 
       ejecucion.finalizarExitoso();
       await this.ejecucionRepo.guardar(ejecucion);
+      this.metricsService?.recordScrapingExecution('exitoso');
       this.logger.log(`Scraping finalizado exitosamente. Procesados: ${ejecucion.jugadoresProcesados}, Errores: ${ejecucion.errores}`);
       return ejecucion;
     } catch (error) {
+      this.metricsService?.recordScrapingExecution('fallido');
+      this.metricsService?.recordScrapingIncident('GLOBAL');
       this.logger.error(`Fallo crítico en pipeline de scraping: ${(error as Error).message}`);
       ejecucion.finalizarFallido({
         liga: 'GLOBAL',

@@ -1967,6 +1967,140 @@
           }
         }
       ]
+    },
+    {
+      "name": "8. Observabilidad",
+      "item": [
+        {
+          "name": "GET Métricas Prometheus (/metrics)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Content-Type text/plain; version=0.0.4\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/plain\");",
+                  "});",
+                  "pm.test(\"Expone métricas de runtime y de dominio del Marketplace\", () => {",
+                  "  const body = pm.response.text();",
+                  "  pm.expect(body).to.include(\"process_cpu\");",
+                  "  pm.expect(body).to.include(\"marketplace_orders_total\");",
+                  "  pm.expect(body).to.include(\"quotes_active_strategy\");",
+                  "  pm.expect(body).to.include(\"football_data_rate_limit_remaining\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Obtener métricas en formato estándar de Prometheus incluyendo runtime Node.js y dominio de trading, cotizaciones, scraping, caché y seguridad."
+          }
+        },
+        {
+          "name": "GET Sonda de Preparación (/health/ready)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK o 503 Service Unavailable\", () => {",
+                  "  pm.expect([200, 503]).to.include(pm.response.code);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Estructura estándar de respuesta Terminus\", () => {",
+                  "  pm.expect(json).to.have.property(\"status\");",
+                  "  pm.expect(json).to.have.property(\"details\");",
+                  "  pm.expect(json.details).to.have.property(\"database\");",
+                  "  pm.expect(json.details).to.have.property(\"redis\");",
+                  "  pm.expect(json.details).to.have.property(\"footballData\");",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test(\"Todas las dependencias críticas se encuentran UP\", () => {",
+                  "    pm.expect(json.status).to.eql(\"ok\");",
+                  "    pm.expect(json.details.database.status).to.eql(\"up\");",
+                  "    pm.expect(json.details.redis.status).to.eql(\"up\");",
+                  "    pm.expect(json.details.footballData.status).to.eql(\"up\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            },
+            "description": "Sonda de preparación (Readiness Probe): Verifica disponibilidad de PostgreSQL, Redis L1 y Football-Data.org."
+          }
+        },
+        {
+          "name": "GET Sonda de Vivacidad (/health/live)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK o 503 Service Unavailable\", () => {",
+                  "  pm.expect([200, 503]).to.include(pm.response.code);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Estructura estándar de respuesta Terminus para Liveness\", () => {",
+                  "  pm.expect(json).to.have.property(\"status\");",
+                  "  pm.expect(json).to.have.property(\"details\");",
+                  "  pm.expect(json.details).to.have.property(\"memory_heap\");",
+                  "  pm.expect(json.details).to.have.property(\"memory_rss\");",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test(\"Consumo de memoria dentro de límites operativos (Heap < 300MB, RSS < 1GB)\", () => {",
+                  "    pm.expect(json.status).to.eql(\"ok\");",
+                  "    pm.expect(json.details.memory_heap.status).to.eql(\"up\");",
+                  "    pm.expect(json.details.memory_rss.status).to.eql(\"up\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/live",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
+            },
+            "description": "Sonda de vivacidad (Liveness Probe): Verifica consumo de memoria Heap (< 300 MB) y RSS (< 1 GB)."
+          }
+        }
+      ]
     }
   ],
   "variable": [

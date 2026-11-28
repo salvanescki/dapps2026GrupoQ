@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { AppMetricsService } from '../../observability/services/app-metrics.service';
 
 export interface FootballDataArea {
   id?: number;
@@ -48,7 +49,7 @@ export class FootballDataClient {
   private readonly apiKey: string;
   private readonly headerName: string;
 
-  constructor() {
+  constructor(@Optional() private readonly metricsService?: AppMetricsService) {
     this.apiKey = process.env.FOOTBALL_DATA_API_KEY || '';
     this.headerName = process.env.FOOTBALL_DATA_HEADER || 'X-Auth-Token';
   }
@@ -68,21 +69,39 @@ export class FootballDataClient {
 
     this.logger.log(`Consultando football-data.org para liga ${codigoLiga}...`);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
-      this.logger.error(
-        `Error al consultar football-data.org para ${codigoLiga}: HTTP ${response.status} - ${errorBody}`,
-      );
-      throw new Error(
-        `Error en football-data.org: HTTP ${response.status} al consultar liga ${codigoLiga}`,
-      );
+      const rateLimitHeader =
+        response.headers?.get?.('x-requests-available-minute') ||
+        response.headers?.get?.('X-Requests-Available-Minute');
+      if (rateLimitHeader) {
+        const remaining = Number.parseInt(rateLimitHeader, 10);
+        if (!Number.isNaN(remaining)) {
+          this.metricsService?.setFootballDataRateLimitRemaining(remaining);
+        }
+      }
+      this.metricsService?.recordFootballDataRequest(`/competitions/${codigoLiga}/teams`, response.status);
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        this.logger.error(
+          `Error al consultar football-data.org para ${codigoLiga}: HTTP ${response.status} - ${errorBody}`,
+        );
+        throw new Error(
+          `Error en football-data.org: HTTP ${response.status} al consultar liga ${codigoLiga}`,
+        );
+      }
+
+      return (await response.json()) as FootballDataCompetitionTeamsResponse;
+    } catch (error) {
+      if (!(error instanceof Error && error.message.startsWith('Error en football-data.org'))) {
+        this.metricsService?.recordFootballDataRequest(`/competitions/${codigoLiga}/teams`, 'error');
+      }
+      throw error;
     }
-
-    return (await response.json()) as FootballDataCompetitionTeamsResponse;
   }
 }

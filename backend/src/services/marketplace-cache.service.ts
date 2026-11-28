@@ -1,13 +1,17 @@
 import { Injectable, Optional } from '@nestjs/common';
 import Redis from 'ioredis';
 import { BaseRedisCacheService } from './base-redis-cache.service';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
 
 @Injectable()
 export class MarketplaceCacheService extends BaseRedisCacheService {
   private readonly defaultTTL = 300; // 5 minutos en segundos
 
-  constructor(@Optional() injectedRedis?: Redis) {
-    super(MarketplaceCacheService.name, injectedRedis);
+  constructor(
+    @Optional() injectedRedis?: Redis,
+    @Optional() metricsService?: AppMetricsService,
+  ) {
+    super(MarketplaceCacheService.name, injectedRedis, metricsService);
   }
 
   public async guardarRanking(

@@ -8,6 +8,7 @@ import {
   NotFoundException,
   HttpCode,
   HttpStatus,
+  Optional,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,11 +28,16 @@ import {
 import { SemanaDisponibleDto } from './dto/semana-disponible.dto';
 import { ResumenGeneracionEquipoDto } from './dto/resumen-generacion-equipo.dto';
 import { EquipoSemanal } from '../domain/equipo-semanal.entity';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
+import { EstadoTotwMetrica } from '../observability/constants/metric-names.constant';
 
 @ApiTags('Equipo de la Semana')
 @Controller('team-of-the-week')
 export class TeamOfTheWeekController {
-  constructor(private readonly equipoSemanalService: EquipoSemanalService) {}
+  constructor(
+    private readonly equipoSemanalService: EquipoSemanalService,
+    @Optional() private readonly metricsService?: AppMetricsService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -174,12 +180,21 @@ export class TeamOfTheWeekController {
     description: 'Acceso denegado: se requiere rol de administrador.',
   })
   public async generarManualmente(): Promise<ResumenGeneracionEquipoDto> {
-    const resultado =
-      await this.equipoSemanalService.generarEquipoSemanaActual();
-    return {
-      mensaje: 'Equipo de la Semana generado exitosamente.',
-      equipo: this.mapearADto(resultado),
-    };
+    const start = Date.now();
+    try {
+      const resultado =
+        await this.equipoSemanalService.generarEquipoSemanaActual();
+      const duracionSegundos = (Date.now() - start) / 1000;
+      this.metricsService?.recordTotwGeneration(EstadoTotwMetrica.EXITO);
+      this.metricsService?.recordTotwDuration(duracionSegundos);
+      return {
+        mensaje: 'Equipo de la Semana generado exitosamente.',
+        equipo: this.mapearADto(resultado),
+      };
+    } catch (error) {
+      this.metricsService?.recordTotwGeneration(EstadoTotwMetrica.FALLO);
+      throw error;
+    }
   }
 
   private mapearADto(equipo: EquipoSemanal): EquipoSemanalRespuestaDto {

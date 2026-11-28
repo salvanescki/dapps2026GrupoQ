@@ -1,5 +1,6 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
 import {
   ICotizacionRepository,
   COTIZACION_REPOSITORY,
@@ -64,6 +65,7 @@ export class QuotesService {
     private readonly usuarioRepo: UsuarioRepository,
     private readonly cacheService: MarketplaceCacheService,
     private readonly tokensService: TokensService,
+    @Optional() private readonly metricsService?: AppMetricsService,
   ) {
     const global = new EstrategiaGlobal();
     const posicional = new EstrategiaPosicional();
@@ -112,6 +114,8 @@ export class QuotesService {
 
     // Al cambiar la estrategia, se invalida el ranking cacheado
     await this.cacheService.invalidarRanking();
+
+    this.metricsService?.setActiveStrategy(estrategia.version);
 
     return this.obtenerConfiguracionEstrategia();
   }
@@ -372,6 +376,13 @@ export class QuotesService {
     const duracionMs = Date.now() - inicio;
     const procesados = nuevasCotizaciones.length;
     const sinEstadisticas = nuevasCotizaciones.filter((c) => c.sinEstadisticas).length;
+    const procesadosConEstadisticas = procesados - sinEstadisticas;
+
+    this.metricsService?.recordPlayersEvaluated('procesados', procesadosConEstadisticas);
+    this.metricsService?.recordPlayersEvaluated('sin_estadisticas', sinEstadisticas);
+    this.metricsService?.recordPlayersEvaluated('fallidos', fallidos);
+    this.metricsService?.recordRecalculation(estrategia.version, 'exito');
+    this.metricsService?.recordRecalculationDuration(estrategia.version, duracionMs / 1000);
 
     this.logger.log(
       `Recálculo masivo completado en ${duracionMs} ms. Procesados: ${procesados}, Fallidos: ${fallidos}, SinEstadisticas: ${sinEstadisticas}`,

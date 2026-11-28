@@ -6,8 +6,10 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
+import { AppMetricsService } from '../observability/services/app-metrics.service';
 import { Orden } from '../domain/orden.entity';
 import { IOrdenRepository, ORDEN_REPOSITORY } from '../domain/orden.repository.interface';
 import { Transaccion } from '../domain/transaccion.entity';
@@ -64,6 +66,7 @@ export class OmsService {
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepo: UsuarioRepository,
     private readonly cacheService: MarketplaceCacheService,
+    @Optional() private readonly metricsService?: AppMetricsService,
   ) {}
 
   public async comprarTokens(
@@ -81,6 +84,7 @@ export class OmsService {
     compradorId: string,
     dto: CrearOrdenCompraDto,
   ): Promise<ResultadoCompraDto> {
+    const startTime = Date.now();
     return this.dataSource.transaction(async (manager: EntityManager) => {
       const { jugadorId, cantidad, precioMaximoUnitario } = dto;
       // 1. Validar que el jugador existe y está activo
@@ -88,9 +92,11 @@ export class OmsService {
         where: { id: jugadorId },
       });
       if (!jugadorOrm) {
+        this.metricsService?.recordOrderCreated('compra', 'primario', 'rechazada');
         throw new NotFoundException(`Jugador con id ${jugadorId} no encontrado.`);
       }
       if (!jugadorOrm.activo) {
+        this.metricsService?.recordOrderCreated('compra', 'primario', 'rechazada');
         throw new BadRequestException('El futbolista no se encuentra activo para transacciones.');
       }
 
@@ -100,6 +106,7 @@ export class OmsService {
         order: { fechaCotizacion: 'DESC' },
       });
       if (!cotizacionOrm) {
+        this.metricsService?.recordOrderCreated('compra', 'primario', 'rechazada');
         throw new BadRequestException('El jugador aún no posee una cotización oficial emitida.');
       }
 
@@ -109,6 +116,8 @@ export class OmsService {
       if (precioMaximoUnitario !== undefined) {
         const limiteMax = Dinero.desdeMonto(precioMaximoUnitario);
         if (precioUnitario.centavos > limiteMax.centavos) {
+          this.metricsService?.recordSlippageRejection('primario');
+          this.metricsService?.recordOrderCreated('compra', 'primario', 'rechazada');
           throw new BadRequestException(
             `El precio oficial vigente (${precioUnitario.aNumero()}) supera el precio máximo especificado (${limiteMax.aNumero()}).`,
           );
@@ -238,6 +247,12 @@ export class OmsService {
       // 12. Invalidar ranking en caché L1
       await this.cacheService.invalidarRanking();
 
+      const durationSeconds = (Date.now() - startTime) / 1000;
+      this.metricsService?.recordOrderCreated('compra', 'primario', 'completada');
+      this.metricsService?.recordTransaction('primario', transaccion.estrategiaCotizacion);
+      this.metricsService?.recordVolumeCents('primario', montoTotal.centavos);
+      this.metricsService?.recordSettlementDuration('primario', durationSeconds);
+
       return {
         transaccionId: transaccion.id,
         ordenId: ordenCompra.id,
@@ -258,6 +273,7 @@ export class OmsService {
     compradorId: string,
     dto: CrearOrdenCompraDto,
   ): Promise<ResultadoCompraDto> {
+    const startTime = Date.now();
     return this.dataSource.transaction(async (manager: EntityManager) => {
       const { ordenVentaId, cantidad, precioMaximoUnitario } = dto;
       // 1. Bloquear orden de venta FOR UPDATE
@@ -268,10 +284,12 @@ export class OmsService {
         .getOne();
 
       if (!ordenOrm) {
+        this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
         throw new NotFoundException(`Oferta de venta ${ordenVentaId} no encontrada.`);
       }
 
       if (ordenOrm.tipo !== 'VENTA' || (ordenOrm.estado !== 'PENDIENTE' && ordenOrm.estado !== 'PARCIAL')) {
+        this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
         throw new ConflictException('La oferta de venta seleccionada ya no se encuentra activa.');
       }
 
@@ -280,16 +298,19 @@ export class OmsService {
       const jugadorId = ordenVenta.jugadorId;
 
       if (compradorId === vendedorId) {
+        this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
         throw new BadRequestException('No puedes comprar tu propia orden de venta (autocontratación prohibida).');
       }
 
       // Validar jugador activo
       const jugadorOrm = await manager.findOne(JugadorOrmEntity, { where: { id: jugadorId } });
       if (!jugadorOrm?.activo) {
+        this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
         throw new BadRequestException('El futbolista no se encuentra activo para transacciones.');
       }
 
       if (cantidad > ordenVenta.cantidadRestante) {
+        this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
         throw new BadRequestException(
           `Cantidad solicitada (${cantidad}) supera la cantidad remanente de la oferta (${ordenVenta.cantidadRestante}).`,
         );
@@ -299,6 +320,8 @@ export class OmsService {
       if (precioMaximoUnitario !== undefined) {
         const limiteMax = Dinero.desdeMonto(precioMaximoUnitario);
         if (precioUnitario.centavos > limiteMax.centavos) {
+          this.metricsService?.recordSlippageRejection('secundario');
+          this.metricsService?.recordOrderCreated('compra', 'secundario', 'rechazada');
           throw new BadRequestException(
             `El precio de la oferta (${precioUnitario.aNumero()}) supera el precio máximo especificado (${limiteMax.aNumero()}).`,
           );
@@ -400,6 +423,15 @@ export class OmsService {
 
       await this.cacheService.invalidarRanking();
 
+      const durationSeconds = (Date.now() - startTime) / 1000;
+      this.metricsService?.recordOrderCreated('compra', 'secundario', 'completada');
+      this.metricsService?.recordTransaction('secundario', estrategiaCotizacion);
+      this.metricsService?.recordVolumeCents('secundario', montoTotal.centavos);
+      this.metricsService?.recordSettlementDuration('secundario', durationSeconds);
+      if (ordenVenta.estado === 'COMPLETADA') {
+        this.metricsService?.updateActiveSellOrders(-1);
+      }
+
       return {
         transaccionId: transaccion.id,
         ordenId: ordenCompra.id,
@@ -464,6 +496,8 @@ export class OmsService {
         precioUnitario,
       });
       await this.ordenRepo.guardar(ordenVenta, manager);
+      this.metricsService?.recordOrderCreated('venta', 'secundario', 'pendiente');
+      this.metricsService?.updateActiveSellOrders(1);
 
       return {
         ordenId: ordenVenta.id,
@@ -552,6 +586,8 @@ export class OmsService {
       // 4. Cancelar la orden
       orden.cancelar();
       await manager.save(OrdenOrmEntity, OrdenMapper.toOrm(orden));
+      this.metricsService?.recordOrderCreated('venta', 'secundario', 'cancelada');
+      this.metricsService?.updateActiveSellOrders(-1);
 
       return {
         ordenId: orden.id,

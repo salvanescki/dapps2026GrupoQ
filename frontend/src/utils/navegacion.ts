@@ -36,6 +36,11 @@ export function construirItemsNavegacion(rol?: RolUsuario): NavItem[] {
       to: '/admin',
       id: 'nav-admin',
     });
+    items.push({
+      label: 'Observabilidad',
+      to: '/admin/observability',
+      id: 'nav-observability',
+    });
   }
 
   return items;
