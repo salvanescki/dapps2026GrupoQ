@@ -77,9 +77,7 @@ export class AuditLoggerService {
   registrarEventoNegocio(entrada: EntradaEventoNegocio): void {
     try {
       const requestId =
-        entrada.requestId !== undefined
-          ? entrada.requestId
-          : this.auditContext.obtenerRequestId();
+        entrada.requestId ?? this.auditContext.obtenerRequestId();
 
       const datosSanitizados = sanitizarValor(entrada.datos ?? {});
       const datos =

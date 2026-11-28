@@ -31,16 +31,18 @@ export function construirItemsNavegacion(rol?: RolUsuario): NavItem[] {
   ];
 
   if (rol === 'ADMIN') {
-    items.push({
-      label: 'Gobernanza',
-      to: '/admin',
-      id: 'nav-admin',
-    });
-    items.push({
-      label: 'Observabilidad',
-      to: '/admin/observability',
-      id: 'nav-observability',
-    });
+    items.push(
+      {
+        label: 'Gobernanza',
+        to: '/admin',
+        id: 'nav-admin',
+      },
+      {
+        label: 'Observabilidad',
+        to: '/admin/observability',
+        id: 'nav-observability',
+      },
+    );
   }
 
   return items;

@@ -1,5 +1,5 @@
-import { randomUUID } from 'crypto';
-import type { IncomingMessage, ServerResponse } from 'http';
+import { randomUUID } from 'node:crypto';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Params } from 'nestjs-pino';
 import type { DestinationStream } from 'pino';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../constants/audit-events.constant';
 import { ActorAuditoriaHttp, ResumenErrorHttp } from '../types/audit-log.types';
 import {
+  convertirCampoEscalarATexto,
   sanitizarParametrosHttp,
   sanitizarTexto,
 } from '../utils/audit-sanitizer.util';
@@ -73,15 +74,15 @@ export function extraerActorHttp(
   user?: Record<string, unknown> | null,
 ): ActorAuditoriaHttp {
   const idRaw = user?.id ?? user?.sub;
-  if (user && idRaw !== undefined && idRaw !== null && String(idRaw).trim()) {
+  const idTexto = convertirCampoEscalarATexto(idRaw);
+  if (user && idTexto?.trim()) {
     const emailRaw = user.email ?? user.correo;
     const rolRaw = user.rol ?? user.role;
     return {
       autenticado: true,
-      id: String(idRaw),
-      email:
-        emailRaw !== undefined && emailRaw !== null ? String(emailRaw) : null,
-      rol: rolRaw !== undefined && rolRaw !== null ? String(rolRaw) : null,
+      id: idTexto,
+      email: convertirCampoEscalarATexto(emailRaw),
+      rol: convertirCampoEscalarATexto(rolRaw),
     };
   }
 

@@ -14,11 +14,11 @@ import { PrometheusSample, extractSingleMetricValue, sumMetricValues } from './p
  * División segura contra NaN e Infinity
  */
 export function calcularDivisionSegura(dividendo: number, divisor: number, valorDefault = 0): number {
-  if (!divisor || isNaN(divisor) || divisor === 0) {
+  if (!divisor || Number.isNaN(divisor) || divisor === 0) {
     return valorDefault;
   }
   const res = dividendo / divisor;
-  return isNaN(res) || !isFinite(res) ? valorDefault : res;
+  return Number.isNaN(res) || !Number.isFinite(res) ? valorDefault : res;
 }
 
 /**
@@ -72,11 +72,26 @@ export function determinarEstadoAlertaMemoria(porcentaje: number): 'nominal' | '
   return 'nominal';
 }
 
-/**
- * Transforma la lista de muestras Prometheus en la estructura de MetricasCompletas
- */
-export function procesarMetricasPrometheus(samples: PrometheusSample[]): MetricasCompletas {
-  // Marketplace
+function obtenerLiga(labels: Record<string, string>): string | undefined {
+  return labels.league || labels.liga;
+}
+
+function mapearMetricaPorLiga(
+  samples: PrometheusSample[],
+  metricName: string
+): Record<string, number> {
+  const resultado: Record<string, number> = {};
+  for (const sample of samples) {
+    if (sample.name !== metricName) continue;
+    const liga = obtenerLiga(sample.labels);
+    if (liga) {
+      resultado[liga] = sample.value;
+    }
+  }
+  return resultado;
+}
+
+export function construirMetricasMarketplace(samples: PrometheusSample[]): MetricaDeMarketplace {
   const orderSamples = samples.filter((s) => s.name === 'marketplace_orders_total');
   const ordenesDesglose: DesgloseOrdenes[] = orderSamples.map((s) => ({
     tipo: (s.labels.tipo as any) || 'compra',
@@ -89,7 +104,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   const transaccionesTotales = sumMetricValues(samples, 'marketplace_transactions_total');
   const txSamples = samples.filter((s) => s.name === 'marketplace_transactions_total');
   const transaccionesDesglose: DesgloseTransacciones[] = txSamples.map((s) => ({
-    mercado: (s.labels.mercado as any) || 'secundario',
+    mercado: s.labels.mercado || 'secundario',
     estrategiaVersion: s.labels.estrategia_version || s.labels.estrategia || 'N/A',
     cantidad: s.value,
   }));
@@ -107,7 +122,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   ]);
   const latenciaLiquidacionPromedioSegundos = calcularLatenciaPromedio(settlementSum, settlementCount);
 
-  const marketplace: MetricaDeMarketplace = {
+  return {
     ordenesTotales,
     ordenesDesglose,
     transaccionesTotales,
@@ -118,8 +133,9 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     rechazosSlippage,
     latenciaLiquidacionPromedioSegundos,
   };
+}
 
-  // Cotizaciones
+export function construirMetricasCotizaciones(samples: PrometheusSample[]): MetricaDeCotizaciones {
   const recalculosExitosos = sumMetricValues(samples, 'quotes_recalculations_total', (l) =>
     ['exito', 'exitoso', 'success'].includes(l.estado || l.status)
   );
@@ -142,14 +158,13 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     ['fallidos', 'failed'].includes(l.categoria || l.category)
   );
 
-  // Estrategia activa
   const strategySamples = samples.filter((s) => s.name === 'quotes_active_strategy' && s.value === 1);
   const estrategiaActiva =
     strategySamples.length > 0
       ? strategySamples[0].labels.strategy || strategySamples[0].labels.estrategia || 'GLOBAL_v1'
       : 'GLOBAL_v1';
 
-  const cotizaciones: MetricaDeCotizaciones = {
+  return {
     recalculosExitosos,
     recalculosFallidos,
     tasaExitoRecalculos,
@@ -159,8 +174,9 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     jugadoresFallidos,
     estrategiaActiva,
   };
+}
 
-  // Ingestion (Scraping)
+export function construirMetricasIngestion(samples: PrometheusSample[]): MetricaDeIngestion {
   const ejecucionesExitosas = sumMetricValues(samples, 'scraping_executions_total', (l) =>
     ['exitoso', 'exito', 'success'].includes(l.estado || l.status)
   );
@@ -178,40 +194,24 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
       s.name === 'scraping_league_duration_seconds_sum'
   );
   for (const sumSample of durationSumSamples) {
-    const liga = sumSample.labels.league || sumSample.labels.liga;
-    if (liga) {
-      const count = sumMetricValues(
-        samples,
-        [
-          'scraping_execution_duration_seconds_count',
-          'scraping_league_duration_seconds_count',
-        ],
-        (l) => (l.league || l.liga) === liga
-      );
-      duracionPorLiga[liga] = count > 0 ? Number((sumSample.value / count).toFixed(2)) : sumSample.value;
-    }
+    const liga = obtenerLiga(sumSample.labels);
+    if (!liga) continue;
+    const count = sumMetricValues(
+      samples,
+      [
+        'scraping_execution_duration_seconds_count',
+        'scraping_league_duration_seconds_count',
+      ],
+      (l) => obtenerLiga(l) === liga
+    );
+    duracionPorLiga[liga] = count > 0 ? Number((sumSample.value / count).toFixed(2)) : sumSample.value;
   }
 
-  const tasaAsociacionPorLiga: Record<string, number> = {};
-  const matchRateSamples = samples.filter((s) => s.name === 'scraping_player_match_rate');
-  for (const mrSample of matchRateSamples) {
-    const liga = mrSample.labels.league || mrSample.labels.liga;
-    if (liga) {
-      tasaAsociacionPorLiga[liga] = mrSample.value;
-    }
-  }
-
+  const tasaAsociacionPorLiga = mapearMetricaPorLiga(samples, 'scraping_player_match_rate');
   const incidentesTotales = sumMetricValues(samples, 'scraping_incidents_total');
-  const incidentesPorLiga: Record<string, number> = {};
-  const incidentSamples = samples.filter((s) => s.name === 'scraping_incidents_total');
-  for (const incSample of incidentSamples) {
-    const liga = incSample.labels.league || incSample.labels.liga;
-    if (liga) {
-      incidentesPorLiga[liga] = incSample.value;
-    }
-  }
+  const incidentesPorLiga = mapearMetricaPorLiga(samples, 'scraping_incidents_total');
 
-  const ingestion: MetricaDeIngestion = {
+  return {
     ejecucionesExitosas,
     ejecucionesFallidas,
     ejecucionesRecuperadas,
@@ -220,10 +220,18 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     incidentesTotales,
     incidentesPorLiga,
   };
+}
 
-  // Integracion y Cache
+export function construirMetricasIntegracionYCache(
+  samples: PrometheusSample[]
+): MetricaDeIntegracionYCache {
   const footballDataRequests = sumMetricValues(samples, 'football_data_requests_total');
-  const footballDataRateLimitRemaining = extractSingleMetricValue(samples, 'football_data_rate_limit_remaining', {}, 10);
+  const footballDataRateLimitRemaining = extractSingleMetricValue(
+    samples,
+    'football_data_rate_limit_remaining',
+    {},
+    10
+  );
 
   const cacheHits = sumMetricValues(samples, 'cache_requests_total', (l) =>
     ['hit'].includes(l.resultado || l.result)
@@ -237,7 +245,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   const totwGeneraciones = sumMetricValues(
     samples,
     ['totw_generations_total', 'totw_generation_executions_total'],
-    (l) => !l.estado && !l.status || ['exito', 'exitoso', 'success'].includes(l.estado || l.status)
+    (l) => (!l.estado && !l.status) || ['exito', 'exitoso', 'success'].includes(l.estado || l.status)
   );
   const totwSum = sumMetricValues(samples, 'totw_generation_duration_seconds_sum');
   const totwCount = sumMetricValues(samples, 'totw_generation_duration_seconds_count');
@@ -260,7 +268,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   ]);
   const authLatenciaHashingPromedio = calcularLatenciaPromedio(authHashSum, authHashCount);
 
-  const integracionYCache: MetricaDeIntegracionYCache = {
+  return {
     footballDataRequests,
     footballDataRateLimitRemaining,
     cacheHits,
@@ -273,8 +281,9 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     authIntentosFallidos,
     authLatenciaHashingPromedio,
   };
+}
 
-  // Runtime Node.js
+export function construirMetricasRuntime(samples: PrometheusSample[]): MetricaDeRuntimeNode {
   const cpuSegundosTotal = sumMetricValues(samples, 'process_cpu_seconds_total');
   const startTime = extractSingleMetricValue(samples, 'process_start_time_seconds');
   const uptimeSegundos = startTime > 0 ? Math.max(0, Math.floor(Date.now() / 1000 - startTime)) : 0;
@@ -287,7 +296,7 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
   const heapUsedBytes = extractSingleMetricValue(samples, 'nodejs_heap_size_used_bytes');
   const rssBytes = extractSingleMetricValue(samples, 'process_resident_memory_bytes');
 
-  const runtime: MetricaDeRuntimeNode = {
+  return {
     cpuSegundosTotal,
     uptimeSegundos,
     eventLoopLagMs,
@@ -297,12 +306,17 @@ export function procesarMetricasPrometheus(samples: PrometheusSample[]): Metrica
     heapUsedBytes: heapUsedBytes > 0 ? heapUsedBytes : undefined,
     rssBytes: rssBytes > 0 ? rssBytes : undefined,
   };
+}
 
+/**
+ * Transforma la lista de muestras Prometheus en la estructura de MetricasCompletas
+ */
+export function procesarMetricasPrometheus(samples: PrometheusSample[]): MetricasCompletas {
   return {
-    marketplace,
-    cotizaciones,
-    ingestion,
-    integracionYCache,
-    runtime,
+    marketplace: construirMetricasMarketplace(samples),
+    cotizaciones: construirMetricasCotizaciones(samples),
+    ingestion: construirMetricasIngestion(samples),
+    integracionYCache: construirMetricasIntegracionYCache(samples),
+    runtime: construirMetricasRuntime(samples),
   };
 }

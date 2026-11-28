@@ -71,7 +71,7 @@ describe('audit-sanitizer.util', () => {
 
       expect(sanitizado.length).toBeLessThanOrEqual(MAX_LONGITUD_STRING);
       expect(sanitizado.endsWith(SUFIJO_TRUNCADO)).toBe(true);
-      expect(sanitizarTexto(largo, false).length).toBe(700);
+      expect(sanitizarTexto(largo, false)).toHaveLength(700);
     });
 
     it('sanitiza URLs de proxy con usuario/contrasena, solo usuario, invalidas o nulas', () => {

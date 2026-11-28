@@ -49,7 +49,8 @@ export interface DesgloseOrdenes {
 }
 
 export interface DesgloseTransacciones {
-  mercado: 'primario' | 'secundario' | string;
+  /** Valores nominales: 'primario' | 'secundario' (abierto a etiquetas adicionales de Prometheus). */
+  mercado: string;
   estrategiaVersion: string;
   cantidad: number;
 }
