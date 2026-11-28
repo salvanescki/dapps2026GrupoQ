@@ -174,7 +174,9 @@ export class EquipoSemanal {
       );
     }
 
-    return candidatos.sort(compararCandidatos).slice(0, requeridos);
+    const ordenados = [...candidatos];
+    ordenados.sort(compararCandidatos);
+    return ordenados.slice(0, requeridos);
   }
 
   public estaCerrada(ahora: Date = new Date()): boolean {

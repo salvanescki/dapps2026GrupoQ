@@ -1,5 +1,5 @@
 import { HttpException } from '@nestjs/common';
-import { performance } from 'perf_hooks';
+import { performance } from 'node:perf_hooks';
 import { ReglaDeNegocioException } from '../../domain/exceptions/regla-de-negocio.exception';
 import { AuditContextService } from '../services/audit-context.service';
 import { AuditLoggerService } from '../services/audit-logger.service';
@@ -9,7 +9,10 @@ import {
   OrigenEventoNegocio,
   ResultadoAuditoriaNegocio,
 } from '../types/audit-log.types';
-import { sanitizarTexto } from '../utils/audit-sanitizer.util';
+import {
+  convertirValorATextoSeguro,
+  sanitizarTexto,
+} from '../utils/audit-sanitizer.util';
 import { AuditAspectRegistry } from './audit-aspect.registry';
 
 const AUDIT_EVENTOS_ERROR_SYMBOL = Symbol('AUDIT_EVENTOS_ERROR');
@@ -104,7 +107,7 @@ function clasificarError(error: unknown): {
 
   return {
     resultado: 'FALLIDO',
-    motivo: sanitizarTexto(String(error)),
+    motivo: sanitizarTexto(convertirValorATextoSeguro(error)),
   };
 }
 

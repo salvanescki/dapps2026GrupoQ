@@ -36,7 +36,7 @@ export class HealthController {
     status: 503,
     description: 'Al menos una dependencia crítica no está disponible o excedió el tiempo límite de espera.',
   })
-  async checkReadiness(): Promise<HealthCheckResult> {
+  checkReadiness(): Promise<HealthCheckResult> {
     return this.health.check([
       () => this.db.pingCheck('database', { timeout: 3000 }),
       () => this.redisIndicator.isHealthy('redis'),
@@ -59,7 +59,7 @@ export class HealthController {
     status: 503,
     description: 'El proceso ha superado los umbrales de memoria Heap o RSS y requiere reinicio por parte del orquestador.',
   })
-  async checkLiveness(): Promise<HealthCheckResult> {
+  checkLiveness(): Promise<HealthCheckResult> {
     const HEAP_THRESHOLD_BYTES = 300 * 1024 * 1024; // 300 MB
     const RSS_THRESHOLD_BYTES = 1024 * 1024 * 1024; // 1024 MB (1 GB)
 

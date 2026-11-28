@@ -7,6 +7,47 @@ import {
 
 const BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
+export function resolverDetallesLiveness(data: any): Record<string, any> {
+  if (data?.details && Object.keys(data.details).length > 0) {
+    return data.details;
+  }
+  return { ...data?.info, ...data?.error };
+}
+
+const REGEX_MEMORIA_MB = /\b(\d{1,12}(?:\.\d{1,6})?)\s{0,4}MB\b/i;
+const REGEX_MEMORIA_MB_GB = /\b(\d{1,12}(?:\.\d{1,6})?)\s{0,4}(MB|GB)\b/i;
+
+export function extraerBytesDesdeMensajeMemoria(mensaje: unknown, permiteGb: boolean): number {
+  if (typeof mensaje !== 'string') {
+    return 0;
+  }
+  const regex = permiteGb ? REGEX_MEMORIA_MB_GB : REGEX_MEMORIA_MB;
+  const match = regex.exec(mensaje);
+  if (!match) {
+    return 0;
+  }
+  const valor = Number.parseFloat(match[1]);
+  const multiplicador =
+    permiteGb && match[2]?.toUpperCase() === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024;
+  return Math.round(valor * multiplicador);
+}
+
+export function resolverBytesMemoria(
+  info: any,
+  fallbackBytes: number | undefined,
+  permiteGb: boolean
+): number {
+  const bytesDirectos = info?.bytes || 0;
+  if (bytesDirectos) {
+    return bytesDirectos;
+  }
+  const bytesMensaje = extraerBytesDesdeMensajeMemoria(info?.message, permiteGb);
+  if (bytesMensaje) {
+    return bytesMensaje;
+  }
+  return fallbackBytes || 0;
+}
+
 export interface ObservabilityApi {
   obtenerMetrics(signal?: AbortSignal): Promise<string>;
   obtenerHealthReady(signal?: AbortSignal): Promise<SondaReadinessData>;
@@ -123,42 +164,18 @@ export class ObservabilityApiClient implements ObservabilityApi {
     data: any,
     fallbackMetrics?: { heapUsedBytes?: number; rssBytes?: number }
   ): SondaLivenessData {
-    const details =
-      data?.details && Object.keys(data.details).length > 0
-        ? data.details
-        : { ...(data?.info || {}), ...(data?.error || {}) };
+    const details = resolverDetallesLiveness(data);
     const heapInfo = details.memory_heap || {};
     const rssInfo = details.memory_rss || {};
 
-    // Extrae bytes directos, parsea mensaje o usa fallback de Prometheus si viene en 0
-    let memoriaHeapBytes = heapInfo.bytes || 0;
-    if (!memoriaHeapBytes && typeof heapInfo.message === 'string') {
-      const match = heapInfo.message.match(/(\d+(?:\.\d+)?)\s*MB/i);
-      if (match) {
-        memoriaHeapBytes = Math.round(parseFloat(match[1]) * 1024 * 1024);
-      }
-    }
-    if (!memoriaHeapBytes && fallbackMetrics?.heapUsedBytes) {
-      memoriaHeapBytes = fallbackMetrics.heapUsedBytes;
-    }
-
-    let memoriaRssBytes = rssInfo.bytes || 0;
-    if (!memoriaRssBytes && typeof rssInfo.message === 'string') {
-      const match = rssInfo.message.match(/(\d+(?:\.\d+)?)\s*(MB|GB)/i);
-      if (match) {
-        const val = parseFloat(match[1]);
-        const unit = match[2].toUpperCase();
-        memoriaRssBytes = Math.round(val * (unit === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024));
-      }
-    }
-    if (!memoriaRssBytes && fallbackMetrics?.rssBytes) {
-      memoriaRssBytes = fallbackMetrics.rssBytes;
-    }
+    const memoriaHeapBytes = resolverBytesMemoria(heapInfo, fallbackMetrics?.heapUsedBytes, false);
+    const memoriaRssBytes = resolverBytesMemoria(rssInfo, fallbackMetrics?.rssBytes, true);
 
     const porcentajeHeap = Number(((memoriaHeapBytes / UMBRAL_HEAP_BYTES) * 100).toFixed(2));
     const porcentajeRss = Number(((memoriaRssBytes / UMBRAL_RSS_BYTES) * 100).toFixed(2));
 
-    const estadoGlobal = data?.status === 'ok' || (heapInfo.status === 'up' && rssInfo.status === 'up') ? 'ok' : 'error';
+    const estadoGlobal =
+      data?.status === 'ok' || (heapInfo.status === 'up' && rssInfo.status === 'up') ? 'ok' : 'error';
 
     return {
       estadoGlobal,

@@ -69,7 +69,7 @@ export class AppMetricsService implements OnModuleInit {
       this.registries = [customRegistry];
     } else {
       const allRegistries: promClient.Registry[] = [promClient.register];
-      if (prometheusIoClient && prometheusIoClient.register && prometheusIoClient.register !== promClient.register) {
+      if (prometheusIoClient?.register && prometheusIoClient.register !== promClient.register) {
         allRegistries.push(prometheusIoClient.register);
       }
       this.registries = allRegistries;
@@ -230,7 +230,13 @@ export class AppMetricsService implements OnModuleInit {
   }
 
   private registerInitialValues(): void {
-    // Inicializar contadores de trading
+    this.inicializarMetricasTrading();
+    this.inicializarMetricasCotizaciones();
+    this.inicializarMetricasScraping();
+    this.inicializarMetricasIntegracionesYSoporte();
+  }
+
+  private inicializarMetricasTrading(): void {
     for (const tipo of Object.values(TipoOrdenMetrica)) {
       for (const mercado of Object.values(MercadoMetrica)) {
         for (const estado of Object.values(EstadoOrdenMetrica)) {
@@ -247,8 +253,9 @@ export class AppMetricsService implements OnModuleInit {
       this.slippageRejectionsTotal.inc({ mercado }, 0);
     }
     this.activeSellOrders.set(0);
+  }
 
-    // Inicializar contadores de cotizaciones
+  private inicializarMetricasCotizaciones(): void {
     for (const estrategia of Object.values(EstrategiaCotizacionMetrica)) {
       for (const estado of Object.values(EstadoRecalculoMetrica)) {
         this.recalculationsTotal.inc({ estrategia, estado }, 0);
@@ -259,8 +266,9 @@ export class AppMetricsService implements OnModuleInit {
     for (const categoria of Object.values(CategoriaEvaluacionMetrica)) {
       this.playersEvaluatedTotal.inc({ categoria }, 0);
     }
+  }
 
-    // Inicializar scraping
+  private inicializarMetricasScraping(): void {
     for (const estado of Object.values(EstadoScrapingMetrica)) {
       this.scrapingExecutionsTotal.inc({ estado }, 0);
     }
@@ -269,8 +277,9 @@ export class AppMetricsService implements OnModuleInit {
       this.scrapingMatchRate.set({ liga }, 0);
       this.scrapingIncidentsTotal.inc({ liga }, 0);
     }
+  }
 
-    // Inicializar integraciones y soporte
+  private inicializarMetricasIntegracionesYSoporte(): void {
     this.footballDataRateLimitRemaining.set(10);
 
     for (const estado of Object.values(EstadoTotwMetrica)) {
