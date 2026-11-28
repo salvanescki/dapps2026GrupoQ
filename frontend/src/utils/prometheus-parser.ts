@@ -10,8 +10,93 @@ export interface PrometheusSample {
   type?: string;
 }
 
+function procesarLineaComentario(
+  trimmed: string,
+  helpMap: Map<string, string>,
+  typeMap: Map<string, string>
+): void {
+  if (trimmed.startsWith('# HELP ')) {
+    const parts = trimmed.substring(7).trim().split(/\s+/);
+    helpMap.set(parts[0], parts.slice(1).join(' '));
+    return;
+  }
+
+  if (trimmed.startsWith('# TYPE ')) {
+    const parts = trimmed.substring(7).trim().split(/\s+/);
+    typeMap.set(parts[0], parts[1]);
+  }
+}
+
+const REGEX_CLAVE_LABEL_PROMETHEUS = /^\w+$/;
+
+export function parsearLabelsPrometheus(labelString: string): Record<string, string> {
+  const labels: Record<string, string> = {};
+  let pos = 0;
+
+  while (pos < labelString.length) {
+    const eqQuoteIdx = labelString.indexOf('="', pos);
+    if (eqQuoteIdx === -1) {
+      break;
+    }
+
+    const valueStart = eqQuoteIdx + 2;
+    const valueEnd = labelString.indexOf('"', valueStart);
+    if (valueEnd === -1) {
+      break;
+    }
+
+    const rawKey = labelString.slice(pos, eqQuoteIdx).trim();
+    const commaIdx = rawKey.lastIndexOf(',');
+    const key = (commaIdx === -1 ? rawKey : rawKey.slice(commaIdx + 1)).trim();
+
+    if (REGEX_CLAVE_LABEL_PROMETHEUS.test(key)) {
+      labels[key] = labelString.slice(valueStart, valueEnd);
+    }
+
+    pos = valueEnd + 1;
+  }
+
+  return labels;
+}
+
+const REGEX_LINEA_MUESTRA = /^([a-zA-Z_:][\w:]*)(?:\{([^}]*)\})?\s+(\S+)(?:\s+\d+)?$/;
+
+function parsearLineaMuestra(
+  trimmed: string,
+  helpMap: Map<string, string>,
+  typeMap: Map<string, string>
+): PrometheusSample | null {
+  // Line sample format: metric_name{label1="val1",...} 123.45
+  // or: metric_name 123.45
+  const match = REGEX_LINEA_MUESTRA.exec(trimmed);
+  if (!match) {
+    return null;
+  }
+
+  const [, metricName, labelString, valueString] = match;
+  const value = Number.parseFloat(valueString);
+  if (Number.isNaN(value)) {
+    return null;
+  }
+
+  const labels = labelString ? parsearLabelsPrometheus(labelString) : {};
+
+  // Base name without _bucket, _sum, _count for HELP/TYPE lookup
+  const baseName = metricName.replace(/(_bucket|_sum|_count)$/, '');
+  const help = helpMap.get(metricName) || helpMap.get(baseName);
+  const type = typeMap.get(metricName) || typeMap.get(baseName);
+
+  return {
+    name: metricName,
+    labels,
+    value,
+    help,
+    type,
+  };
+}
+
 export function parsePrometheusText(rawText: string): PrometheusSample[] {
-  if (!rawText || !rawText.trim()) {
+  if (!rawText?.trim()) {
     return [];
   }
 
@@ -24,61 +109,15 @@ export function parsePrometheusText(rawText: string): PrometheusSample[] {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    if (trimmed.startsWith('# HELP ')) {
-      const parts = trimmed.substring(7).trim().split(/\s+/);
-      const metricName = parts[0];
-      const helpText = parts.slice(1).join(' ');
-      helpMap.set(metricName, helpText);
-      continue;
-    }
-
-    if (trimmed.startsWith('# TYPE ')) {
-      const parts = trimmed.substring(7).trim().split(/\s+/);
-      const metricName = parts[0];
-      const typeText = parts[1];
-      typeMap.set(metricName, typeText);
-      continue;
-    }
-
     if (trimmed.startsWith('#')) {
+      procesarLineaComentario(trimmed, helpMap, typeMap);
       continue;
     }
 
-    // Line sample format: metric_name{label1="val1",...} 123.45
-    // or: metric_name 123.45
-    const match = trimmed.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{([^}]*)\})?\s+([^\s]+)(?:\s+[0-9]+)?$/);
-    if (!match) {
-      continue;
+    const sample = parsearLineaMuestra(trimmed, helpMap, typeMap);
+    if (sample) {
+      samples.push(sample);
     }
-
-    const [, metricName, labelString, valueString] = match;
-    const value = Number.parseFloat(valueString);
-    if (Number.isNaN(value)) {
-      continue;
-    }
-
-    const labels: Record<string, string> = {};
-    if (labelString) {
-      // Parse key="value" pairs handling commas inside quotes if any
-      const labelRegex = /([a-zA-Z_0-9]+)="([^"]*)"/g;
-      let labelMatch;
-      while ((labelMatch = labelRegex.exec(labelString)) !== null) {
-        labels[labelMatch[1]] = labelMatch[2];
-      }
-    }
-
-    // Base name without _bucket, _sum, _count for HELP/TYPE lookup
-    const baseName = metricName.replace(/(_bucket|_sum|_count)$/, '');
-    const help = helpMap.get(metricName) || helpMap.get(baseName);
-    const type = typeMap.get(metricName) || typeMap.get(baseName);
-
-    samples.push({
-      name: metricName,
-      labels,
-      value,
-      help,
-      type,
-    });
   }
 
   return samples;

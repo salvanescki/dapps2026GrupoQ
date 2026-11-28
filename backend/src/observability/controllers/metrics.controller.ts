@@ -20,7 +20,7 @@ export class MetricsController extends PrometheusController {
       type: 'string',
     },
   })
-  async index(@Res({ passthrough: true }) response: Response): Promise<string> {
+  index(@Res({ passthrough: true }) response: Response): Promise<string> {
     return super.index(response);
   }
 }

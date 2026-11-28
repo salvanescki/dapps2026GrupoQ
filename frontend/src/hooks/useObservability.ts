@@ -3,6 +3,8 @@ import {
   IntervaloRefresco,
   EstadoConexion,
   PanelDeObservabilidadEstado,
+  SondaLivenessData,
+  MetricasCompletas,
 } from '../types/observability.types';
 import { observabilityApiClient, ObservabilityApi } from '../api/observabilityApi';
 import { parsePrometheusText } from '../utils/prometheus-parser';
@@ -13,20 +15,68 @@ export interface UseObservabilityOptions {
   intervaloInicial?: IntervaloRefresco;
 }
 
+function estaNavegadorOffline(): boolean {
+  return typeof navigator !== 'undefined' && !navigator.onLine;
+}
+
+export function resolverResultadoSonda<T>(
+  result: PromiseSettledResult<T>,
+  mensajeFallback: string
+): { valor: T | null; error: string | null } {
+  if (result.status === 'fulfilled') {
+    return { valor: result.value, error: null };
+  }
+  const reason = result.reason as { message?: string } | undefined;
+  return {
+    valor: null,
+    error: reason?.message || mensajeFallback,
+  };
+}
+
+export function aplicarFallbackRuntimeALiveness(
+  liveness: SondaLivenessData | null,
+  metricas: MetricasCompletas | null
+): SondaLivenessData | null {
+  const runtime = metricas?.runtime;
+  if (!liveness || !runtime) {
+    return liveness;
+  }
+
+  const heapBytes =
+    !liveness.memoriaHeapBytes && runtime.heapUsedBytes
+      ? runtime.heapUsedBytes
+      : liveness.memoriaHeapBytes;
+  const rssBytes =
+    !liveness.memoriaRssBytes && runtime.rssBytes
+      ? runtime.rssBytes
+      : liveness.memoriaRssBytes;
+
+  if (heapBytes === liveness.memoriaHeapBytes && rssBytes === liveness.memoriaRssBytes) {
+    return liveness;
+  }
+
+  return {
+    ...liveness,
+    memoriaHeapBytes: heapBytes,
+    porcentajeHeap: Number(((heapBytes / liveness.umbralHeapBytes) * 100).toFixed(2)),
+    memoriaRssBytes: rssBytes,
+    porcentajeRss: Number(((rssBytes / liveness.umbralRssBytes) * 100).toFixed(2)),
+  };
+}
+
 export function useObservability(options?: UseObservabilityOptions) {
   const api = options?.apiClient || observabilityApiClient;
+  const intervaloInicial = options?.intervaloInicial ?? 10000;
 
-  const [intervaloRefresco, setIntervaloRefresco] = useState<IntervaloRefresco>(
-    options?.intervaloInicial !== undefined ? options?.intervaloInicial : 10000
-  );
+  const [intervaloRefresco, setIntervaloRefresco] = useState<IntervaloRefresco>(intervaloInicial);
   const [estadoConexion, setEstadoConexion] = useState<EstadoConexion>(
-    typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'online'
+    estaNavegadorOffline() ? 'offline' : 'online'
   );
 
   const [estado, setEstado] = useState<PanelDeObservabilidadEstado>({
-    intervaloRefresco: options?.intervaloInicial !== undefined ? options?.intervaloInicial : 10000,
+    intervaloRefresco: intervaloInicial,
     ultimaSincronizacion: null,
-    estadoConexion: typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'online',
+    estadoConexion: estaNavegadorOffline() ? 'offline' : 'online',
     cargando: true,
     actualizando: false,
     error: null,
@@ -42,7 +92,7 @@ export function useObservability(options?: UseObservabilityOptions) {
 
   const sincronizar = useCallback(
     async (esInicial = false) => {
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (estaNavegadorOffline()) {
         setEstadoConexion('offline');
         setEstado((prev) => ({
           ...prev,
@@ -53,9 +103,7 @@ export function useObservability(options?: UseObservabilityOptions) {
         return;
       }
 
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      abortControllerRef.current?.abort();
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
 
@@ -73,56 +121,15 @@ export function useObservability(options?: UseObservabilityOptions) {
 
       if (signal.aborted) return;
 
-      let errorReadiness: string | null = null;
-      let readiness = null;
-      if (readyResult.status === 'fulfilled') {
-        readiness = readyResult.value;
-      } else {
-        errorReadiness = readyResult.reason?.message || 'Error al consultar /health/ready';
-      }
+      const ready = resolverResultadoSonda(readyResult, 'Error al consultar /health/ready');
+      const live = resolverResultadoSonda(liveResult, 'Error al consultar /health/live');
+      const metricsRes = resolverResultadoSonda(metricsResult, 'Error al consultar /metrics');
 
-      let errorLiveness: string | null = null;
-      let liveness = null;
-      if (liveResult.status === 'fulfilled') {
-        liveness = liveResult.value;
-      } else {
-        errorLiveness = liveResult.reason?.message || 'Error al consultar /health/live';
-      }
-
-      let errorMetrics: string | null = null;
-      let metricas = null;
-      if (metricsResult.status === 'fulfilled') {
-        const samples = parsePrometheusText(metricsResult.value);
-        metricas = procesarMetricasPrometheus(samples);
-      } else {
-        errorMetrics = metricsResult.reason?.message || 'Error al consultar /metrics';
-      }
-
-      // Fallback resiliente: si /health/live no reporta bytes (0 MB) pero /metrics proveyó métricas de Node.js
-      if (liveness && metricas?.runtime) {
-        let heapBytes = liveness.memoriaHeapBytes;
-        let rssBytes = liveness.memoriaRssBytes;
-        let recalcular = false;
-
-        if ((!heapBytes || heapBytes === 0) && metricas.runtime.heapUsedBytes) {
-          heapBytes = metricas.runtime.heapUsedBytes;
-          recalcular = true;
-        }
-        if ((!rssBytes || rssBytes === 0) && metricas.runtime.rssBytes) {
-          rssBytes = metricas.runtime.rssBytes;
-          recalcular = true;
-        }
-
-        if (recalcular) {
-          liveness = {
-            ...liveness,
-            memoriaHeapBytes: heapBytes,
-            porcentajeHeap: Number(((heapBytes / liveness.umbralHeapBytes) * 100).toFixed(2)),
-            memoriaRssBytes: rssBytes,
-            porcentajeRss: Number(((rssBytes / liveness.umbralRssBytes) * 100).toFixed(2)),
-          };
-        }
-      }
+      const metricas =
+        metricsRes.valor !== null
+          ? procesarMetricasPrometheus(parsePrometheusText(metricsRes.valor))
+          : null;
+      const liveness = aplicarFallbackRuntimeALiveness(live.valor, metricas);
 
       const fallaronTodas =
         readyResult.status === 'rejected' &&
@@ -132,19 +139,20 @@ export function useObservability(options?: UseObservabilityOptions) {
       const errorGeneral = fallaronTodas
         ? 'No fue posible sincronizar ninguna fuente de telemetría del servidor.'
         : null;
+      const fechaSincronizacion = fallaronTodas ? null : new Date();
 
       setEstado((prev) => ({
         ...prev,
         cargando: false,
         actualizando: false,
-        ultimaSincronizacion: fallaronTodas ? prev.ultimaSincronizacion : new Date(),
+        ultimaSincronizacion: fechaSincronizacion ?? prev.ultimaSincronizacion,
         error: errorGeneral,
-        errorReadiness,
-        errorLiveness,
-        errorMetrics,
-        readiness: readiness || prev.readiness,
-        liveness: liveness || prev.liveness,
-        metricas: metricas || prev.metricas,
+        errorReadiness: ready.error,
+        errorLiveness: live.error,
+        errorMetrics: metricsRes.error,
+        readiness: ready.valor ?? prev.readiness,
+        liveness: liveness ?? prev.liveness,
+        metricas: metricas ?? prev.metricas,
         estadoConexion: 'online',
       }));
     },

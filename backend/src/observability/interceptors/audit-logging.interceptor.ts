@@ -6,7 +6,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { performance } from 'perf_hooks';
+import { performance } from 'node:perf_hooks';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { ReglaDeNegocioException } from '../../domain/exceptions/regla-de-negocio.exception';
@@ -23,6 +23,7 @@ import { AuditContextService } from '../services/audit-context.service';
 import { AuditLoggerService } from '../services/audit-logger.service';
 import { ResumenErrorHttp } from '../types/audit-log.types';
 import {
+  convertirValorATextoSeguro,
   sanitizarParametrosHttp,
   sanitizarTexto,
 } from '../utils/audit-sanitizer.util';
@@ -32,7 +33,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
   constructor(
     private readonly auditLogger: AuditLoggerService,
     private readonly auditContext: AuditContextService,
-  ) {}
+  ) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
@@ -151,7 +152,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         if (Array.isArray(msg)) {
           mensaje = msg.map((item) => sanitizarTexto(String(item)));
         } else if (msg !== undefined && msg !== null) {
-          mensaje = sanitizarTexto(String(msg));
+          mensaje = sanitizarTexto(convertirValorATextoSeguro(msg));
         }
       } else {
         mensaje = sanitizarTexto(error.message);
@@ -176,7 +177,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
 
     return {
       codigoEstado: HttpStatus.INTERNAL_SERVER_ERROR,
-      mensaje: sanitizarTexto(String(error)),
+      mensaje: sanitizarTexto(convertirValorATextoSeguro(error)),
     };
   }
 }

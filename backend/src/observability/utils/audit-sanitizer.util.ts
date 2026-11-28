@@ -39,6 +39,33 @@ export function sanitizarTexto(texto: string, truncar = true): string {
   return sanitizado;
 }
 
+const REGEX_ESQUEMA_URL = /^[a-zA-Z][a-zA-Z0-9+.-]{0,31}$/;
+
+export function redactarCredencialUrlSinParser(url: string): string {
+  const idxProtocolo = url.indexOf('://');
+  if (idxProtocolo <= 0) {
+    return url;
+  }
+
+  const esquema = url.slice(0, idxProtocolo);
+  if (!REGEX_ESQUEMA_URL.test(esquema)) {
+    return url;
+  }
+
+  const inicioCredencial = idxProtocolo + 3;
+  const idxArroba = url.indexOf('@', inicioCredencial);
+  if (idxArroba <= inicioCredencial) {
+    return url;
+  }
+
+  const credencial = url.slice(inicioCredencial, idxArroba);
+  if (/[\s/]/.test(credencial)) {
+    return url;
+  }
+
+  return `${esquema}://${VALOR_REDACTADO}${url.slice(idxArroba)}`;
+}
+
 export function sanitizarUrlProxy(url?: string | null): string | null {
   if (!url) {
     return null;
@@ -57,14 +84,123 @@ export function sanitizarUrlProxy(url?: string | null): string | null {
         sanitizada = `${protocolo}${VALOR_REDACTADO}@${resto}`;
       }
     } catch {
-      sanitizada = url.replace(
-        /([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^@\s/]+)@/g,
-        `$1${VALOR_REDACTADO}@`,
-      );
+      sanitizada = redactarCredencialUrlSinParser(url);
     }
   }
 
   return sanitizada;
+}
+
+function sanitizarValorEspecial(valor: object): {
+  manejado: boolean;
+  resultado?: unknown;
+} {
+  if (valor instanceof Date) {
+    return {
+      manejado: true,
+      resultado: Number.isNaN(valor.getTime())
+        ? 'Invalid Date'
+        : valor.toISOString(),
+    };
+  }
+
+  if (Buffer.isBuffer(valor)) {
+    return {
+      manejado: true,
+      resultado: `[Buffer ${valor.length} bytes]`,
+    };
+  }
+
+  if (valor instanceof RegExp) {
+    return {
+      manejado: true,
+      resultado: valor.toString(),
+    };
+  }
+
+  if (valor instanceof Error) {
+    return {
+      manejado: true,
+      resultado: {
+        name: valor.name,
+        message: sanitizarTexto(valor.message),
+      },
+    };
+  }
+
+  return { manejado: false };
+}
+
+function sanitizarArray(
+  lista: unknown[],
+  profundidad: number,
+  visitados: WeakSet<object>,
+): unknown[] {
+  const limite = Math.min(lista.length, MAX_ITEMS_ARRAY);
+  const resultado: unknown[] = [];
+
+  for (let i = 0; i < limite; i++) {
+    resultado.push(sanitizarValor(lista[i], profundidad + 1, visitados));
+  }
+
+  if (lista.length > MAX_ITEMS_ARRAY) {
+    resultado.push(`[+${lista.length - MAX_ITEMS_ARRAY} items]`);
+  }
+
+  return resultado;
+}
+
+function sanitizarObjetoPlano(
+  registro: Record<string, unknown>,
+  profundidad: number,
+  visitados: WeakSet<object>,
+): Record<string, unknown> {
+  const claves = Object.keys(registro);
+  const limiteClaves = Math.min(claves.length, MAX_CLAVES_OBJETO);
+  const resultado: Record<string, unknown> = {};
+
+  for (let i = 0; i < limiteClaves; i++) {
+    const clave = claves[i];
+    resultado[clave] = esClaveSensible(clave)
+      ? VALOR_REDACTADO
+      : sanitizarValor(registro[clave], profundidad + 1, visitados);
+  }
+
+  if (claves.length > MAX_CLAVES_OBJETO) {
+    resultado._truncatedKeys = claves.length - MAX_CLAVES_OBJETO;
+  }
+
+  return resultado;
+}
+
+function sanitizarEstructuraObjeto(
+  objeto: object,
+  profundidad: number,
+  visitados: WeakSet<object>,
+): unknown {
+  if (visitados.has(objeto)) {
+    return MARCADOR_CIRCULAR;
+  }
+
+  if (profundidad >= MAX_PROFUNDIDAD_SANITIZACION) {
+    return MARCADOR_PROFUNDIDAD_MAXIMA;
+  }
+
+  visitados.add(objeto);
+
+  try {
+    if (Array.isArray(objeto)) {
+      return sanitizarArray(objeto, profundidad, visitados);
+    }
+
+    return sanitizarObjetoPlano(
+      objeto as Record<string, unknown>,
+      profundidad,
+      visitados,
+    );
+  } finally {
+    visitados.delete(objeto);
+  }
 }
 
 export function sanitizarValor(
@@ -90,85 +226,65 @@ export function sanitizarValor(
   }
 
   if (typeof valor === 'symbol' || typeof valor === 'function') {
-    return String(valor);
-  }
-
-  if (valor instanceof Date) {
-    return Number.isNaN(valor.getTime())
-      ? 'Invalid Date'
-      : valor.toISOString();
-  }
-
-  if (Buffer.isBuffer(valor)) {
-    return `[Buffer ${valor.length} bytes]`;
-  }
-
-  if (valor instanceof RegExp) {
     return valor.toString();
   }
 
-  if (valor instanceof Error) {
-    return {
-      name: valor.name,
-      message: sanitizarTexto(valor.message),
-    };
+  const objeto = valor as object;
+  const especial = sanitizarValorEspecial(objeto);
+  if (especial.manejado) {
+    return especial.resultado;
   }
 
-  if (typeof valor === 'object') {
-    const objeto = valor as object;
+  return sanitizarEstructuraObjeto(objeto, profundidad, visitados);
+}
 
-    if (visitados.has(objeto)) {
-      return MARCADOR_CIRCULAR;
-    }
-
-    if (profundidad >= MAX_PROFUNDIDAD_SANITIZACION) {
-      return MARCADOR_PROFUNDIDAD_MAXIMA;
-    }
-
-    visitados.add(objeto);
-
-    try {
-      if (Array.isArray(objeto)) {
-        const limite = Math.min(objeto.length, MAX_ITEMS_ARRAY);
-        const resultado: unknown[] = [];
-        for (let i = 0; i < limite; i++) {
-          resultado.push(sanitizarValor(objeto[i], profundidad + 1, visitados));
-        }
-        if (objeto.length > MAX_ITEMS_ARRAY) {
-          resultado.push(`[+${objeto.length - MAX_ITEMS_ARRAY} items]`);
-        }
-        return resultado;
-      }
-
-      const registro = objeto as Record<string, unknown>;
-      const claves = Object.keys(registro);
-      const limiteClaves = Math.min(claves.length, MAX_CLAVES_OBJETO);
-      const resultado: Record<string, unknown> = {};
-
-      for (let i = 0; i < limiteClaves; i++) {
-        const clave = claves[i];
-        if (esClaveSensible(clave)) {
-          resultado[clave] = VALOR_REDACTADO;
-        } else {
-          resultado[clave] = sanitizarValor(
-            registro[clave],
-            profundidad + 1,
-            visitados,
-          );
-        }
-      }
-
-      if (claves.length > MAX_CLAVES_OBJETO) {
-        resultado._truncatedKeys = claves.length - MAX_CLAVES_OBJETO;
-      }
-
-      return resultado;
-    } finally {
-      visitados.delete(objeto);
-    }
+export function convertirValorATextoSeguro(valor: unknown): string {
+  if (typeof valor === 'string') {
+    return valor;
   }
 
-  return String(valor);
+  if (
+    typeof valor === 'number' ||
+    typeof valor === 'boolean' ||
+    typeof valor === 'bigint'
+  ) {
+    return `${valor}`;
+  }
+
+  if (valor === null) {
+    return 'null';
+  }
+
+  if (valor === undefined) {
+    return 'undefined';
+  }
+
+  if (typeof valor === 'symbol' || typeof valor === 'function') {
+    return valor.toString();
+  }
+
+  try {
+    const serializado = JSON.stringify(sanitizarValor(valor));
+    return serializado ?? '[Objeto no serializable]';
+  } catch {
+    return '[Objeto no serializable]';
+  }
+}
+
+export function convertirCampoEscalarATexto(valor: unknown): string | null {
+  if (typeof valor === 'string') {
+    return valor;
+  }
+
+  if (
+    typeof valor === 'number' ||
+    typeof valor === 'boolean' ||
+    typeof valor === 'bigint'
+  ) {
+    return `${valor}`;
+  }
+
+  return null;
 }
 
 function normalizarMapaParametros(valor: unknown): Record<string, unknown> {

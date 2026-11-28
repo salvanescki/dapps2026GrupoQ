@@ -72,9 +72,9 @@ export const MAX_CLAVES_OBJETO = 30;
 export const MAX_BYTES_PARAMETROS = 4096;
 
 export const REGEX_CREDENCIALES_URL =
-  /([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^:@\s/]+):([^@\s/]+)@/g;
+  /\b([a-zA-Z][a-zA-Z0-9+.-]{0,31}:\/\/)([^:@\s/]+):([^@\s/]+)@/g;
 
-export const REGEX_TOKEN_BEARER = /\bBearer\s+[A-Za-z0-9\-._~+/]+=*/gi;
+export const REGEX_TOKEN_BEARER = /\bBearer\s+[\w.~+/-]+=*/gi;
 
 export const REGEX_REQUEST_ID_VALIDO = /^[a-zA-Z0-9._:-]{1,128}$/;
 
